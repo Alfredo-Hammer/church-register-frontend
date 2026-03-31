@@ -48,6 +48,14 @@ const CSS = `
   .btn-print{background:#f97316;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(249,115,22,.45)}
   .btn-close{background:#e2e8f0;color:#334155;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
   .footer{margin-top:28px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
+  /* ── Church branding ── */
+  .church-brand{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #f1f5f9}
+  .church-brand img{height:58px;max-width:140px;object-fit:contain;display:block;border-radius:4px;flex-shrink:0}
+  .church-brand-placeholder{width:52px;height:52px;border-radius:50%;background:#f1f5f9;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:22px;color:#cbd5e1;flex-shrink:0}
+  .church-brand-name{font-size:17px;font-weight:700;color:#0f172a;letter-spacing:0.2px}
+  .church-brand-info{font-size:11px;color:#64748b;margin-top:3px;line-height:1.6}
+  .church-brand-pastor{font-size:11px;color:#475569;font-style:italic;margin-top:1px}
+  .church-brand-meta{font-size:10px;color:#94a3b8;margin-top:2px}
   @media print{
     .actions{display:none!important}
     body{padding:0}
@@ -70,28 +78,52 @@ function doc(title, body) {
 <style>${CSS}</style></head><body>${body}${actionBtns}</body></html>`;
 }
 
-// ── Cabecera de cada reporte ──────────────────────────────────────────────
-function hdr(title, subtitle, period) {
-  return `<div class="hdr">
+// ── Cabecera de cada reporte (con branding de iglesia) ───────────────────
+function hdr(title, subtitle, period, church = {}) {
+  const hasLogo = !!church.logoUrl;
+  const hasChurch = !!church.name;
+
+  const logoBlock = hasLogo
+    ? `<img src="${church.logoUrl}" alt="Logo">`
+    : `<div class="church-brand-placeholder">✝</div>`;
+
+  const infoLine = [church.address, church.phone, church.city && church.country
+    ? `${church.city}, ${church.country}` : (church.city || church.country || "")]
+    .filter(Boolean).join(" · ");
+
+  const brandHtml = hasChurch ? `
+  <div class="church-brand">
+    ${logoBlock}
+    <div>
+      <div class="church-brand-name">${church.name}</div>
+      ${infoLine ? `<div class="church-brand-info">${infoLine}</div>` : ""}
+      ${church.pastorName ? `<div class="church-brand-pastor">Pastor: ${church.pastorName}</div>` : ""}
+      ${church.foundedYear ? `<div class="church-brand-meta">Fundada en ${church.foundedYear}${church.denomination ? ` · ${church.denomination}` : ""}</div>` : (church.denomination ? `<div class="church-brand-meta">${church.denomination}</div>` : "")}
+    </div>
+  </div>` : "";
+
+  return `${brandHtml}<div class="hdr">
     <div class="hdr-l">
       <h1>${title}</h1>
       <p>${subtitle}</p>
       ${period ? `<p class="period">${period}</p>` : ""}
     </div>
     <div class="hdr-r">
-      <strong>Sistema de Control Eclesiástico</strong><br>
       Generado: ${nowLabel()}
     </div>
   </div>`;
 }
 
 // ── Pie de página ─────────────────────────────────────────────────────────
-const footer = `<div class="footer">Reporte generado automáticamente por el Sistema de Control Eclesiástico · Confidencial</div>`;
+function footerFor(church = {}) {
+  const name = church.name || "Sistema de Control Eclesiástico";
+  return `<div class="footer">${name} · Reporte generado automáticamente · Confidencial</div>`;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. REPORTE GENERAL
 // ─────────────────────────────────────────────────────────────────────────
-export function buildOverviewReport({ mStats, fSummary, dSummary, bStats, gStats }) {
+export function buildOverviewReport({ mStats, fSummary, dSummary, bStats, gStats }, church = {}) {
   const balance = fSummary?.summary?.balance || 0;
   const baptismsYear = bStats?.byMonth?.reduce((s, m) => s + parseInt(m.count), 0) || 0;
 
@@ -112,7 +144,7 @@ export function buildOverviewReport({ mStats, fSummary, dSummary, bStats, gStats
   const egresos = (fSummary?.byCategory || []).filter((c) => c.category_type === "EGRESO");
 
   return doc("Reporte General", `
-    ${hdr("Reporte General", "Resumen ejecutivo de estadísticas de la iglesia")}
+    ${hdr("Reporte General", "Resumen ejecutivo de estadísticas de la iglesia", "", church)}
 
     <div class="metrics">
       <div class="metric"><div class="metric-lbl">Miembros Activos</div><div class="metric-val">${mStats?.active || 0}</div><div class="metric-sub">de ${mStats?.total || 0} registrados</div></div>
@@ -151,20 +183,22 @@ export function buildOverviewReport({ mStats, fSummary, dSummary, bStats, gStats
         </table>
       </div>
     </div>
-    ${footer}
+    ${footerFor(church)}
   `);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 // 2. REPORTE DE MIEMBROS
 // ─────────────────────────────────────────────────────────────────────────
-export function buildMembersReport(stats) {
-  const { total, active, birthdaysThisMonth, byGender = [], byStatus = [] } = stats;
+export function buildMembersReport(stats, church = {}) {
+  const { total, active, birthdaysThisMonth, byGender = [], byStatus = [], byAgeGroup = [] } = stats;
   const GENDER_LABELS = { M: "Masculino", F: "Femenino", OTRO: "Otro" };
   const STATUS_COLORS = { ACTIVO: "#22c55e", INACTIVO: "#94a3b8", VISITANTE: "#eab308", TRANSFERIDO: "#3b82f6" };
+  const AGE_GROUP_COLORS = { ADULTO: "#3b82f6", JOVEN: "#8b5cf6", NIÑO: "#f59e0b" };
 
   const maxG = Math.max(...byGender.map((g) => parseInt(g.count)), 1);
   const maxS = Math.max(...byStatus.map((s) => parseInt(s.count)), 1);
+  const maxA = Math.max(...byAgeGroup.map((a) => parseInt(a.count)), 1);
 
   const gRows = byGender
     .map((g) => `<div class="bar-row">
@@ -182,27 +216,40 @@ export function buildMembersReport(stats) {
       </div>`)
     .join("") || `<p style="color:#94a3b8;font-size:12px">Sin datos</p>`;
 
+  const aRows = byAgeGroup
+    .map((a) => `<div class="bar-row">
+        <div class="bar-lbl">${a.age_group}</div>
+        <div class="bar-wrap"><div class="bar" style="background:${AGE_GROUP_COLORS[a.age_group] || "#64748b"};width:${(parseInt(a.count) / maxA) * 100}%"></div></div>
+        <div class="bar-val">${a.count} (${total > 0 ? ((parseInt(a.count) / total) * 100).toFixed(1) : 0}%)</div>
+      </div>`)
+    .join("") || `<p style="color:#94a3b8;font-size:12px">Sin datos</p>`;
+
+  const ninos = parseInt(byAgeGroup.find(a => a.age_group === 'NIÑO')?.count || 0);
+  const jovenes = parseInt(byAgeGroup.find(a => a.age_group === 'JOVEN')?.count || 0);
+
   return doc("Reporte de Miembros", `
-    ${hdr("Reporte de Miembros", "Distribución y estadísticas de miembros registrados")}
+    ${hdr("Reporte de Miembros", "Distribución y estadísticas de miembros registrados", "", church)}
 
     <div class="metrics">
       <div class="metric"><div class="metric-lbl">Total Miembros</div><div class="metric-val">${total}</div></div>
       <div class="metric"><div class="metric-lbl">Miembros Activos</div><div class="metric-val" style="color:#15803d">${active}</div><div class="metric-sub">${total > 0 ? ((active / total) * 100).toFixed(1) : 0}% del total</div></div>
-      <div class="metric"><div class="metric-lbl">Cumpleaños este mes</div><div class="metric-val">${birthdaysThisMonth}</div></div>
+      <div class="metric"><div class="metric-lbl">Jóvenes</div><div class="metric-val" style="color:#7c3aed">${jovenes}</div><div class="metric-sub">${total > 0 ? ((jovenes / total) * 100).toFixed(1) : 0}% del total</div></div>
+      <div class="metric"><div class="metric-lbl">Niños</div><div class="metric-val" style="color:#d97706">${ninos}</div><div class="metric-sub">${total > 0 ? ((ninos / total) * 100).toFixed(1) : 0}% del total</div></div>
     </div>
 
     <div class="two-col">
       <div class="section"><h2>Distribución por Género</h2>${gRows}</div>
       <div class="section"><h2>Distribución por Estado</h2>${sRows}</div>
     </div>
-    ${footer}
+    <div class="section" style="margin-top:16px"><h2>Distribución por Grupo de Edad</h2>${aRows}</div>
+    ${footerFor(church)}
   `);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 // 3. REPORTE FINANCIERO
 // ─────────────────────────────────────────────────────────────────────────
-export function buildFinancesReport(data, { startDate, endDate } = {}) {
+export function buildFinancesReport(data, { startDate, endDate } = {}, church = {}) {
   const { summary, byCategory = [] } = data;
   const ingresos = byCategory.filter((c) => c.category_type === "INGRESO");
   const egresos = byCategory.filter((c) => c.category_type === "EGRESO");
@@ -235,7 +282,7 @@ export function buildFinancesReport(data, { startDate, endDate } = {}) {
   };
 
   return doc("Reporte Financiero", `
-    ${hdr("Reporte Financiero", "Ingresos, egresos y balance por categoría", period)}
+    ${hdr("Reporte Financiero", "Ingresos, egresos y balance por categoría", period, church)}
 
     <div class="metrics">
       <div class="metric"><div class="metric-lbl">Total Ingresos</div><div class="metric-val" style="color:#15803d">${fmtM(summary?.totalIngresos)}</div></div>
@@ -245,14 +292,14 @@ export function buildFinancesReport(data, { startDate, endDate } = {}) {
 
     ${catSection(ingresos, "#16a34a", "Ingresos por Categoría")}
     ${catSection(egresos, "#dc2626", "Egresos por Categoría")}
-    ${footer}
+    ${footerFor(church)}
   `);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 // 4. REPORTE DE DIEZMOS Y OFRENDAS
 // ─────────────────────────────────────────────────────────────────────────
-export function buildDonationsReport(data, { startDate, endDate } = {}) {
+export function buildDonationsReport(data, { startDate, endDate } = {}, church = {}) {
   const { summary, byType = [], topDonors = [] } = data;
   const maxType = Math.max(...byType.map((t) => t.total), 1);
   const period = startDate || endDate
@@ -280,7 +327,7 @@ export function buildDonationsReport(data, { startDate, endDate } = {}) {
       </tr>`).join("");
 
   return doc("Reporte de Diezmos y Ofrendas", `
-    ${hdr("Reporte de Diezmos y Ofrendas", "Contribuciones personales de miembros", period)}
+    ${hdr("Reporte de Diezmos y Ofrendas", "Contribuciones personales de miembros", period, church)}
 
     <div class="metrics">
       <div class="metric"><div class="metric-lbl">Total Recaudado</div><div class="metric-val">${fmtM(summary?.total)}</div></div>
@@ -301,14 +348,14 @@ export function buildDonationsReport(data, { startDate, endDate } = {}) {
         </table>
       </div>
     </div>
-    ${footer}
+    ${footerFor(church)}
   `);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 // 5. REPORTE DE BAUTISMOS
 // ─────────────────────────────────────────────────────────────────────────
-export function buildBaptismsReport(data) {
+export function buildBaptismsReport(data, church = {}) {
   const { total, year, byMonth = [], recent = [] } = data;
 
   const monthlyData = MONTHS.map((label, i) => ({
@@ -343,7 +390,7 @@ export function buildBaptismsReport(data) {
     : null;
 
   return doc(`Reporte de Bautismos ${year}`, `
-    ${hdr("Reporte de Bautismos", `Estadísticas de bautismos — Año ${year}`)}
+    ${hdr("Reporte de Bautismos", `Estadísticas de bautismos — Año ${year}`, "", church)}
 
     <div class="metrics">
       <div class="metric"><div class="metric-lbl">Total Histórico</div><div class="metric-val">${total}</div></div>
@@ -365,12 +412,244 @@ export function buildBaptismsReport(data) {
         <tbody>${recentRows}</tbody>
       </table>
     </div>
-    ${footer}
+    ${footerFor(church)}
   `);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 6. CERTIFICADO DE BAUTISMO INDIVIDUAL
+// 6. REPORTE DE ASISTENCIA
+// ─────────────────────────────────────────────────────────────────────────
+export function buildAttendanceReport(data, church = {}) {
+  const { summary, byType = [], monthly = [], topEvents = [] } = data;
+  const TYPE_LABELS = { CULTO: "Culto", REUNION: "Reunión", ESPECIAL: "Especial" };
+  const TYPE_COLORS = { CULTO: "#3b82f6", REUNION: "#f59e0b", ESPECIAL: "#8b5cf6" };
+
+  const maxType = Math.max(...byType.map((t) => parseInt(t.total_attendance || 0)), 1);
+  const BAR_H = 60;
+
+  // Gráfico mensual: barras por mes (miembros + visitantes)
+  const monthlyRows = monthly.length === 0
+    ? `<p style="color:#94a3b8;font-size:12px;text-align:center;padding:16px">Sin datos en los últimos 6 meses</p>`
+    : monthly.map((m) => {
+      const members = parseInt(m.member_attendance || 0);
+      const guests = parseInt(m.guest_count || 0);
+      const total = members + guests;
+      const maxVal = Math.max(...monthly.map(x => parseInt(x.member_attendance || 0) + parseInt(x.guest_count || 0)), 1);
+      return `<div class="bar-row">
+          <div class="bar-lbl">${m.label || m.month}</div>
+          <div class="bar-wrap" style="position:relative">
+            <div class="bar" style="background:#3b82f6;width:${(members / maxVal) * 100}%;position:absolute;top:0;left:0"></div>
+            <div class="bar" style="background:#f59e0b;width:${(total / maxVal) * 100}%;opacity:0.45"></div>
+          </div>
+          <div class="bar-val">${total.toLocaleString()}</div>
+        </div>`;
+    }).join("");
+
+  const typeRows = byType.length === 0
+    ? `<p style="color:#94a3b8;font-size:12px">Sin datos</p>`
+    : byType.map((t) => `<div class="bar-row">
+        <div class="bar-lbl">${TYPE_LABELS[t.event_type] || t.event_type}</div>
+        <div class="bar-wrap"><div class="bar" style="background:${TYPE_COLORS[t.event_type] || "#64748b"};width:${(parseInt(t.total_attendance || 0) / maxType) * 100}%"></div></div>
+        <div class="bar-val">${parseInt(t.total_attendance).toLocaleString()} <span style="color:#94a3b8;font-size:10px">(${t.event_count} ev.)</span></div>
+      </div>`).join("");
+
+  const topRows = topEvents.length === 0
+    ? `<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">Sin datos</td></tr>`
+    : topEvents.map((e, i) => {
+      const medals = ["🥇", "🥈", "🥉"];
+      return `<tr>
+          <td style="text-align:center;font-weight:700">${medals[i] || i + 1}</td>
+          <td>${e.title}</td>
+          <td>${e.date ? e.date.split("T")[0].split("-").reverse().join("/") : "—"} · ${TYPE_LABELS[e.event_type] || e.event_type}</td>
+          <td style="text-align:right;font-weight:600">${parseInt(e.total_attendance).toLocaleString()}</td>
+        </tr>`;
+    }).join("");
+
+  return doc("Reporte de Asistencia", `
+    ${hdr("Reporte de Asistencia", "Estadísticas de eventos y asistencia — Últimos 6 meses", "", church)}
+
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">Total Eventos</div><div class="metric-val">${summary?.totalEvents || 0}</div></div>
+      <div class="metric"><div class="metric-lbl">Total Asistencias</div><div class="metric-val">${parseInt(summary?.totalAttendance || 0).toLocaleString()}</div><div class="metric-sub">Miembros registrados</div></div>
+      <div class="metric"><div class="metric-lbl">Eventos este mes</div><div class="metric-val">${summary?.eventsThisMonth || 0}</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="section"><h2>Asistencia Mensual — Últimos 6 meses</h2>${monthlyRows}</div>
+      <div class="section"><h2>Por Tipo de Evento</h2>${typeRows}</div>
+    </div>
+
+    <div class="section">
+      <h2>Eventos con Mayor Asistencia</h2>
+      <table>
+        <thead><tr><th style="text-align:center">#</th><th>Evento</th><th>Fecha · Tipo</th><th style="text-align:right">Asistencia</th></tr></thead>
+        <tbody>${topRows}</tbody>
+      </table>
+    </div>
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 8. LISTA DE ASISTENCIA — EVENTO ESPECÍFICO
+// ─────────────────────────────────────────────────────────────────────────
+export function buildEventAttendancePDF(event, attendees = [], guestCount = 0, church = {}) {
+  const TYPE_LABELS = { CULTO: "Culto", REUNION: "Reunión", ESPECIAL: "Evento Especial" };
+
+  const fmtDate = (d) => {
+    if (!d) return "—";
+    return new Date(d.slice ? d.slice(0, 10) + "T12:00:00" : d)
+      .toLocaleDateString("es-DO", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  };
+
+  const total = attendees.length + guestCount;
+  const subtitle = `${TYPE_LABELS[event.event_type] || event.event_type} · ${fmtDate(event.date)}`;
+
+  const attendeeRows = attendees.length === 0
+    ? `<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:16px">Sin asistentes registrados</td></tr>`
+    : attendees.map((a, i) => `<tr>
+        <td style="text-align:center;color:#94a3b8;width:36px">${i + 1}</td>
+        <td style="font-weight:500">${a.first_name || ""} ${a.last_name || ""}</td>
+        <td style="color:#64748b">${a.phone || "—"}</td>
+      </tr>`).join("");
+
+  return doc(`Lista de Asistencia — ${event.title}`, `
+    ${hdr("Lista de Asistencia", event.title, subtitle, church)}
+
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric"><div class="metric-lbl">Miembros registrados</div><div class="metric-val">${attendees.length}</div></div>
+      <div class="metric"><div class="metric-lbl">Visitantes / Público</div><div class="metric-val" style="color:#d97706">${guestCount}</div></div>
+      <div class="metric"><div class="metric-lbl">Total Asistentes</div><div class="metric-val" style="color:#15803d">${total}</div></div>
+    </div>
+
+    <div class="section">
+      <h2>Miembros Presentes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:center;width:36px">#</th>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+          </tr>
+        </thead>
+        <tbody>${attendeeRows}</tbody>
+      </table>
+    </div>
+
+    ${guestCount > 0 ? `<div class="section">
+      <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">👥</span>
+        <div>
+          <div style="font-weight:600;color:#854d0e">Visitantes / Público General</div>
+          <div style="color:#713f12;font-size:12px;margin-top:2px"><strong>${guestCount}</strong> personas sin registro previo (entrada libre)</div>
+        </div>
+      </div>
+    </div>` : ""}
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 9. DIRECTORIO DE FAMILIA
+// ─────────────────────────────────────────────────────────────────────────
+export function buildFamilyMembersPDF(family, members = [], church = {}) {
+  const REL_LABELS = { PADRE: "Padre", MADRE: "Madre", HIJO: "Hijo/a", MIEMBRO: "Miembro", ABUELO: "Abuelo/a", TIOS: "Tío/a", OTRO: "Otro" };
+
+  const rows = members.length === 0
+    ? `<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:14px">Sin miembros registrados</td></tr>`
+    : members.map((m, i) => `<tr>
+        <td style="text-align:center;color:#94a3b8;width:36px">${i + 1}</td>
+        <td style="font-weight:500">${m.first_name || ""} ${m.last_name || ""}</td>
+        <td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;background:#f1f5f9;color:#475569;font-weight:600">${REL_LABELS[m.relationship] || m.relationship || "—"}</span></td>
+      </tr>`).join("");
+
+  return doc(`Familia ${family.family_name}`, `
+    ${hdr(`Familia ${family.family_name}`, "Registro de integrantes de la familia", "", church)}
+    <div class="metrics" style="grid-template-columns:repeat(2,1fr)">
+      <div class="metric"><div class="metric-lbl">Total integrantes</div><div class="metric-val">${members.length}</div></div>
+      <div class="metric"><div class="metric-lbl">Familia</div><div class="metric-val" style="font-size:16px">${family.family_name}</div></div>
+    </div>
+    <div class="section">
+      <h2>Integrantes</h2>
+      <table>
+        <thead><tr><th style="text-align:center;width:36px">#</th><th>Nombre</th><th>Relación</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 10. LISTA DE MIEMBROS DE GRUPO/MINISTERIO
+// ─────────────────────────────────────────────────────────────────────────
+export function buildGroupMembersPDF(group, members = [], church = {}) {
+  const rows = members.length === 0
+    ? `<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:14px">Sin miembros en este grupo</td></tr>`
+    : members.map((m, i) => `<tr>
+        <td style="text-align:center;color:#94a3b8;width:36px">${i + 1}</td>
+        <td style="font-weight:500">${m.first_name || ""} ${m.last_name || ""}</td>
+        <td style="color:#64748b">${m.phone || "—"}</td>
+      </tr>`).join("");
+
+  return doc(`Miembros — ${group.name}`, `
+    ${hdr(group.name, group.description || "Lista de miembros del grupo/ministerio", "", church)}
+    <div class="metrics" style="grid-template-columns:repeat(2,1fr)">
+      <div class="metric"><div class="metric-lbl">Total miembros</div><div class="metric-val">${members.length}</div></div>
+      <div class="metric"><div class="metric-lbl">Grupo / Ministerio</div><div class="metric-val" style="font-size:15px">${group.name}</div></div>
+    </div>
+    <div class="section">
+      <h2>Lista de Miembros</h2>
+      <table>
+        <thead><tr><th style="text-align:center;width:36px">#</th><th>Nombre</th><th>Teléfono</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 11. DIRECTORIO DE LÍDERES
+// ─────────────────────────────────────────────────────────────────────────
+export function buildLeadersDirectoryPDF(leaders = [], church = {}) {
+  const rows = leaders.length === 0
+    ? `<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:14px">Sin líderes registrados</td></tr>`
+    : leaders.map((l, i) => {
+      const statusColor = l.status === "ACTIVO" ? "#15803d" : "#94a3b8";
+      return `<tr>
+          <td style="text-align:center;color:#94a3b8;width:36px">${i + 1}</td>
+          <td style="font-weight:500">${l.firstName || ""} ${l.lastName || ""}</td>
+          <td>${l.position || "—"}</td>
+          <td>${l.area || "—"}</td>
+          <td>${l.groupName || "—"}</td>
+          <td style="text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;background:${l.status === "ACTIVO" ? "#dcfce7" : "#f1f5f9"};color:${statusColor};font-weight:600">${l.status || "—"}</span></td>
+        </tr>`;
+    }).join("");
+
+  const activos = leaders.filter(l => l.status === "ACTIVO").length;
+  const areas = [...new Set(leaders.map(l => l.area).filter(Boolean))].length;
+
+  return doc("Directorio de Líderes", `
+    ${hdr("Directorio de Líderes", "Equipo de liderazgo de la iglesia", "", church)}
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">Total Líderes</div><div class="metric-val">${leaders.length}</div></div>
+      <div class="metric"><div class="metric-lbl">Activos</div><div class="metric-val" style="color:#15803d">${activos}</div></div>
+      <div class="metric"><div class="metric-lbl">Áreas activas</div><div class="metric-val">${areas}</div></div>
+    </div>
+    <div class="section">
+      <h2>Equipo de Liderazgo</h2>
+      <table>
+        <thead><tr><th style="text-align:center;width:36px">#</th><th>Nombre</th><th>Posición</th><th>Área</th><th>Grupo</th><th style="text-align:center">Estado</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 12. CERTIFICADO DE BAUTISMO INDIVIDUAL
 // ─────────────────────────────────────────────────────────────────────────
 export function buildBaptismCertificate(baptismData, churchName = "Iglesia Cristiana") {
   const { first_name, last_name, baptism_date, minister, place } = baptismData;
@@ -713,4 +992,374 @@ export function buildBaptismCertificate(baptismData, churchName = "Iglesia Crist
   <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
 </div>
 </body></html>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 7. CARTAS DE REFERENCIA PASTORALES
+// ─────────────────────────────────────────────────────────────────────────
+
+const LETTER_LABELS = {
+  MEMBRESIA: "Carta de Membresía",
+  BUENA_CONDUCTA: "Carta de Buena Conducta",
+  RECOMENDACION: "Carta de Recomendación",
+  TRANSFERENCIA: "Carta de Transferencia de Membresía",
+  PRESENTACION: "Carta de Presentación",
+  VISA: "Carta de Respaldo para Gestiones Oficiales",
+};
+
+const LETTER_BODIES = {
+  MEMBRESIA: (member, church) =>
+    `Por medio de la presente, la <strong>${church.name}</strong>, ubicada en ${church.address || "nuestra localidad"}, 
+    certifica que <strong>${member.first_name} ${member.last_name}</strong> es miembro activo de esta 
+    congregación, participando regularmente en los cultos, actividades y ministerios de esta casa de Dios.
+    <br><br>
+    Esta iglesia da fe de la comunión fraternal y el compromiso cristiano que caracteriza a dicho(a) hermano(a), 
+    por lo cual extendemos la presente carta a solicitud del interesado(a).`,
+
+  BUENA_CONDUCTA: (member, church) =>
+    `La <strong>${church.name}</strong> hace constar que <strong>${member.first_name} ${member.last_name}</strong>, 
+    miembro de esta congregación, ha demostrado en todo tiempo una conducta íntegra, responsable y 
+    en concordancia con los principios y valores del evangelio de Jesucristo.
+    <br><br>
+    Durante su permanencia en nuestra iglesia, dicho(a) hermano(a) ha sido ejemplo de honestidad, 
+    responsabilidad y buen testimonio cristiano tanto dentro como fuera de la congregación, 
+    por lo que no tenemos objeción alguna que hacer con respecto a su persona.`,
+
+  RECOMENDACION: (member, church) =>
+    `La <strong>${church.name}</strong> se complace en recomendar ampliamente a 
+    <strong>${member.first_name} ${member.last_name}</strong>, miembro fiel y comprometido(a) de 
+    esta congregación.
+    <br><br>
+    Conocemos a dicho(a) hermano(a) como una persona de fe sólida, carácter íntegro y dedicación 
+    genuina al servicio del Señor. Su vida refleja los valores del evangelio y su actitud siempre 
+    ha sido de colaboración y buen testimonio. Con toda confianza, la recomendamos para cualquier 
+    cargo, gestión o responsabilidad para la cual se le considere.`,
+
+  TRANSFERENCIA: (member, church, dest) =>
+    `La <strong>${church.name}</strong> extiende la presente carta a fin de hacer constar que 
+    <strong>${member.first_name} ${member.last_name}</strong> ha sido miembro activo y fiel de 
+    esta congregación.
+    <br><br>
+    Por motivos de traslado, dicho(a) hermano(a) solicita su transferencia de membresía${dest ? ` hacia la <strong>${dest}</strong>` : " a la congregación que corresponda"}. 
+    Esta iglesia certifica que se retira en plena comunión, al día en sus responsabilidades y 
+    con un testimonio cristiano irreprochable. Lo recomendamos fraternalmente a la congregación 
+    receptora como un(a) hermano(a) digno(a) de plena confianza y comunión.`,
+
+  PRESENTACION: (member, church) =>
+    `La <strong>${church.name}</strong> tiene el agrado de presentar ante ustedes a 
+    <strong>${member.first_name} ${member.last_name}</strong>, miembro activo de esta congregación.
+    <br><br>
+    Le extendemos esta carta de presentación con el propósito de que sea recibido(a) con el amor 
+    fraternal que caracteriza al cuerpo de Cristo. Dicho(a) hermano(a) cuenta con nuestro pleno 
+    respaldo y confianza, y esperamos que su participación sea de bendición para la congregación 
+    que lo(a) reciba.`,
+
+  VISA: (member, church) =>
+    `La <strong>${church.name}</strong>, congregación cristiana debidamente establecida, hace 
+    constar por medio de la presente que <strong>${member.first_name} ${member.last_name}</strong> 
+    es miembro activo y comprometido(a) de esta iglesia desde hace tiempo, participando regularmente 
+    en los servicios religiosos y actividades de la congregación.
+    <br><br>
+    Esta carta se emite a petición del interesado(a) para los fines que estime convenientes ante 
+    las autoridades correspondientes. La iglesia respalda plenamente a dicho(a) miembro(a) y 
+    certifica la veracidad de la información aquí contenida.`,
+};
+
+const LETTER_CSS = `
+  *{box-sizing:border-box;margin:0;padding:0}
+  @page{size:letter portrait;margin:2cm}
+  body{
+    font-family:'Georgia',serif;
+    background:#f5f5f0;
+    color:#1a1a1a;
+    padding:40px;
+    font-size:13.5px;
+    line-height:1.8;
+  }
+  .letter-wrap{
+    max-width:720px;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid #d0c8b0;
+    border-top:6px solid #1a2744;
+    padding:52px 60px 48px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.08);
+    position:relative;
+  }
+  .letter-wrap::before{
+    content:'';
+    position:absolute;
+    top:8px;left:8px;right:8px;bottom:8px;
+    border:1px solid #e8e0c8;
+    pointer-events:none;
+  }
+  /* Header */
+  .ltr-header{
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:2px solid #1a2744;
+    padding-bottom:20px;margin-bottom:26px;
+    gap:20px;
+  }
+  .ltr-header-text{flex:1}
+  .ltr-header-logo{
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:flex-end;
+  }
+  .ltr-church-name{
+    font-size:20px;font-weight:700;
+    color:#1a2744;letter-spacing:0.5px;
+    text-transform:uppercase;
+    font-family:'Georgia',serif;
+  }
+  .ltr-church-info{
+    font-size:11px;color:#6b6b5a;
+    line-height:1.6;margin-top:5px;
+    font-family:'Arial',sans-serif;
+  }
+  .ltr-cross{
+    font-size:44px;color:#1a2744;
+    opacity:0.12;
+    font-family:serif;
+    line-height:1;
+  }
+  /* Type badge */
+  .ltr-type-badge{
+    display:inline-block;
+    background:#1a2744;
+    color:#fff;
+    font-size:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    padding:5px 18px;
+    border-radius:2px;
+    margin-bottom:22px;
+    font-family:'Arial',sans-serif;
+  }
+  /* Meta row */
+  .ltr-meta{
+    display:flex;justify-content:space-between;
+    font-size:11.5px;color:#6b6b5a;
+    margin-bottom:30px;
+    font-family:'Arial',sans-serif;
+  }
+  /* Saludo */
+  .ltr-recipient{
+    font-size:13px;color:#1a1a1a;
+    margin-bottom:18px;
+    font-style:italic;
+  }
+  /* Body */
+  .ltr-body{
+    font-size:13.5px;
+    line-height:1.9;
+    color:#222;
+    margin-bottom:28px;
+    text-align:justify;
+  }
+  /* Purpose block */
+  .ltr-purpose{
+    background:#f8f7f2;
+    border-left:3px solid #1a2744;
+    padding:12px 18px;
+    margin:20px 0;
+    font-style:italic;
+    font-size:12.5px;
+    color:#3a3a2a;
+    border-radius:0 4px 4px 0;
+  }
+  /* Custom block */
+  .ltr-custom{
+    font-size:13px;
+    color:#333;
+    margin:16px 0 24px;
+    line-height:1.85;
+  }
+  /* Closing */
+  .ltr-closing{
+    margin-bottom:48px;
+    font-size:13px;color:#333;
+    line-height:1.7;
+  }
+  /* Signature */
+  .ltr-sig-wrap{
+    display:flex;justify-content:flex-end;
+    margin-top:16px;
+  }
+  .ltr-sig{
+    text-align:center;
+    min-width:240px;
+  }
+  .ltr-sig-line{
+    border-top:1.5px solid #1a2744;
+    padding-top:10px;
+    margin-top:52px;
+  }
+  .ltr-sig-name{
+    font-size:13px;font-weight:700;
+    color:#1a2744;text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .ltr-sig-role{
+    font-size:11px;color:#6b6b5a;
+    margin-top:3px;font-family:'Arial',sans-serif;
+  }
+  /* Validity */
+  .ltr-validity{
+    display:inline-block;
+    border:1px dashed #c0b890;
+    padding:6px 18px;
+    font-size:11px;
+    color:#7a6a40;
+    border-radius:4px;
+    margin-top:24px;
+    font-family:'Arial',sans-serif;
+  }
+  /* Footer */
+  .ltr-footer{
+    margin-top:32px;
+    padding-top:14px;
+    border-top:1px solid #e0dac8;
+    font-size:10px;
+    color:#a0a090;
+    text-align:center;
+    font-family:'Arial',sans-serif;
+    letter-spacing:0.3px;
+  }
+  /* Print buttons */
+  .actions{position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:100}
+  .btn-print{
+    background:#1a2744;color:#fff;border:none;
+    padding:11px 22px;border-radius:8px;font-size:13px;
+    font-weight:700;cursor:pointer;
+    box-shadow:0 4px 14px rgba(26,39,68,0.4);
+    font-family:'Arial',sans-serif;
+  }
+  .btn-close{
+    background:#f0ece0;color:#3a3020;
+    border:1.5px solid #c0b890;padding:11px 18px;
+    border-radius:8px;font-size:13px;font-weight:600;
+    cursor:pointer;font-family:'Arial',sans-serif;
+  }
+  @media print{
+    .actions{display:none!important}
+    body{background:#fff;padding:0}
+    .letter-wrap{box-shadow:none;border:none;border-top:4px solid #1a2744}
+    @page{size:letter;margin:2cm}
+  }
+`;
+
+function ltrValidityLabel(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr.slice(0, 10) + "T12:00:00");
+  return `Válida hasta: ${d.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" })}`;
+}
+
+function ltrFormatDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr.slice(0, 10) + "T12:00:00");
+  return d.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/**
+ * Genera el HTML de una carta de referencia lista para imprimir / exportar a PDF.
+ *
+ * @param {Object} letter       - Datos de la carta (de la BD)
+ * @param {Object} church       - { name, address, phone }
+ */
+export function buildReferenceLetter(letter, church = {}) {
+  const {
+    letter_type, recipient, purpose, custom_body,
+    issued_by, issued_at, valid_until, destination_church,
+    first_name, last_name,
+  } = letter;
+
+  const memberObj = { first_name, last_name };
+  const churchObj = { name: church.name || "Iglesia Cristiana", address: church.address || "", phone: church.phone || "", logoUrl: church.logoUrl || null };
+
+  const typeLabel = LETTER_LABELS[letter_type] || "Carta Pastoral";
+  const bodyFn = LETTER_BODIES[letter_type];
+  const bodyText = bodyFn
+    ? bodyFn(memberObj, churchObj, destination_church)
+    : `La <strong>${churchObj.name}</strong> extiende la presente carta en favor de <strong>${first_name} ${last_name}</strong>.`;
+
+  const issueDate = ltrFormatDate(issued_at);
+  const validLabel = ltrValidityLabel(valid_until);
+  const purposeHtml = purpose
+    ? `<div class="ltr-purpose"><strong>Propósito:</strong> ${purpose}</div>`
+    : "";
+  const customHtml = custom_body
+    ? `<div class="ltr-custom">${custom_body}</div>`
+    : "";
+  const validHtml = validLabel
+    ? `<div class="ltr-validity">📅 ${validLabel}</div>`
+    : "";
+
+  const churchInfo = [churchObj.address, churchObj.phone].filter(Boolean).join(" · ");
+  const logoHtml = churchObj.logoUrl
+    ? `<img src="${churchObj.logoUrl}" alt="Logo" style="height:64px;max-width:160px;object-fit:contain;display:block;">`
+    : `<div class="ltr-cross">✝</div>`;
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${typeLabel} — ${first_name} ${last_name}</title>
+<style>${LETTER_CSS}</style></head><body>
+
+<div class="letter-wrap">
+
+  <!-- Encabezado -->
+  <div class="ltr-header">
+    <div class="ltr-header-text">
+      <div class="ltr-church-name">${churchObj.name}</div>
+      ${churchInfo ? `<div class="ltr-church-info">${churchInfo}</div>` : ""}
+    </div>
+    <div class="ltr-header-logo">${logoHtml}</div>
+  </div>
+
+  <!-- Tipo de carta -->
+  <div class="ltr-type-badge">${typeLabel}</div>
+
+  <!-- Metadatos -->
+  <div class="ltr-meta">
+    <span><strong>Para:</strong> ${recipient || "A quien corresponda"}</span>
+    <span>Fecha de emisión: ${issueDate}</span>
+  </div>
+
+  <!-- Saludo -->
+  <p class="ltr-recipient">Estimado(a) ${recipient || "a quien corresponda"}:</p>
+
+  <!-- Cuerpo -->
+  <div class="ltr-body">${bodyText}</div>
+
+  ${purposeHtml}
+  ${customHtml}
+
+  <!-- Cierre -->
+  <div class="ltr-closing">
+    En Cristo,<br><br>
+    ${validHtml}
+  </div>
+
+  <!-- Firma -->
+  <div class="ltr-sig-wrap">
+    <div class="ltr-sig">
+      <div class="ltr-sig-line">
+        <div class="ltr-sig-name">${issued_by}</div>
+        <div class="ltr-sig-role">Pastor / Ministro · ${churchObj.name}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pie -->
+  <div class="ltr-footer">
+    ${typeLabel} · Emitida el ${issueDate} · ${churchObj.name} · Sistema de Control Eclesiástico
+  </div>
+
+</div>
+
+<div class="actions">
+  <button class="btn-print" onclick="window.print()">🖨&nbsp; Imprimir / Guardar PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+</div>
+</body></html>`;
+
+  return html;
 }

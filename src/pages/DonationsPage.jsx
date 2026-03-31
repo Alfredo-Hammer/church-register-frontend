@@ -21,8 +21,14 @@ import {
   DollarSign,
   ChevronDown,
   AlertCircle,
+  Printer,
 } from "lucide-react";
-import {donationsService, membersService} from "@/services/api";
+import {
+  donationsService,
+  membersService,
+  settingsService,
+} from "@/services/api";
+import {buildDonationsReport} from "@/utils/reportPrint";
 
 // ─── Tipos de donación ────────────────────────────────────────────────────────
 const DONATION_TYPES = [
@@ -99,6 +105,22 @@ export default function DonationsPage() {
   // delete confirm
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const [church, setChurch] = useState({});
+  useEffect(() => {
+    settingsService
+      .getChurch()
+      .then((r) => setChurch(r.church || r || {}))
+      .catch(() => {});
+  }, []);
+
+  const handlePrint = () => {
+    if (!summary) return;
+    const html = buildDonationsReport(summary, {startDate, endDate}, church);
+    const win = window.open("", "_blank", "width=960,height=720");
+    win.document.write(html);
+    win.document.close();
+  };
 
   // ─── Data fetch ────────────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -249,13 +271,23 @@ export default function DonationsPage() {
             Registro de contribuciones personales de miembros
           </p>
         </div>
-        <Button
-          onClick={openCreate}
-          className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Registrar Contribución
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+            disabled={!summary}
+            className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+          >
+            <Printer className="w-4 h-4" /> PDF
+          </Button>
+          <Button
+            onClick={openCreate}
+            className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Registrar Contribución
+          </Button>
+        </div>
       </div>
 
       {/* Summary cards */}

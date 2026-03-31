@@ -433,6 +433,39 @@ export default function MemberPrintCard({member, groups = [], church}) {
         </>
       )}
 
+      {/* ── Palabras del Pastor / Líder ──────────────────────────────────── */}
+      {member.pastor_notes && (
+        <>
+          <Divider />
+          <div style={{padding: "0 28px"}}>
+            <SectionTitle color="#4f46e5">
+              Palabras del Pastor / Líder
+            </SectionTitle>
+            <div
+              style={{
+                background: "#f5f3ff",
+                border: "1px solid #c4b5fd",
+                borderRadius: 8,
+                padding: "10px 14px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#374151",
+                  lineHeight: 1.65,
+                  margin: 0,
+                  fontStyle: "italic",
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                &ldquo;{member.pastor_notes}&rdquo;
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── Spacer para empujar el footer abajo ─────────────────────────── */}
       <div style={{flex: 1, minHeight: 20}} />
 

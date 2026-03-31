@@ -186,6 +186,48 @@ export const groupsService = {
     const response = await api.get('/groups/stats');
     return response.data;
   },
+
+  // ── Líderes del grupo
+  getLeaders: async (groupId) => {
+    const response = await api.get(`/groups/${groupId}/leaders`);
+    return response.data;
+  },
+  addLeader: async (groupId, data) => {
+    const response = await api.post(`/groups/${groupId}/leaders`, data);
+    return response.data;
+  },
+  removeLeader: async (groupId, leaderId) => {
+    const response = await api.delete(`/groups/${groupId}/leaders/${leaderId}`);
+    return response.data;
+  },
+
+  // ── Actividades del grupo
+  getActivities: async (groupId) => {
+    const response = await api.get(`/groups/${groupId}/activities`);
+    return response.data;
+  },
+  addActivity: async (groupId, data) => {
+    const response = await api.post(`/groups/${groupId}/activities`, data);
+    return response.data;
+  },
+  deleteActivity: async (groupId, activityId) => {
+    const response = await api.delete(`/groups/${groupId}/activities/${activityId}`);
+    return response.data;
+  },
+
+  // ── Finanzas del grupo
+  getFinances: async (groupId) => {
+    const response = await api.get(`/groups/${groupId}/finances`);
+    return response.data;
+  },
+  addTransaction: async (groupId, data) => {
+    const response = await api.post(`/groups/${groupId}/finances`, data);
+    return response.data;
+  },
+  deleteTransaction: async (groupId, transactionId) => {
+    const response = await api.delete(`/groups/${groupId}/finances/${transactionId}`);
+    return response.data;
+  },
 };
 
 // Servicios de eventos
@@ -238,6 +280,11 @@ export const eventsService = {
 
   updateGuestCount: async (eventId, guestCount) => {
     const response = await api.put(`/events/${eventId}/guest-count`, { guestCount });
+    return response.data;
+  },
+
+  getStats: async (params = {}) => {
+    const response = await api.get('/events/stats', { params });
     return response.data;
   },
 };
@@ -611,6 +658,96 @@ export const communionService = {
   },
   updateGuestCount: async (id, guestCount) => {
     const response = await api.put(`/communion/${id}/guest-count`, { guestCount });
+    return response.data;
+  },
+};
+
+// ============================================
+// PRAYER DAYS SERVICE
+// ============================================
+export const prayerService = {
+  getAll: async (params) => {
+    const response = await api.get('/prayer', { params });
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/prayer/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/prayer', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/prayer/${id}`, data);
+    return response.data;
+  },
+
+  toggleActive: async (id) => {
+    const response = await api.patch(`/prayer/${id}/toggle`);
+    return response.data;
+  },
+
+  remove: async (id) => {
+    const response = await api.delete(`/prayer/${id}`);
+    return response.data;
+  },
+
+  getAttendance: async (id, date) => {
+    const response = await api.get(`/prayer/${id}/attendance`, { params: { date } });
+    return response.data;
+  },
+
+  saveAttendance: async (id, date, memberIds, guestCount = 0) => {
+    const response = await api.post(`/prayer/${id}/attendance`, { date, memberIds, guestCount });
+    return response.data;
+  },
+
+  getAttendanceHistory: async (id, limit = 10) => {
+    const response = await api.get(`/prayer/${id}/attendance/history`, { params: { limit } });
+    return response.data;
+  },
+};
+
+// ============================================
+// SEARCH SERVICE
+// ============================================
+export const searchService = {
+  search: async (q, limit = 5) => {
+    const response = await api.get('/search', { params: { q, limit } });
+    return response.data;
+  },
+};
+
+// ============================================
+// LETTERS SERVICE (Cartas de Referencia)
+// ============================================
+export const lettersService = {
+  getAll: async (params = {}) => {
+    const response = await api.get('/letters', { params });
+    return response.data;
+  },
+  getById: async (id) => {
+    const response = await api.get(`/letters/${id}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post('/letters', data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/letters/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/letters/${id}`);
+    return response.data;
+  },
+  getStats: async () => {
+    const response = await api.get('/letters/stats');
     return response.data;
   },
 };

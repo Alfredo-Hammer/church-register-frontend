@@ -37,6 +37,8 @@ import {
   UserCheck,
   Check,
   FileDown,
+  MessageSquare,
+  Pencil,
 } from "lucide-react";
 import {membersService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
@@ -172,6 +174,62 @@ const emptyForm = () => ({
   emergencyContact: "",
 });
 
+// ── Plantillas de notas del pastor / líder ───────────────────────────────────
+const PASTOR_NOTE_TEMPLATES = [
+  {
+    label: "Miembro fiel",
+    text: "Es un miembro fiel y comprometido con la congregación. Su coherencia entre la fe que profesa y la vida que vive es un testimonio constante de la gracia de Dios. Siempre dispuesto a servir con humildad y a colaborar en las actividades de la iglesia sin esperar reconocimiento.",
+  },
+  {
+    label: "Columna de la iglesia",
+    text: "Es una de las personas en quien esta congregación se sostiene. Su madurez espiritual, su amor por la Palabra y su disposición para servir lo hacen un ejemplo vivo para los demás hermanos. La iglesia cuenta con él/ella como un pilar de confianza y oración.",
+  },
+  {
+    label: "Corazón de adoración",
+    text: "Posee un corazón genuinamente entregado a la adoración y la presencia de Dios. Su participación en los momentos de alabanza inspira a la congregación y refleja una relación íntima y auténtica con el Señor.",
+  },
+  {
+    label: "Líder potencial",
+    text: "Muestra cualidades notables de liderazgo: escucha con atención, actúa con integridad y tiene un corazón de servicio hacia los demás. Se recomienda para formación y capacitación con miras a asumir responsabilidades de liderazgo dentro de la iglesia.",
+  },
+  {
+    label: "Maestro de la Palabra",
+    text: "Tiene un don especial para enseñar y comunicar la Palabra de Dios con claridad y profundidad. Su preparación, su amor por las Escrituras y su sensibilidad pastoral lo hacen apto para ministrar en la enseñanza bíblica y el discipulado.",
+  },
+  {
+    label: "Servidor incansable",
+    text: "Es de las personas que sirven sin que nadie se los pida. Se anticipa a las necesidades, trabaja en silencio y con excelencia, y pone los intereses del Reino por encima de los suyos. Su servicio desinteresado es un reflejo del carácter de Cristo.",
+  },
+  {
+    label: "En proceso",
+    text: "Se encuentra en un proceso activo de crecimiento espiritual. Ha mostrado apertura a la Palabra, disposición para aprender y deseo genuino de cambio. Se recomienda acompañamiento pastoral continuo, discipulado y oración de intercesión por su vida.",
+  },
+  {
+    label: "Nuevo creyente",
+    text: "Es un nuevo creyente que está dando sus primeros pasos en la fe. Su entrega ha sido sincera y su hambre espiritual es evidente. Necesita guía cercana, integración en un grupo pequeño y el apoyo afectuoso de la comunidad para consolidar su vida cristiana.",
+  },
+  {
+    label: "Restauración",
+    text: "Está atravesando un proceso de restauración espiritual y personal. La iglesia lo/la recibe con gracia y misericordia, creyendo en la obra transformadora de Dios. Se requiere acompañamiento pastoral cuidadoso, confidencialidad y amor fraternal.",
+  },
+  {
+    label: "Visitante regular",
+    text: "Asiste regularmente a los servicios como visitante y ha mostrado interés genuino en la comunidad de fe. Se sugiere un seguimiento pastoral personalizado para acompañar su proceso de integración y responder a sus preguntas espirituales.",
+  },
+  {
+    label: "Recomendado para bautismo",
+    text: "Ha demostrado un cambio genuino en su vida, una comprensión clara del significado del bautismo y un compromiso sólido con Cristo. Se recomienda su participación en el próximo bautismo como declaración pública de su fe.",
+  },
+  {
+    label: "Intercesor",
+    text: "Es una persona de oración. Tiene un ministerio de intercesión activo y constante que sostiene a la iglesia. Su vida de oración private es un fundamento poderoso para la obra que Dios hace en esta congregación.",
+  },
+  {
+    label: "Familia pastoral",
+    text: "Es una familia que ha dado frutos de fe dentro de la congregación. Su hogar es un reflejo del amor de Cristo y un modelo de vida cristiana para otras familias de la iglesia. Se les reconoce con gratitud por su entrega y ejemplo.",
+  },
+];
+
 // ── Detail Panel ──────────────────────────────────────────────────────────────
 function DetailPanel({
   member,
@@ -180,9 +238,13 @@ function DetailPanel({
   onDelete,
   onPhotoChange,
   onPrint,
+  onNotesChange,
 }) {
   const [groups, setGroups] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState(member.pastor_notes || "");
+  const [notesSaving, setNotesSaving] = useState(false);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -404,6 +466,93 @@ function DetailPanel({
           </section>
 
           {/* Groups */}
+          {/* Palabras del Pastor / Líder */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+                Palabras del Pastor / Líder
+              </h3>
+              {!editingNotes && (
+                <button
+                  onClick={() => {
+                    setNotesValue(member.pastor_notes || "");
+                    setEditingNotes(true);
+                  }}
+                  className="text-gray-500 hover:text-indigo-400 transition-colors"
+                  title="Editar notas"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {editingNotes ? (
+              <div className="space-y-2.5">
+                {/* Plantillas rápidas */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1.5">
+                    Plantillas rápidas:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PASTOR_NOTE_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.label}
+                        onClick={() => setNotesValue(tpl.text)}
+                        className="px-2.5 py-1 text-xs rounded-full border border-indigo-500/30 text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 hover:border-indigo-400/50 transition-colors text-left"
+                      >
+                        {tpl.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  value={notesValue}
+                  onChange={(e) => setNotesValue(e.target.value)}
+                  rows={4}
+                  placeholder="Escribe aquí las palabras de referencia..."
+                  className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 resize-none focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setEditingNotes(false)}
+                    className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                    disabled={notesSaving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setNotesSaving(true);
+                      try {
+                        await membersService.update(member.id, {
+                          pastorNotes: notesValue || null,
+                        });
+                        onNotesChange(member.id, notesValue || null);
+                        setEditingNotes(false);
+                      } catch {
+                        alert("Error al guardar las notas.");
+                      } finally {
+                        setNotesSaving(false);
+                      }
+                    }}
+                    disabled={notesSaving}
+                    className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:opacity-60"
+                  >
+                    {notesSaving ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </div>
+            ) : member.pastor_notes ? (
+              <p className="text-sm text-gray-300 leading-relaxed italic border-l-2 border-indigo-500/40 pl-3">
+                {member.pastor_notes}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600 italic">
+                Sin notas registradas.
+              </p>
+            )}
+          </section>
+
           <section>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Grupos
@@ -1059,6 +1208,16 @@ export default function MembersPage() {
             confirmDelete(m);
           }}
           onPhotoChange={handlePhotoChange}
+          onNotesChange={(memberId, notes) => {
+            setMembers((prev) =>
+              prev.map((m) =>
+                m.id === memberId ? {...m, pastor_notes: notes} : m,
+              ),
+            );
+            setDetailMember((prev) =>
+              prev ? {...prev, pastor_notes: notes} : prev,
+            );
+          }}
           onPrint={async (m) => {
             const groups = await membersService
               .getGroups(m.id)

@@ -22,6 +22,8 @@ import {
   donationsService,
   baptismsService,
   groupsService,
+  eventsService,
+  settingsService,
 } from "@/services/api";
 import {
   buildOverviewReport,
@@ -29,6 +31,7 @@ import {
   buildFinancesReport,
   buildDonationsReport,
   buildBaptismsReport,
+  buildAttendanceReport,
 } from "@/utils/reportPrint";
 
 // ── Util ──────────────────────────────────────────────────────────────────────
@@ -162,6 +165,53 @@ function CssBarChart({data, colorClass = "bg-cyan-500"}) {
   );
 }
 
+// Gráfica multi-serie con barras agrupadas (sin dependencias externas)
+function MultiBarChart({data = [], series = []}) {
+  if (!data.length) return null;
+  const allVals = data.flatMap((d) =>
+    series.map((s) => parseFloat(d[s.key] || 0)),
+  );
+  const max = Math.max(...allVals, 1);
+  const barW = `${Math.floor(60 / series.length)}%`;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-end gap-1 h-36">
+        {data.map((d, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+            <div
+              className="w-full flex items-end justify-center gap-0.5"
+              style={{height: "120px"}}
+            >
+              {series.map((s) => {
+                const val = parseFloat(d[s.key] || 0);
+                const h = Math.max((val / max) * 120, val > 0 ? 4 : 0);
+                return (
+                  <div
+                    key={s.key}
+                    className={`rounded-t ${s.color} opacity-80 hover:opacity-100 transition-opacity`}
+                    style={{height: `${h}px`, width: barW}}
+                    title={`${s.label}: ${val.toLocaleString("es-MX")}`}
+                  />
+                );
+              })}
+            </div>
+            <span className="text-[10px] text-gray-500">{d.label}</span>
+          </div>
+        ))}
+      </div>
+      {/* Leyenda */}
+      <div className="flex items-center gap-4 flex-wrap">
+        {series.map((s) => (
+          <div key={s.key} className="flex items-center gap-1.5">
+            <div className={`w-3 h-3 rounded-sm ${s.color}`} />
+            <span className="text-xs text-gray-400">{s.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DateRangeFilter({startDate, endDate, onStart, onEnd, onReset}) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
@@ -209,11 +259,15 @@ const TABS = [
   {id: "finances", label: "Finanzas", icon: DollarSign},
   {id: "donations", label: "Diezmos", icon: Heart},
   {id: "baptisms", label: "Bautismos", icon: Droplet},
+  {id: "attendance", label: "Asistencia", icon: Calendar},
 ];
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("overview");
+
+  // church branding
+  const [church, setChurch] = useState({});
 
   // overview
   const [overviewData, setOverviewData] = useState(null);
@@ -227,6 +281,7 @@ export default function ReportsPage() {
   const [finStart, setFinStart] = useState("");
   const [finEnd, setFinEnd] = useState("");
   const [finData, setFinData] = useState(null);
+  const [finMonthly, setFinMonthly] = useState(null);
   const [finLoading, setFinLoading] = useState(false);
 
   // donations
@@ -239,6 +294,10 @@ export default function ReportsPage() {
   const [baptismYear, setBaptismYear] = useState(new Date().getFullYear());
   const [baptismData, setBaptismData] = useState(null);
   const [baptismLoading, setBaptismLoading] = useState(false);
+
+  // attendance
+  const [attendanceData, setAttendanceData] = useState(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   // ─── Fetch helpers ─────────────────────────────────────────────────────────
   const fetchOverview = useCallback(async () => {
@@ -271,12 +330,15 @@ export default function ReportsPage() {
   const fetchFinances = useCallback(async () => {
     setFinLoading(true);
     try {
-      setFinData(
-        await financesService.getSummary({
+      const [summary, monthly] = await Promise.all([
+        financesService.getSummary({
           startDate: finStart || undefined,
           endDate: finEnd || undefined,
         }),
-      );
+        financesService.getMonthly({months: 6}),
+      ]);
+      setFinData(summary);
+      setFinMonthly(monthly);
     } catch {
       /* silent */
     }
@@ -308,6 +370,24 @@ export default function ReportsPage() {
     setBaptismLoading(false);
   }, [baptismYear]);
 
+  const fetchAttendance = useCallback(async () => {
+    setAttendanceLoading(true);
+    try {
+      setAttendanceData(await eventsService.getStats({months: 6}));
+    } catch {
+      /* silent */
+    }
+    setAttendanceLoading(false);
+  }, []);
+
+  // Carga de iglesia al montar
+  useEffect(() => {
+    settingsService
+      .getChurch()
+      .then((r) => setChurch(r.church || r || {}))
+      .catch(() => {});
+  }, []);
+
   // Carga lazy por tab
   useEffect(() => {
     if (activeTab === "overview" && !overviewData) fetchOverview();
@@ -315,27 +395,38 @@ export default function ReportsPage() {
     if (activeTab === "finances" && !finData) fetchFinances();
     if (activeTab === "donations" && !donData) fetchDonations();
     if (activeTab === "baptisms" && !baptismData) fetchBaptisms();
+    if (activeTab === "attendance" && !attendanceData) fetchAttendance();
   }, [activeTab]); // eslint-disable-line
 
   // ─── Vista previa / Exportar PDF ─────────────────────────────────────────
   const handlePreview = (autoPrint = false) => {
     let html = null;
     if (activeTab === "overview" && overviewData)
-      html = buildOverviewReport(overviewData);
+      html = buildOverviewReport(overviewData, church);
     if (activeTab === "members" && memberStats)
-      html = buildMembersReport(memberStats);
+      html = buildMembersReport(memberStats, church);
     if (activeTab === "finances" && finData)
-      html = buildFinancesReport(finData, {
-        startDate: finStart,
-        endDate: finEnd,
-      });
+      html = buildFinancesReport(
+        finData,
+        {
+          startDate: finStart,
+          endDate: finEnd,
+        },
+        church,
+      );
     if (activeTab === "donations" && donData)
-      html = buildDonationsReport(donData, {
-        startDate: donStart,
-        endDate: donEnd,
-      });
+      html = buildDonationsReport(
+        donData,
+        {
+          startDate: donStart,
+          endDate: donEnd,
+        },
+        church,
+      );
     if (activeTab === "baptisms" && baptismData)
-      html = buildBaptismsReport(baptismData);
+      html = buildBaptismsReport(baptismData, church);
+    if (activeTab === "attendance" && attendanceData)
+      html = buildAttendanceReport(attendanceData, church);
     if (!html) return;
 
     const win = window.open("", "_blank", "width=960,height=720");
@@ -361,6 +452,7 @@ export default function ReportsPage() {
     finances: !!finData,
     donations: !!donData,
     baptisms: !!baptismData,
+    attendance: !!attendanceData,
   };
 
   // Re-fetch al cambiar filtros
@@ -453,6 +545,7 @@ export default function ReportsPage() {
       birthdaysThisMonth,
       byGender = [],
       byStatus = [],
+      byAgeGroup = [],
     } = memberStats;
     const GENDER_LABELS = {M: "Masculino", F: "Femenino", OTRO: "Otro"};
     const STATUS_COLORS = {
@@ -461,10 +554,21 @@ export default function ReportsPage() {
       VISITANTE: "bg-yellow-500",
       TRANSFERIDO: "bg-blue-500",
     };
+    const AGE_GROUP_COLORS = {
+      ADULTO: "bg-blue-500",
+      JOVEN: "bg-purple-500",
+      NIÑO: "bg-amber-500",
+    };
+    const ninos = parseInt(
+      byAgeGroup.find((a) => a.age_group === "NIÑO")?.count || 0,
+    );
+    const jovenes = parseInt(
+      byAgeGroup.find((a) => a.age_group === "JOVEN")?.count || 0,
+    );
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             label="Total Miembros"
             value={total}
@@ -483,14 +587,30 @@ export default function ReportsPage() {
             color="green"
           />
           <MetricCard
-            label="Cumpleaños este mes"
-            value={birthdaysThisMonth}
-            icon={Calendar}
+            label="Jóvenes"
+            value={jovenes}
+            sub={
+              total > 0
+                ? `${((jovenes / total) * 100).toFixed(1)}% del total`
+                : ""
+            }
+            icon={Users}
+            color="purple"
+          />
+          <MetricCard
+            label="Niños"
+            value={ninos}
+            sub={
+              total > 0
+                ? `${((ninos / total) * 100).toFixed(1)}% del total`
+                : ""
+            }
+            icon={Users}
             color="amber"
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white text-base">
@@ -536,6 +656,29 @@ export default function ReportsPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base">
+                Distribución por Grupo de Edad
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {byAgeGroup.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sin datos</p>
+              ) : (
+                byAgeGroup.map((a) => (
+                  <ProgressBar
+                    key={a.age_group}
+                    label={a.age_group}
+                    value={parseInt(a.count)}
+                    total={total}
+                    colorClass={AGE_GROUP_COLORS[a.age_group] || "bg-slate-500"}
+                  />
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -553,6 +696,19 @@ export default function ReportsPage() {
       1,
     );
     const balance = summary?.balance || 0;
+
+    const monthlyChartData = (finMonthly?.months || []).map((m) => ({
+      label: m.label,
+      ingresos: parseFloat(m.ingresos || 0),
+      egresos: parseFloat(m.egresos || 0),
+      donaciones: parseFloat(m.donaciones || 0),
+    }));
+
+    const FINANCE_SERIES = [
+      {key: "ingresos", label: "Ingresos", color: "bg-green-500"},
+      {key: "egresos", label: "Egresos", color: "bg-red-500"},
+      {key: "donaciones", label: "Diezmos", color: "bg-purple-500"},
+    ];
 
     return (
       <div className="space-y-6">
@@ -588,6 +744,19 @@ export default function ReportsPage() {
             color={balance >= 0 ? "green" : "red"}
           />
         </div>
+
+        {monthlyChartData.length > 0 && (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base">
+                Tendencia Mensual — Últimos 6 meses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MultiBarChart data={monthlyChartData} series={FINANCE_SERIES} />
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
@@ -867,6 +1036,159 @@ export default function ReportsPage() {
     );
   };
 
+  // ─── Tab: Asistencia ──────────────────────────────────────────────────────
+  const renderAttendance = () => {
+    if (attendanceLoading) return <Spinner />;
+    if (!attendanceData) return null;
+    const {summary, byType = [], monthly = [], topEvents = []} = attendanceData;
+
+    const TYPE_LABELS = {
+      CULTO: "Culto",
+      REUNION: "Reunión",
+      ESPECIAL: "Especial",
+    };
+    const TYPE_COLORS = {
+      CULTO: "bg-blue-500",
+      REUNION: "bg-amber-500",
+      ESPECIAL: "bg-purple-500",
+    };
+    const maxType = Math.max(
+      ...byType.map((t) => parseInt(t.total_attendance || 0)),
+      1,
+    );
+
+    const ATTEND_SERIES = [
+      {
+        key: "member_attendance",
+        label: "Miembros registrados",
+        color: "bg-blue-500",
+      },
+      {
+        key: "guest_count",
+        label: "Visitantes generales",
+        color: "bg-amber-500",
+      },
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MetricCard
+            label="Total Eventos"
+            value={summary?.totalEvents || 0}
+            icon={Calendar}
+            color="blue"
+          />
+          <MetricCard
+            label="Total Asistencias"
+            value={summary?.totalAttendance || 0}
+            sub="Miembros registrados"
+            icon={Users}
+            color="cyan"
+          />
+          <MetricCard
+            label="Eventos este mes"
+            value={summary?.eventsThisMonth || 0}
+            icon={TrendingUp}
+            color="amber"
+          />
+        </div>
+
+        {monthly.length > 0 && (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base">
+                Asistencia Mensual — Últimos 6 meses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MultiBarChart data={monthly} series={ATTEND_SERIES} />
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base">
+                Asistencia por Tipo de Evento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {byType.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sin datos</p>
+              ) : (
+                byType.map((t) => (
+                  <div key={t.event_type} className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm">
+                        {TYPE_LABELS[t.event_type] || t.event_type}
+                      </span>
+                      <span className="text-white text-sm font-semibold">
+                        {parseInt(t.total_attendance).toLocaleString()}
+                        <span className="text-gray-500 font-normal ml-1 text-xs">
+                          ({t.event_count} eventos)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${TYPE_COLORS[t.event_type] || "bg-slate-500"} rounded-full transition-all duration-500`}
+                        style={{
+                          width: `${(parseInt(t.total_attendance || 0) / maxType) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-400" />
+                Eventos con Mayor Asistencia
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {topEvents.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sin datos</p>
+              ) : (
+                topEvents.map((e, i) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-700/40"
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                        ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-gray-400 text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-slate-600 text-gray-300"}`}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-200 text-sm font-medium truncate">
+                        {e.title}
+                      </p>
+                      <p className="text-gray-500 text-xs">
+                        {fmtDate(e.date)} ·{" "}
+                        {TYPE_LABELS[e.event_type] || e.event_type}
+                      </p>
+                    </div>
+                    <span className="text-white text-sm font-semibold shrink-0">
+                      {parseInt(e.total_attendance).toLocaleString()}
+                    </span>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -934,6 +1256,7 @@ export default function ReportsPage() {
         {activeTab === "finances" && renderFinances()}
         {activeTab === "donations" && renderDonations()}
         {activeTab === "baptisms" && renderBaptisms()}
+        {activeTab === "attendance" && renderAttendance()}
       </div>
     </div>
   );

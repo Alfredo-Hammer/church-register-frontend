@@ -21,8 +21,10 @@ import {
   AlertCircle,
   CheckCircle,
   X,
+  Printer,
 } from "lucide-react";
-import {familiesService, membersService} from "@/services/api";
+import {familiesService, membersService, settingsService} from "@/services/api";
+import {buildFamilyMembersPDF} from "@/utils/reportPrint";
 
 export default function FamiliesPage() {
   const [families, setFamilies] = useState([]);
@@ -52,6 +54,23 @@ export default function FamiliesPage() {
   const [availableMembers, setAvailableMembers] = useState([]);
   const [selectedMember, setSelectedMember] = useState("");
   const [relationship, setRelationship] = useState("MIEMBRO");
+
+  // Diálogo de confirmación
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const [errorAlert, setErrorAlert] = useState("");
+  const [church, setChurch] = useState({});
+
+  useEffect(() => {
+    settingsService
+      .getChurch()
+      .then((r) => setChurch(r.church || r || {}))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchFamilies();
@@ -140,24 +159,24 @@ export default function FamiliesPage() {
     }
   };
 
-  const handleDelete = async (id, familyName) => {
-    if (
-      !window.confirm(
-        `¿Estás seguro de eliminar la familia "${familyName}"? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await familiesService.delete(id);
-      fetchFamilies();
-    } catch (error) {
-      alert(
-        error.response?.data?.error ||
-          "Error al eliminar la familia. Intenta de nuevo.",
-      );
-    }
+  const handleDelete = (id, familyName) => {
+    setConfirmDialog({
+      open: true,
+      title: "Eliminar Familia",
+      message: `¿Estás seguro de eliminar la familia "${familyName}"? Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({...prev, open: false}));
+        try {
+          await familiesService.delete(id);
+          fetchFamilies();
+        } catch (error) {
+          setErrorAlert(
+            error.response?.data?.error ||
+              "Error al eliminar la familia. Intenta de nuevo.",
+          );
+        }
+      },
+    });
   };
 
   const handleOpenMembersModal = async (family) => {
@@ -201,25 +220,31 @@ export default function FamiliesPage() {
       setRelationship("MIEMBRO");
       fetchFamilies(); // Actualizar contador
     } catch (error) {
-      alert(error.response?.data?.error || "Error al agregar miembro");
+      setErrorAlert(error.response?.data?.error || "Error al agregar miembro");
     }
   };
 
-  const handleRemoveMember = async (memberId) => {
-    if (!window.confirm("¿Deseas remover este miembro de la familia?")) {
-      return;
-    }
-
-    try {
-      await familiesService.removeMember(selectedFamily.id, memberId);
-
-      // Recargar miembros de la familia
-      const familyDetails = await familiesService.getById(selectedFamily.id);
-      setFamilyMembers(familyDetails.members || []);
-      fetchFamilies(); // Actualizar contador
-    } catch (error) {
-      alert(error.response?.data?.error || "Error al remover miembro");
-    }
+  const handleRemoveMember = (memberId) => {
+    setConfirmDialog({
+      open: true,
+      title: "Remover Miembro",
+      message: "¿Deseas remover este miembro de la familia?",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({...prev, open: false}));
+        try {
+          await familiesService.removeMember(selectedFamily.id, memberId);
+          const familyDetails = await familiesService.getById(
+            selectedFamily.id,
+          );
+          setFamilyMembers(familyDetails.members || []);
+          fetchFamilies();
+        } catch (error) {
+          setErrorAlert(
+            error.response?.data?.error || "Error al remover miembro",
+          );
+        }
+      },
+    });
   };
 
   const filteredFamilies = families.filter((family) => {
@@ -455,9 +480,7 @@ export default function FamiliesPage() {
                 >
                   <option value="">Seleccionar miembro...</option>
                   {availableMembers
-                    .filter(
-                      (m) => !familyMembers.some((fm) => fm.member_id === m.id),
-                    )
+                    .filter((m) => !familyMembers.some((fm) => fm.id === m.id))
                     .map((member) => (
                       <option key={member.id} value={member.id}>
                         {member.first_name} {member.last_name}
@@ -498,7 +521,7 @@ export default function FamiliesPage() {
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {familyMembers.map((member) => (
                     <div
-                      key={member.member_id}
+                      key={member.id}
                       className="flex items-center justify-between bg-slate-700 p-3 rounded-lg"
                     >
                       <div>
@@ -510,7 +533,7 @@ export default function FamiliesPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => handleRemoveMember(member.member_id)}
+                        onClick={() => handleRemoveMember(member.id)}
                         className="p-2 text-red-400 hover:bg-slate-600 rounded-lg transition-colors"
                       >
                         <X className="h-4 w-4" />
@@ -524,10 +547,78 @@ export default function FamiliesPage() {
 
           <DialogFooter>
             <Button
+              variant="outline"
+              onClick={() => {
+                if (!selectedFamily || familyMembers.length === 0) return;
+                const html = buildFamilyMembersPDF(
+                  selectedFamily,
+                  familyMembers,
+                  church,
+                );
+                const win = window.open("", "_blank", "width=960,height=720");
+                win.document.write(html);
+                win.document.close();
+              }}
+              disabled={familyMembers.length === 0}
+              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+            >
+              <Printer className="h-4 w-4" /> PDF
+            </Button>
+            <Button
               onClick={handleCloseMembersModal}
               className="bg-slate-700 hover:bg-slate-600 text-white"
             >
               Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Alert (fuera de modales, para errores generales) */}
+      {errorAlert && (
+        <div className="fixed bottom-4 right-4 z-50 bg-red-900/90 border border-red-700 text-red-200 rounded-lg p-4 flex items-center gap-3 shadow-lg max-w-sm">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <span className="text-sm flex-1">{errorAlert}</span>
+          <button
+            onClick={() => setErrorAlert("")}
+            className="text-red-300 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Diálogo de confirmación */}
+      <Dialog
+        open={confirmDialog.open}
+        onOpenChange={(open) =>
+          !open && setConfirmDialog((prev) => ({...prev, open: false}))
+        }
+      >
+        <DialogContent
+          onClose={() => setConfirmDialog((prev) => ({...prev, open: false}))}
+          className="max-w-sm"
+        >
+          <DialogHeader>
+            <DialogTitle>{confirmDialog.title}</DialogTitle>
+            <DialogDescription>{confirmDialog.message}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={() =>
+                setConfirmDialog((prev) => ({...prev, open: false}))
+              }
+              variant="outline"
+              className="bg-slate-700 border-slate-600 text-gray-300 hover:bg-slate-600"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmDialog.onConfirm}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
