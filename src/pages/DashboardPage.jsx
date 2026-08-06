@@ -1,31 +1,21 @@
-import {useEffect, useState} from "react";
-import {Link} from "react-router-dom";
-import {useAuth} from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  Users,
-  UsersRound,
-  DollarSign,
-  CalendarDays,
-  UserSearch,
-  Rocket,
-  Cake,
-  TrendingUp,
-  ArrowUpRight,
-  Wine,
-  Flame,
+  Users, UserSearch, UsersRound, DollarSign,
+  CalendarDays, Cake,
+  TrendingUp, TrendingDown, ArrowUpRight,
+  UserPlus, PlusCircle, Flame, ChevronRight,
 } from "lucide-react";
 import {
-  membersService,
-  financesService,
-  groupsService,
-  eventsService,
-  visitorsService,
-  activitiesService,
-  communionService,
-  prayerService,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
+import {
+  membersService, financesService, groupsService, eventsService,
+  visitorsService, communionService, prayerService,
 } from "@/services/api";
 
-// ── Utilidades ────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -35,700 +25,392 @@ const greeting = () => {
 };
 
 const todayLabel = () =>
-  new Date().toLocaleDateString("es-MX", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+  new Date().toLocaleDateString("es-ES", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-const formatDate = (val) => {
-  if (!val) return "—";
-  return new Date(val.slice(0, 10) + "T12:00:00").toLocaleDateString("es-MX", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+const fmtMoney = (v) =>
+  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(v || 0);
+
+const fmtDay = (dateStr) => {
+  const d = new Date(dateStr.slice(0, 10) + "T12:00:00");
+  return { day: d.getDate(), mon: d.toLocaleDateString("es-MX", { month: "short" }).toUpperCase() };
 };
 
-const formatCurrency = (val) =>
-  new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 0,
-  }).format(val || 0);
+const daysUntil = (dow) => (dow - new Date().getDay() + 7) % 7;
 
-const DAYS_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const DAYS_FULL = [
-  "Domingo",
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-];
-
-const fmtTimePrayer = (t) => {
+const fmtTime = (t) => {
   if (!t) return "";
   const [h, m] = t.slice(0, 5).split(":");
   const hour = parseInt(h, 10);
   return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`;
 };
 
-/** Días desde hoy hasta el próximo día de semana dado (0 = hoy mismo) */
-const daysUntil = (dow) => (dow - new Date().getDay() + 7) % 7;
-
-const EVENT_TYPE = {
-  CULTO: {
-    label: "Culto",
-    color: "bg-blue-500/20 text-blue-300",
-    icon: CalendarDays,
-  },
-  REUNION: {
-    label: "Reunión",
-    color: "bg-purple-500/20 text-purple-300",
-    icon: CalendarDays,
-  },
-  ESPECIAL: {
-    label: "Especial",
-    color: "bg-amber-500/20 text-amber-300",
-    icon: CalendarDays,
-  },
-  COMMUNION: {
-    label: "Santa Cena",
-    color: "bg-red-600/20 text-red-300",
-    icon: Wine,
-  },
+const EVENT_META = {
+  CULTO:    { label: "Culto",      dot: "bg-blue-400",   text: "text-blue-300"   },
+  REUNION:  { label: "Reunión",    dot: "bg-purple-400", text: "text-purple-300" },
+  ESPECIAL: { label: "Especial",   dot: "bg-amber-400",  text: "text-amber-300"  },
+  COMMUNION:{ label: "Santa Cena", dot: "bg-red-400",    text: "text-red-300"    },
 };
 
-// ── Componentes internos ──────────────────────────────────────────────────────
+// ── Subcomponentes ────────────────────────────────────────────────────────────
 
-const StatCard = ({icon: Icon, label, value, sub, color, loading}) => (
-  <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-slate-600 transition-colors">
-    <div
-      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}
-    >
-      <Icon className="h-6 w-6" />
+function KpiCard({ icon: Icon, label, value, sub, trend, color, href, loading }) {
+  const inner = (
+    <div className={`bg-slate-800 border rounded-xl p-5 flex flex-col gap-3 hover:border-slate-500 transition-colors ${color.border}`}>
+      <div className="flex items-center justify-between">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color.bg}`}>
+          <Icon className={`h-5 w-5 ${color.icon}`} />
+        </div>
+        {trend !== undefined && !loading && (
+          <span className={`text-xs font-semibold flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {Math.abs(trend)}
+          </span>
+        )}
+      </div>
+      <div>
+        {loading ? (
+          <div className="h-8 w-20 bg-slate-700 animate-pulse rounded" />
+        ) : (
+          <p className="text-2xl font-bold text-white leading-none">{value ?? "—"}</p>
+        )}
+        <p className="text-xs text-slate-400 font-medium mt-1">{label}</p>
+        {sub && !loading && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
+      </div>
     </div>
-    <div className="min-w-0">
-      <p className="text-xs text-slate-400 font-medium uppercase tracking-wide truncate">
-        {label}
-      </p>
-      {loading ? (
-        <div className="h-7 w-16 bg-slate-700 animate-pulse rounded mt-1" />
-      ) : (
-        <p className="text-2xl font-bold text-white leading-tight">{value}</p>
-      )}
-      {sub && !loading && (
-        <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
-      )}
-    </div>
-  </div>
-);
+  );
+  return href ? <Link to={href}>{inner}</Link> : inner;
+}
 
-// ── Página principal ──────────────────────────────────────────────────────────
+function QuickAction({ icon: Icon, label, href, color }) {
+  return (
+    <Link to={href}
+      className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] ${color}`}>
+      <Icon className="h-4 w-4 shrink-0" />
+      {label}
+    </Link>
+  );
+}
+
+function SectionHeader({ title, linkTo, linkLabel = "Ver todos", color = "text-slate-400 hover:text-white" }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{title}</h2>
+      {linkTo && (
+        <Link to={linkTo} className={`flex items-center gap-1 text-xs transition-colors ${color}`}>
+          {linkLabel} <ArrowUpRight className="h-3 w-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ── Página ────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const {user} = useAuth();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const [memberStats, setMemberStats] = useState(null);
-  const [balance, setBalance] = useState(null);
-  const [groupTotal, setGroupTotal] = useState(null);
-  const [visitorStats, setVisitorStats] = useState(null);
-  const [activityStats, setActivityStats] = useState(null);
-  const [events, setEvents] = useState([]);
-  const [birthdays, setBirthdays] = useState([]);
-  const [prayerSessions, setPrayerSessions] = useState([]);
-  const [loadingPrayer, setLoadingPrayer] = useState(true);
-
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [memberStats,   setMemberStats]   = useState(null);
+  const [balance,       setBalance]       = useState(null);
+  const [groupTotal,    setGroupTotal]    = useState(null);
+  const [visitorStats,  setVisitorStats]  = useState(null);
+  const [events,        setEvents]        = useState([]);
+  const [birthdays,     setBirthdays]     = useState([]);
+  const [prayerToday,   setPrayerToday]   = useState(null);
+  const [finMonthly,    setFinMonthly]    = useState([]);
+  const [loading,       setLoading]       = useState(true);
 
   useEffect(() => {
-    const fetchAll = async () => {
-      setLoadingStats(true);
+    const run = async () => {
+      setLoading(true);
+      const [ms, fs, gs, vs, ev, comm, pr, fin] = await Promise.allSettled([
+        membersService.getStats(),
+        financesService.getSummary(),
+        groupsService.getStats(),
+        visitorsService.getStats(),
+        eventsService.getAll({ limit: 100 }),
+        communionService.getAll({ limit: 50 }),
+        prayerService.getAll(),
+        financesService.getMonthly({ months: 6 }),
+      ]);
+
+      if (ms.status === "fulfilled") setMemberStats(ms.value);
+      if (fs.status === "fulfilled") setBalance(fs.value?.summary?.balance ?? 0);
+      if (gs.status === "fulfilled") setGroupTotal(gs.value?.total ?? 0);
+      if (vs.status === "fulfilled") setVisitorStats(vs.value?.stats);
+
+      // Eventos próximos
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const upcomingEv = (ev.status === "fulfilled" ? ev.value?.events || [] : [])
+        .filter(e => new Date(e.date.slice(0, 10) + "T00:00:00") >= today)
+        .map(e => ({ ...e, _kind: "event" }));
+      const upcomingComm = (comm.status === "fulfilled" ? comm.value?.communion || [] : [])
+        .filter(c => new Date(c.date.slice(0, 10) + "T00:00:00") >= today)
+        .map(c => ({ ...c, _kind: "communion", title: "Santa Cena", event_type: "COMMUNION",
+          date: c.date + (c.time ? "T" + c.time : "T00:00:00") }));
+      setEvents([...upcomingEv, ...upcomingComm]
+        .sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 6));
+
+      // Cumpleaños del mes
       try {
-        const [ms, fs, gs, vs, as_] = await Promise.allSettled([
-          membersService.getStats(),
-          financesService.getSummary(),
-          groupsService.getStats(),
-          visitorsService.getStats(),
-          activitiesService.getStats(),
-        ]);
-        if (ms.status === "fulfilled") setMemberStats(ms.value);
-        if (fs.status === "fulfilled")
-          setBalance(fs.value?.summary?.balance ?? 0);
-        if (gs.status === "fulfilled") setGroupTotal(gs.value?.total ?? 0);
-        if (vs.status === "fulfilled") setVisitorStats(vs.value?.stats);
-        if (as_.status === "fulfilled") setActivityStats(as_.value?.stats);
-      } finally {
-        setLoadingStats(false);
+        const cm = new Date().getMonth() + 1;
+        const allMembers = await membersService.getAll({ limit: 500, status: "ACTIVO" });
+        const bdays = (allMembers?.members || [])
+          .filter(m => m.birth_date && parseInt(m.birth_date.slice(5, 7)) === cm)
+          .sort((a, b) => parseInt(a.birth_date.slice(8, 10)) - parseInt(b.birth_date.slice(8, 10)))
+          .slice(0, 8);
+        setBirthdays(bdays);
+      } catch { /* silent */ }
+
+      // Oración hoy
+      if (pr.status === "fulfilled") {
+        const todayDow = new Date().getDay();
+        const session = (pr.value?.prayer_days || []).find(s => s.is_active && s.day_of_week === todayDow);
+        setPrayerToday(session || null);
       }
+
+      // Finanzas mensuales
+      if (fin.status === "fulfilled") setFinMonthly(fin.value?.months || []);
+
+      setLoading(false);
     };
-
-    const fetchEvents = async () => {
-      setLoadingEvents(true);
-      try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const [evData, commData] = await Promise.allSettled([
-          eventsService.getAll({limit: 100}),
-          communionService.getAll({limit: 50}),
-        ]);
-
-        const upcomingEvents = (
-          evData.status === "fulfilled" ? evData.value?.events || [] : []
-        )
-          .filter((e) => new Date(e.date.slice(0, 10) + "T00:00:00") >= today)
-          .map((e) => ({...e, _kind: "event", date: e.date}));
-
-        const upcomingComm = (
-          commData.status === "fulfilled" ? commData.value?.communion || [] : []
-        )
-          .filter((c) => new Date(c.date.slice(0, 10) + "T00:00:00") >= today)
-          .map((c) => ({
-            ...c,
-            _kind: "communion",
-            title: "Santa Cena",
-            event_type: "COMMUNION",
-            date: c.date + (c.time ? "T" + c.time : "T00:00:00"),
-          }));
-
-        const combined = [...upcomingEvents, ...upcomingComm]
-          .sort((a, b) => new Date(a.date) - new Date(b.date))
-          .slice(0, 6);
-
-        setEvents(combined);
-      } finally {
-        setLoadingEvents(false);
-      }
-    };
-
-    const fetchBirthdays = async () => {
-      try {
-        const currentMonth = new Date().getMonth() + 1;
-        const data = await membersService.getAll({
-          limit: 200,
-          status: "ACTIVO",
-        });
-        const thisMonth = (data?.members || [])
-          .filter((m) => {
-            if (!m.birth_date) return false;
-            return parseInt(m.birth_date.slice(5, 7)) === currentMonth;
-          })
-          .sort(
-            (a, b) =>
-              parseInt(a.birth_date.slice(8, 10)) -
-              parseInt(b.birth_date.slice(8, 10)),
-          )
-          .slice(0, 6);
-        setBirthdays(thisMonth);
-      } catch {
-        /* silencioso */
-      }
-    };
-
-    const fetchPrayer = async () => {
-      setLoadingPrayer(true);
-      try {
-        const data = await prayerService.getAll();
-        const active = (data?.prayer_days || [])
-          .filter((s) => s.is_active)
-          .sort((a, b) => daysUntil(a.day_of_week) - daysUntil(b.day_of_week));
-        setPrayerSessions(active);
-      } catch {
-        /* silencioso */
-      } finally {
-        setLoadingPrayer(false);
-      }
-    };
-
-    fetchAll();
-    fetchEvents();
-    fetchBirthdays();
-    fetchPrayer();
+    run();
   }, []);
 
   const firstName = user?.fullName?.split(" ")[0] || "Pastor";
+  const finHasData = finMonthly.some(m => m.ingresos > 0 || m.egresos > 0);
+
+  // Construye dinámicamente las secciones que tienen datos
+  const hasEvents    = loading || events.length > 0;
+  const hasBirthdays = birthdays.length > 0;
+  const hasFinance   = finHasData;
 
   return (
-    <div className="space-y-8">
-      {/* ── Hero header ──────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-800 to-blue-900/40 border border-slate-700 rounded-2xl p-6 sm:p-8">
-        {/* Decoración de fondo */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-        <div className="absolute bottom-0 right-16 w-32 h-32 bg-purple-500/5 rounded-full translate-y-1/2 pointer-events-none" />
+    <div className="space-y-6">
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-blue-400 font-medium mb-1">
-              {greeting()}
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white">
-              {firstName} <span className="text-slate-400 font-normal">👋</span>
-            </h1>
-            <p className="text-slate-400 mt-1 text-sm capitalize">
-              {todayLabel()}
-            </p>
-            {user?.churchName && (
-              <p className="text-slate-500 text-xs mt-1">{user.churchName}</p>
-            )}
-          </div>
-
-          {/* Mini métricas rápidas */}
-          <div className="flex gap-3 sm:gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">
-                {loadingStats
-                  ? "—"
-                  : (memberStats?.active ?? memberStats?.total ?? "—")}
-              </p>
-              <p className="text-xs text-slate-400">Activos</p>
-            </div>
-            <div className="w-px bg-slate-700" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-teal-400">
-                {loadingStats ? "—" : (visitorStats?.en_seguimiento ?? "—")}
-              </p>
-              <p className="text-xs text-slate-400">En seguim.</p>
-            </div>
-            <div className="w-px bg-slate-700" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-400">
-                {loadingStats ? "—" : (activityStats?.en_progreso ?? "—")}
-              </p>
-              <p className="text-xs text-slate-400">Actividades</p>
-            </div>
-          </div>
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <p className="text-slate-400 text-sm">
+            {greeting()}, <span className="text-white font-semibold">{firstName}</span>
+          </p>
+          <p className="text-xs text-slate-500 capitalize mt-0.5">
+            {todayLabel()}{user?.churchName && ` · ${user.churchName}`}
+          </p>
         </div>
-      </div>
-
-      {/* ── Stats cards ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard
-          icon={Users}
-          label="Total Miembros"
-          value={memberStats?.total ?? "—"}
-          sub={
-            memberStats?.active ? `${memberStats.active} activos` : undefined
-          }
-          color="bg-blue-500/20 text-blue-400"
-          loading={loadingStats}
-        />
-        <StatCard
-          icon={UserSearch}
-          label="Visitantes"
-          value={visitorStats?.total ?? "—"}
-          sub={
-            visitorStats?.nuevos_este_mes
-              ? `+${visitorStats.nuevos_este_mes} este mes`
-              : undefined
-          }
-          color="bg-teal-500/20 text-teal-400"
-          loading={loadingStats}
-        />
-        <StatCard
-          icon={UsersRound}
-          label="Grupos"
-          value={groupTotal ?? "—"}
-          color="bg-purple-500/20 text-purple-400"
-          loading={loadingStats}
-        />
-        <StatCard
-          icon={Rocket}
-          label="Actividades"
-          value={activityStats?.total ?? "—"}
-          sub={
-            activityStats?.completadas
-              ? `${activityStats.completadas} completadas`
-              : undefined
-          }
-          color="bg-orange-500/20 text-orange-400"
-          loading={loadingStats}
-        />
-        <StatCard
-          icon={DollarSign}
-          label="Balance"
-          value={balance !== null ? formatCurrency(balance) : "—"}
-          color={
-            balance >= 0
-              ? "bg-emerald-500/20 text-emerald-400"
-              : "bg-red-500/20 text-red-400"
-          }
-          loading={loadingStats}
-        />
-      </div>
-
-      {/* ── Eventos + Cumpleaños ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Próximos eventos */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-blue-400" />
-              <h2 className="font-semibold text-white">Próximos Eventos</h2>
-            </div>
-            <Link
-              to="/dashboard/events"
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-colors"
-            >
-              Ver todos <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-
-          <div className="p-3 space-y-1.5">
-            {loadingEvents ? (
-              [1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-14 bg-slate-700/50 animate-pulse rounded-lg"
-                />
-              ))
-            ) : events.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-slate-500">
-                <CalendarDays className="h-10 w-10 mb-2 opacity-30" />
-                <p className="text-sm">No hay eventos próximos</p>
-              </div>
-            ) : (
-              events.map((event) => {
-                const typeInfo = EVENT_TYPE[event.event_type] || {
-                  label: event.event_type,
-                  color: "bg-slate-500/20 text-slate-300",
-                  icon: CalendarDays,
-                };
-                const todayDate = new Date();
-                todayDate.setHours(0, 0, 0, 0);
-                const isToday =
-                  new Date(event.date.slice(0, 10) + "T00:00:00").getTime() ===
-                  todayDate.getTime();
-                const isCommunion = event._kind === "communion";
-                const highlightClass = isToday
-                  ? isCommunion
-                    ? "bg-red-600/10 border border-red-600/20"
-                    : "bg-blue-500/10 border border-blue-500/20"
-                  : "hover:bg-slate-700/40";
-                const ItemIcon = typeInfo.icon || CalendarDays;
-                return (
-                  <div
-                    key={`${event._kind}-${event.id}`}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${highlightClass}`}
-                  >
-                    {/* Date block */}
-                    <div className="text-center w-10 flex-shrink-0">
-                      <p className="text-lg font-bold text-white leading-none">
-                        {new Date(
-                          event.date.slice(0, 10) + "T12:00:00",
-                        ).getDate()}
-                      </p>
-                      <p className="text-xs text-slate-500 uppercase">
-                        {new Date(
-                          event.date.slice(0, 10) + "T12:00:00",
-                        ).toLocaleDateString("es-MX", {month: "short"})}
-                      </p>
-                    </div>
-                    <div className="w-px h-8 bg-slate-600 flex-shrink-0" />
-                    {/* Icon */}
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isCommunion ? "bg-red-600/20" : "bg-blue-500/10"}`}
-                    >
-                      <ItemIcon
-                        className={`h-3.5 w-3.5 ${isCommunion ? "text-red-400" : "text-blue-400"}`}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-white truncate">
-                          {event.title}
-                        </p>
-                        {isToday && (
-                          <span
-                            className={`text-xs font-medium flex-shrink-0 ${isCommunion ? "text-red-400" : "text-blue-400"}`}
-                          >
-                            Hoy
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        {formatDate(event.date)}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${typeInfo.color}`}
-                    >
-                      {typeInfo.label}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Cumpleaños del mes */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-            <div className="flex items-center gap-2">
-              <Cake className="h-4 w-4 text-pink-400" />
-              <h2 className="font-semibold text-white">Cumpleaños del Mes</h2>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-medium capitalize">
-                {new Date().toLocaleDateString("es-MX", {month: "long"})}
-              </span>
-            </div>
-            <Link
-              to="/dashboard/members"
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-pink-400 transition-colors"
-            >
-              Ver todos <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-
-          <div className="p-3 space-y-1.5">
-            {birthdays.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-slate-500">
-                <Cake className="h-10 w-10 mb-2 opacity-30" />
-                <p className="text-sm">Sin cumpleaños registrados este mes</p>
-              </div>
-            ) : (
-              birthdays.map((member) => {
-                const day = parseInt(member.birth_date.slice(8, 10));
-                const today = new Date().getDate();
-                const isToday = day === today;
-                const isPast = day < today;
-                return (
-                  <div
-                    key={member.id}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isToday ? "bg-pink-500/10 border border-pink-500/20" : isPast ? "opacity-40" : "hover:bg-slate-700/40"}`}
-                  >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                      {member.first_name[0]}
-                      {member.last_name[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">
-                        {member.first_name} {member.last_name}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {new Date(
-                          member.birth_date.slice(0, 10) + "T12:00:00",
-                        ).toLocaleDateString("es-MX", {
-                          day: "numeric",
-                          month: "long",
-                        })}
-                      </p>
-                    </div>
-                    {isToday && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-medium flex-shrink-0">
-                        🎂 Hoy
-                      </span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Días de Oración ─────────────────────────────────────────────── */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-orange-400" />
-            <h2 className="font-semibold text-white">Días de Oración</h2>
-            {!loadingPrayer && prayerSessions.length > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-medium">
-                {prayerSessions.length} activa
-                {prayerSessions.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-          <Link
-            to="/dashboard/prayer"
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors"
-          >
-            Administrar <ArrowUpRight className="h-3.5 w-3.5" />
+        {prayerToday && (
+          <Link to="/dashboard/prayer"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-medium hover:bg-orange-500/25 transition-colors self-start sm:self-auto">
+            <Flame className="h-3 w-3" />
+            Día de Oración hoy{prayerToday.start_time && ` · ${fmtTime(prayerToday.start_time)}`}
           </Link>
-        </div>
-
-        {loadingPrayer ? (
-          <div className="p-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-            {[...Array(7)].map((_, i) => (
-              <div
-                key={i}
-                className="h-16 bg-slate-700/50 animate-pulse rounded-lg"
-              />
-            ))}
-          </div>
-        ) : prayerSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-slate-500">
-            <Flame className="h-10 w-10 mb-2 opacity-20" />
-            <p className="text-sm">No hay sesiones de oración configuradas</p>
-          </div>
-        ) : (
-          <div className="p-4 space-y-4">
-            {/* Mini calendario semanal */}
-            <div className="grid grid-cols-7 gap-1.5">
-              {DAYS_ES.map((day, dow) => {
-                const todayDow = new Date().getDay();
-                const isToday = dow === todayDow;
-                const session = prayerSessions.find(
-                  (s) => s.day_of_week === dow,
-                );
-                return (
-                  <div
-                    key={dow}
-                    className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-center transition-colors ${
-                      session && isToday
-                        ? "bg-orange-500/20 border border-orange-500/40"
-                        : session
-                          ? "bg-slate-700/60 border border-slate-600/60"
-                          : isToday
-                            ? "bg-slate-700/30 border border-slate-600/40"
-                            : "bg-slate-700/20 border border-transparent"
-                    }`}
-                  >
-                    <span
-                      className={`text-[11px] font-semibold uppercase tracking-wide ${
-                        isToday
-                          ? session
-                            ? "text-orange-300"
-                            : "text-slate-300"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      {day}
-                    </span>
-                    {session ? (
-                      <Flame
-                        className={`h-3.5 w-3.5 ${
-                          isToday ? "text-orange-400" : "text-orange-500/60"
-                        }`}
-                      />
-                    ) : (
-                      <div className="h-3.5 w-3.5" />
-                    )}
-                    {isToday && (
-                      <div className="w-1 h-1 rounded-full bg-blue-400" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Lista de sesiones */}
-            <div className="space-y-1.5">
-              {prayerSessions.map((s) => {
-                const until = daysUntil(s.day_of_week);
-                const isToday = until === 0;
-                return (
-                  <div
-                    key={s.id}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isToday
-                        ? "bg-orange-500/10 border border-orange-500/20"
-                        : "hover:bg-slate-700/40"
-                    }`}
-                  >
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isToday ? "bg-orange-500/20" : "bg-slate-700"
-                      }`}
-                    >
-                      <Flame
-                        className={`h-3.5 w-3.5 ${
-                          isToday ? "text-orange-400" : "text-slate-500"
-                        }`}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-white truncate">
-                          {s.name}
-                        </p>
-                        {isToday && (
-                          <span className="text-xs text-orange-400 font-semibold flex-shrink-0">
-                            Hoy
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        {DAYS_FULL[s.day_of_week]}
-                        {s.start_time && ` · ${fmtTimePrayer(s.start_time)}`}
-                        {s.location && ` · ${s.location}`}
-                      </p>
-                    </div>
-                    <span className="text-xs text-slate-500 flex-shrink-0">
-                      {isToday
-                        ? "hoy"
-                        : until === 1
-                          ? "mañana"
-                          : `en ${until}d`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         )}
       </div>
 
-      {/* ── Embudo de visitantes ──────────────────────────────────────────── */}
-      {visitorStats && (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-teal-400" />
-              <h2 className="font-semibold text-white">Embudo de Visitantes</h2>
-            </div>
-            <Link
-              to="/dashboard/visitors"
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-teal-400 transition-colors"
-            >
-              Gestionar <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              {
-                label: "Primera Visita",
-                value: visitorStats.primera_visita,
-                color: "border-blue-500 text-blue-300",
-                bg: "bg-blue-500/5",
-              },
-              {
-                label: "En Seguimiento",
-                value: visitorStats.en_seguimiento,
-                color: "border-yellow-500 text-yellow-300",
-                bg: "bg-yellow-500/5",
-              },
-              {
-                label: "Integrados",
-                value: visitorStats.integrados,
-                color: "border-green-500 text-green-300",
-                bg: "bg-green-500/5",
-              },
-              {
-                label: "Inactivos",
-                value: visitorStats.inactivos,
-                color: "border-slate-500 text-slate-400",
-                bg: "bg-slate-500/5",
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className={`${item.bg} border ${item.color} rounded-lg p-3 text-center`}
-              >
-                <p className={`text-2xl font-bold ${item.color.split(" ")[1]}`}>
-                  {item.value ?? 0}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">{item.label}</p>
+      {/* ── KPIs ────────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          icon={Users} label="Miembros Activos"
+          value={memberStats?.active ?? memberStats?.total}
+          sub={memberStats?.total ? `${memberStats.total} registrados` : undefined}
+          color={{ bg: "bg-blue-500/15", icon: "text-blue-400", border: "border-slate-700" }}
+          href="/dashboard/members" loading={loading}
+        />
+        <KpiCard
+          icon={UserSearch} label="Visitantes"
+          value={visitorStats?.total}
+          sub={visitorStats?.nuevos_este_mes ? `+${visitorStats.nuevos_este_mes} este mes` : undefined}
+          trend={visitorStats?.nuevos_este_mes}
+          color={{ bg: "bg-teal-500/15", icon: "text-teal-400", border: "border-slate-700" }}
+          href="/dashboard/visitors" loading={loading}
+        />
+        <KpiCard
+          icon={UsersRound} label="Grupos"
+          value={groupTotal}
+          color={{ bg: "bg-purple-500/15", icon: "text-purple-400", border: "border-slate-700" }}
+          href="/dashboard/groups" loading={loading}
+        />
+        <KpiCard
+          icon={DollarSign} label="Balance"
+          value={balance !== null ? fmtMoney(balance) : undefined}
+          sub={balance >= 0 ? "Superávit" : "Déficit"}
+          color={balance >= 0
+            ? { bg: "bg-emerald-500/15", icon: "text-emerald-400", border: "border-slate-700" }
+            : { bg: "bg-red-500/15",     icon: "text-red-400",     border: "border-red-900/40" }}
+          href="/dashboard/finances" loading={loading}
+        />
+      </div>
+
+      {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <QuickAction icon={UserPlus}     label="Nuevo Miembro"     href="/dashboard/members"  color="bg-blue-600/10 border-blue-600/30 text-blue-300 hover:bg-blue-600/20" />
+        <QuickAction icon={UserSearch}   label="Nuevo Visitante"   href="/dashboard/visitors" color="bg-teal-600/10 border-teal-600/30 text-teal-300 hover:bg-teal-600/20" />
+        <QuickAction icon={CalendarDays} label="Nuevo Evento"      href="/dashboard/events"   color="bg-purple-600/10 border-purple-600/30 text-purple-300 hover:bg-purple-600/20" />
+        <QuickAction icon={PlusCircle}   label="Registrar Ofrenda" href="/dashboard/finances" color="bg-emerald-600/10 border-emerald-600/30 text-emerald-300 hover:bg-emerald-600/20" />
+      </div>
+
+
+      {/* ── Agenda + Finanzas (lados iguales, solo si hay) ───────────────── */}
+      {(hasEvents || hasFinance) && (
+        <div className={`grid grid-cols-1 gap-6 ${hasEvents && hasFinance ? "lg:grid-cols-2" : ""}`}>
+
+          {/* Próxima agenda */}
+          {hasEvents && (
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-700">
+                <SectionHeader title="Próxima Agenda" linkTo="/dashboard/events" color="text-slate-500 hover:text-blue-400" />
               </div>
-            ))}
+              <div className="divide-y divide-slate-700/50">
+                {loading
+                  ? [1,2,3].map(i => (
+                      <div key={i} className="px-5 py-3.5 flex items-center gap-4">
+                        <div className="w-10 h-10 bg-slate-700 animate-pulse rounded-lg shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3.5 bg-slate-700 animate-pulse rounded w-40" />
+                          <div className="h-3 bg-slate-700/60 animate-pulse rounded w-24" />
+                        </div>
+                      </div>
+                    ))
+                  : events.map(event => {
+                      const meta = EVENT_META[event.event_type] || { label: event.event_type, dot: "bg-slate-400", text: "text-slate-300" };
+                      const { day, mon } = fmtDay(event.date);
+                      const t0 = new Date(); t0.setHours(0,0,0,0);
+                      const isToday = new Date(event.date.slice(0,10) + "T00:00:00").getTime() === t0.getTime();
+                      return (
+                        <div key={`${event._kind}-${event.id}`}
+                          className={`px-5 py-3.5 flex items-center gap-4 transition-colors ${isToday ? "bg-blue-500/5" : "hover:bg-slate-700/30"}`}>
+                          <div className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${isToday ? "bg-blue-600/20 border-blue-500/40" : "bg-slate-700/50 border-slate-600/40"}`}>
+                            <span className={`text-base font-bold leading-none ${isToday ? "text-blue-300" : "text-white"}`}>{day}</span>
+                            <span className={`text-[9px] uppercase font-semibold mt-0.5 ${isToday ? "text-blue-400" : "text-slate-500"}`}>{mon}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dot}`} />
+                              <span className={`text-xs ${meta.text}`}>{meta.label}</span>
+                              {isToday && <span className="text-xs font-semibold text-blue-400">· Hoy</span>}
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-slate-600 shrink-0" />
+                        </div>
+                      );
+                    })
+                }
+              </div>
+            </div>
+          )}
+
+          {/* Gráfica finanzas */}
+          {hasFinance && (
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-700">
+                <SectionHeader title="Finanzas · 6 meses" linkTo="/dashboard/finances"
+                  color="text-slate-500 hover:text-emerald-400" linkLabel="Detalles" />
+              </div>
+              <div className="px-2 pt-4 pb-2">
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={finMonthly} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gIn" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gOut" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <Tooltip
+                      contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: "10px", fontSize: "11px" }}
+                      labelStyle={{ color: "#94a3b8" }}
+                      formatter={(v, n) => ["$" + Number(v).toLocaleString("en-US"), n]}
+                    />
+                    <Area type="monotone" dataKey="ingresos" name="Ingresos" stroke="#22c55e" strokeWidth={2}
+                      fill="url(#gIn)" dot={false} activeDot={{ r: 3 }} />
+                    <Area type="monotone" dataKey="egresos" name="Egresos" stroke="#ef4444" strokeWidth={2}
+                      fill="url(#gOut)" dot={false} activeDot={{ r: 3 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 px-4 pb-2">
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />Ingresos
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />Egresos
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Cumpleaños — solo si hay, ancho completo compacto ────────────── */}
+      {hasBirthdays && (
+        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-700">
+            <SectionHeader
+              title={`Cumpleaños — ${new Date().toLocaleDateString("es-MX", { month: "long" })}`}
+              linkTo="/dashboard/members" color="text-slate-500 hover:text-pink-400"
+            />
+          </div>
+          <div className="px-4 py-3 flex flex-wrap gap-2.5">
+            {birthdays.map(m => {
+              const day = parseInt(m.birth_date.slice(8, 10));
+              const today = new Date().getDate();
+              const isToday = day === today;
+              const isPast  = day < today;
+              return (
+                <div key={m.id}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
+                    isToday ? "border-pink-500/40 bg-pink-500/10" :
+                    isPast  ? "border-slate-700/40 opacity-40" :
+                              "border-slate-700 bg-slate-800/60"
+                  }`}>
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                    {m.first_name[0]}{m.last_name[0]}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white leading-tight">{m.first_name} {m.last_name}</p>
+                    <p className={`text-[10px] leading-tight ${isToday ? "text-pink-400 font-semibold" : "text-slate-500"}`}>
+                      {isToday ? "🎂 Hoy" : `día ${day}`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
+
+      {/* ── Acceso a módulos — siempre visible ──────────────────────────── */}
+      <div className="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Acceso rápido</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {[
+            { label: "Familias",    href: "/dashboard/families",   icon: "👨‍👩‍👧" },
+            { label: "Bautismos",   href: "/dashboard/baptisms",   icon: "💧" },
+            { label: "Asistencia",  href: "/dashboard/attendance", icon: "✅" },
+            { label: "Donaciones",  href: "/dashboard/donations",  icon: "💝" },
+            { label: "Líderes",     href: "/dashboard/leaders",    icon: "👑" },
+            { label: "Santa Cena",  href: "/dashboard/communion",  icon: "🍷" },
+            { label: "Reportes",    href: "/dashboard/reports",    icon: "📊" },
+            { label: "Oración",     href: "/dashboard/prayer",     icon: "🔥" },
+          ].map(({ label, href, icon }) => (
+            <Link key={href} to={href}
+              className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors text-center">
+              <span className="text-xl leading-none">{icon}</span>
+              <span className="text-[11px] font-medium leading-tight">{label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }

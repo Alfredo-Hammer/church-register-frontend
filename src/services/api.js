@@ -562,6 +562,10 @@ export const visitorsService = {
     const response = await api.delete(`/visitors/${visitorId}/follow-ups/${followUpId}`);
     return response.data;
   },
+  convertToMember: async (visitorId) => {
+    const response = await api.post(`/visitors/${visitorId}/convert-to-member`);
+    return response.data;
+  },
 };
 
 // ============================================
@@ -710,6 +714,11 @@ export const prayerService = {
     const response = await api.get(`/prayer/${id}/attendance/history`, { params: { limit } });
     return response.data;
   },
+
+  getReports: async (startDate, endDate) => {
+    const response = await api.get('/prayer/reports', { params: { startDate, endDate } });
+    return response.data;
+  },
 };
 
 // ============================================
@@ -748,6 +757,79 @@ export const lettersService = {
   },
   getStats: async () => {
     const response = await api.get('/letters/stats');
+    return response.data;
+  },
+};
+
+// ============================================
+// CONFERENCE SERVICE
+// ============================================
+export const conferenceService = {
+  // ── Conferencias ──────────────────────────
+  getAll: async () => {
+    const response = await api.get('/conference');
+    return response.data;
+  },
+  getById: async (id) => {
+    const response = await api.get(`/conference/${id}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post('/conference', data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/conference/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/conference/${id}`);
+    return response.data;
+  },
+
+  // ── Días ──────────────────────────────────
+  addDay: async (conferenceId, data) => {
+    const response = await api.post(`/conference/${conferenceId}/days`, data);
+    return response.data;
+  },
+  deleteDay: async (conferenceId, dayId) => {
+    const response = await api.delete(`/conference/${conferenceId}/days/${dayId}`);
+    return response.data;
+  },
+
+  // ── Sesiones ──────────────────────────────
+  addSession: async (dayId, data) => {
+    const response = await api.post(`/conference/days/${dayId}/sessions`, data);
+    return response.data;
+  },
+  updateSession: async (sessionId, data) => {
+    const response = await api.put(`/conference/sessions/${sessionId}`, data);
+    return response.data;
+  },
+  deleteSession: async (sessionId) => {
+    const response = await api.delete(`/conference/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // ── Registros de asistentes ────────────────
+  getRegistrations: async (conferenceId, params = {}) => {
+    const response = await api.get(`/conference/${conferenceId}/registrations`, { params });
+    return response.data;
+  },
+  getStats: async (conferenceId) => {
+    const response = await api.get(`/conference/${conferenceId}/stats`);
+    return response.data;
+  },
+  createRegistration: async (conferenceId, data) => {
+    const response = await api.post(`/conference/${conferenceId}/registrations`, data);
+    return response.data;
+  },
+  updateRegistration: async (conferenceId, regId, data) => {
+    const response = await api.put(`/conference/${conferenceId}/registrations/${regId}`, data);
+    return response.data;
+  },
+  deleteRegistration: async (conferenceId, regId) => {
+    const response = await api.delete(`/conference/${conferenceId}/registrations/${regId}`);
     return response.data;
   },
 };

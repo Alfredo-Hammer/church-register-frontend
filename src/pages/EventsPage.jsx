@@ -1,4 +1,5 @@
 import React, {useState, useEffect} from "react";
+import {useNavigate} from "react-router-dom";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
 import {
@@ -28,15 +29,19 @@ import {
   X,
   Minus,
   Printer,
+  BookOpen,
+  MapPin,
+  Settings,
 } from "lucide-react";
-import {eventsService, membersService, settingsService} from "@/services/api";
+import {eventsService, membersService, settingsService, conferenceService} from "@/services/api";
 import {buildEventAttendancePDF} from "@/utils/reportPrint";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TYPE_LABEL = {
-  CULTO: "Culto",
-  REUNION: "Reunión",
-  ESPECIAL: "Evento Especial",
+  CULTO:       "Culto",
+  REUNION:     "Reunión",
+  ESPECIAL:    "Evento Especial",
+  CONFERENCIA: "Conferencia",
 };
 const TYPE_COLOR = {
   CULTO: {
@@ -50,6 +55,10 @@ const TYPE_COLOR = {
   ESPECIAL: {
     badge: "bg-amber-600/20 text-amber-400 border-amber-600/40",
     dot: "bg-amber-400",
+  },
+  CONFERENCIA: {
+    badge: "bg-orange-600/20 text-orange-400 border-orange-600/40",
+    dot: "bg-orange-400",
   },
 };
 
@@ -291,23 +300,37 @@ function EventFormModal({
                 <option value="CULTO">Culto</option>
                 <option value="REUNION">Reunión</option>
                 <option value="ESPECIAL">Evento Especial</option>
+                <option value="CONFERENCIA">Conferencia</option>
               </select>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-300">
-              Descripción
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={onChange}
-              rows={3}
-              placeholder="Detalles adicionales del evento..."
-              className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
-            />
-          </div>
+          {/* Aviso especial para conferencias */}
+          {formData.eventType === "CONFERENCIA" ? (
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2 text-orange-300">
+                <BookOpen className="w-4 h-4 shrink-0" />
+                <p className="text-sm font-semibold">Las conferencias tienen gestión especial</p>
+              </div>
+              <p className="text-xs text-slate-400">
+                Al confirmar se abrirá el gestor de conferencias donde podrás configurar días, sesiones, temas y registro de asistentes.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-300">
+                Descripción
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={onChange}
+                rows={3}
+                placeholder="Detalles adicionales del evento..."
+                className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
+              />
+            </div>
+          )}
 
           <div className="flex gap-3 pt-1">
             <Button
@@ -322,9 +345,13 @@ function EventFormModal({
             <Button
               type="submit"
               disabled={!!formSuccess}
-              className="flex-[2] bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white"
+              className={`flex-[2] text-white ${formData.eventType === "CONFERENCIA"
+                ? "bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
+                : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700"}`}
             >
-              {isEditing ? "Actualizar Evento" : "Crear Evento"}
+              {formData.eventType === "CONFERENCIA"
+                ? "Ir al Gestor de Conferencias →"
+                : isEditing ? "Actualizar Evento" : "Crear Evento"}
             </Button>
           </div>
         </form>
@@ -695,43 +722,73 @@ function AttendanceModal({event, open, onClose, onSaved}) {
 }
 
 // ─── List Row ─────────────────────────────────────────────────────────────────
-function EventRow({event, past, onDetail, onEdit, onDelete, onAttendance}) {
+function EventRow({event, past, onDetail, onEdit, onDelete, onAttendance, onManageConference}) {
   const tc = TYPE_COLOR[event.event_type] || TYPE_COLOR.CULTO;
+  const isConference = event.event_type === "CONFERENCIA";
   const members = parseInt(event.attendance_count) || 0;
   const guests = parseInt(event.guest_count) || 0;
   const total = parseInt(event.total_count) || members + guests;
 
+  const handleRowClick = () => {
+    if (isConference && event._conferenceId) {
+      onManageConference(event._conferenceId);
+    } else {
+      onDetail(event);
+    }
+  };
+
   return (
     <div
-      onClick={() => onDetail(event)}
+      onClick={handleRowClick}
       className="flex items-center gap-4 px-4 py-3 border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30 transition-colors cursor-pointer group"
     >
-      {/* Dot */}
-      <div
-        className={`w-2.5 h-2.5 rounded-full shrink-0 ${past ? "bg-slate-600" : tc.dot}`}
-      />
+      {/* Dot / icon */}
+      {isConference ? (
+        <BookOpen className={`w-4 h-4 shrink-0 ${past ? "text-slate-600" : "text-orange-400"}`} />
+      ) : (
+        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${past ? "bg-slate-600" : tc.dot}`} />
+      )}
 
       {/* Title + meta */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={`text-sm font-semibold ${past ? "text-gray-400" : "text-white"}`}
-          >
+          <span className={`text-sm font-semibold ${past ? "text-gray-400" : "text-white"}`}>
             {event.title}
           </span>
-          <span
-            className={`px-1.5 py-0.5 rounded text-[11px] border ${tc.badge}`}
-          >
+          <span className={`px-1.5 py-0.5 rounded text-[11px] border ${tc.badge}`}>
             {TYPE_LABEL[event.event_type]}
           </span>
         </div>
         <p className="text-xs text-gray-500 mt-0.5 capitalize">
-          {fmtDateShort(event.date)} · {fmtTime(event.date)}
+          {isConference
+            ? fmtDateShort(event.date)
+            : `${fmtDateShort(event.date)} · ${fmtTime(event.date)}`}
+          {isConference && event._location && (
+            <span className="ml-2 inline-flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{event._location}</span>
+          )}
         </p>
       </div>
 
-      {/* Attendance (past events) */}
-      {past ? (
+      {/* Columna derecha según tipo */}
+      {isConference ? (
+        <div className="hidden sm:flex items-center gap-3 shrink-0">
+          {event._sessionsCount > 0 && (
+            <span className="text-xs text-slate-500">{event._sessionsCount} sesiones</span>
+          )}
+          {event._registrantsCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-orange-400">
+              <Users className="w-3 h-3" />{event._registrantsCount}
+            </span>
+          )}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+            event._status === "ACTIVO" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" :
+            event._status === "FINALIZADO" ? "bg-slate-500/15 text-slate-400 border-slate-500/30" :
+            "bg-red-500/15 text-red-400 border-red-500/30"
+          }`}>
+            {event._status === "ACTIVO" ? "Activa" : event._status === "FINALIZADO" ? "Finalizada" : "Cancelada"}
+          </span>
+        </div>
+      ) : past ? (
         <div className="hidden sm:flex items-center gap-4 shrink-0 text-sm">
           <div className="text-center">
             <p className="text-gray-500 text-xs">Miembros</p>
@@ -755,7 +812,7 @@ function EventRow({event, past, onDetail, onEdit, onDelete, onAttendance}) {
       )}
 
       {/* Mobile total */}
-      {past && (
+      {past && !isConference && (
         <div className="sm:hidden shrink-0 text-right">
           <p className="text-xs text-gray-500">Total</p>
           <p className="font-bold text-gray-300">{total}</p>
@@ -763,35 +820,41 @@ function EventRow({event, past, onDetail, onEdit, onDelete, onAttendance}) {
       )}
 
       {/* Actions */}
-      <div
-        className="flex items-center gap-1 shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
         <div className="hidden group-hover:flex items-center gap-1">
-          {past && (
+          {isConference ? (
             <button
-              onClick={() => onAttendance(event)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
-              title="Registrar asistencia"
+              onClick={() => event._conferenceId && onManageConference(event._conferenceId)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-600/30 transition-colors"
             >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Asistencia</span>
+              <Settings className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Gestionar</span>
             </button>
+          ) : (
+            <>
+              {past && (
+                <button
+                  onClick={() => onAttendance(event)}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Asistencia</span>
+                </button>
+              )}
+              <button
+                onClick={() => onEdit(event)}
+                className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
+              >
+                <Edit className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => onDelete(event.id, event.title)}
+                className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
           )}
-          <button
-            onClick={() => onEdit(event)}
-            className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
-            title="Editar"
-          >
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onDelete(event.id, event.title)}
-            className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Eliminar"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
         </div>
         <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
       </div>
@@ -801,7 +864,8 @@ function EventRow({event, past, onDetail, onEdit, onDelete, onAttendance}) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function EventsPage() {
-  const [events, setEvents] = useState([]);
+  const navigate = useNavigate();
+  const [allItems, setAllItems] = useState([]);   // events + conferences mezclados
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState("ALL");
@@ -828,16 +892,49 @@ export default function EventsPage() {
   const [attendanceOpen, setAttendanceOpen] = useState(false);
 
   useEffect(() => {
-    fetchEvents();
+    fetchAll();
   }, [eventTypeFilter]);
 
-  const fetchEvents = async () => {
+  const fetchAll = async () => {
     try {
       setLoading(true);
       const params = {limit: 200};
-      if (eventTypeFilter !== "ALL") params.eventType = eventTypeFilter;
-      const data = await eventsService.getAll(params);
-      setEvents(data.events || []);
+      // Si el filtro no es CONFERENCIA, traemos eventos normales
+      const fetchEvs = (eventTypeFilter === "ALL" || eventTypeFilter !== "CONFERENCIA")
+        ? eventsService.getAll(eventTypeFilter !== "CONFERENCIA" && eventTypeFilter !== "ALL"
+            ? {...params, eventType: eventTypeFilter}
+            : params)
+        : Promise.resolve({events: []});
+
+      // Siempre traemos conferencias para mezclarlas (salvo filtro específico no-CONFERENCIA)
+      const fetchConfs = (eventTypeFilter === "ALL" || eventTypeFilter === "CONFERENCIA")
+        ? conferenceService.getAll()
+        : Promise.resolve({conferences: []});
+
+      const [evData, confData] = await Promise.all([fetchEvs, fetchConfs]);
+
+      // Normalizar conferencias como "eventos"
+      const confAsEvents = (confData.conferences || []).map(c => ({
+        id:              `conf-${c.id}`,
+        _conferenceId:   c.id,
+        _isConference:   true,
+        _status:         c.status,
+        _location:       c.location,
+        _sessionsCount:  parseInt(c.sessions_count) || 0,
+        _registrantsCount: parseInt(c.registrants_count) || 0,
+        title:           c.name,
+        date:            c.start_date,
+        event_type:      "CONFERENCIA",
+        description:     c.theme || null,
+        attendance_count: 0,
+        guest_count:     0,
+        total_count:     parseInt(c.registrants_count) || 0,
+      }));
+
+      const merged = [...(evData.events || []), ...confAsEvents]
+        .sort((a, b) => new Date(b.date) - new Date(a.date));  // más reciente primero
+
+      setAllItems(merged);
     } catch (e) {
       console.error(e);
     } finally {
@@ -855,6 +952,11 @@ export default function EventsPage() {
   };
 
   const openEdit = (event) => {
+    // Las conferencias se editan en su propia página
+    if (event._isConference) {
+      navigate(`/dashboard/conference/${event._conferenceId}`);
+      return;
+    }
     setIsEditing(true);
     setCurrentEvent(event);
     const dateObj = new Date(event.date);
@@ -876,6 +978,12 @@ export default function EventsPage() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    // Si es CONFERENCIA, redirigir al módulo de conferencias
+    if (formData.eventType === "CONFERENCIA") {
+      setFormOpen(false);
+      navigate("/dashboard/conference");
+      return;
+    }
     setFormError("");
     setFormSuccess("");
     try {
@@ -894,7 +1002,7 @@ export default function EventsPage() {
       }
       setTimeout(() => {
         setFormOpen(false);
-        fetchEvents();
+        fetchAll();
       }, 1500);
     } catch (error) {
       setFormError(error.response?.data?.error || "Error al guardar el evento");
@@ -902,15 +1010,11 @@ export default function EventsPage() {
   };
 
   const handleDelete = async (id, title) => {
-    if (
-      !window.confirm(
-        `¿Eliminar el evento "${title}"?\nEsta acción eliminará toda la asistencia registrada.`,
-      )
-    )
+    if (!window.confirm(`¿Eliminar el evento "${title}"?\nEsta acción eliminará toda la asistencia registrada.`))
       return;
     try {
       await eventsService.delete(id);
-      fetchEvents();
+      fetchAll();
     } catch (error) {
       alert(error.response?.data?.error || "Error al eliminar el evento");
     }
@@ -924,8 +1028,11 @@ export default function EventsPage() {
     setAttendanceEvent(event);
     setAttendanceOpen(true);
   };
+  const manageConference = (confId) => {
+    navigate(`/dashboard/conference/${confId}`);
+  };
 
-  const filteredEvents = events.filter(
+  const filteredEvents = allItems.filter(
     (e) =>
       e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (e.description || "").toLowerCase().includes(searchTerm.toLowerCase()),
@@ -935,8 +1042,8 @@ export default function EventsPage() {
   const pastEvents = filteredEvents.filter((e) => new Date(e.date) < now);
 
   // Summary stats
-  const totalEvents = events.length;
-  const totalAttended = events.reduce(
+  const totalEvents = allItems.length;
+  const totalAttended = allItems.reduce(
     (s, e) => s + (parseInt(e.total_count) || 0),
     0,
   );
@@ -947,9 +1054,9 @@ export default function EventsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Eventos</h1>
+          <h1 className="text-3xl font-bold text-white">Eventos y Conferencias</h1>
           <p className="text-gray-400 mt-1">
-            Programación y gestión de eventos de la iglesia
+            Cultos, reuniones, eventos especiales y conferencias
           </p>
         </div>
         <Button
@@ -1016,6 +1123,7 @@ export default function EventsPage() {
           <option value="CULTO">Cultos</option>
           <option value="REUNION">Reuniones</option>
           <option value="ESPECIAL">Eventos Especiales</option>
+          <option value="CONFERENCIA">Conferencias</option>
         </select>
       </div>
 
@@ -1049,6 +1157,7 @@ export default function EventsPage() {
                     onEdit={openEdit}
                     onDelete={handleDelete}
                     onAttendance={openAttendance}
+                    onManageConference={manageConference}
                   />
                 ))}
               </div>
@@ -1072,6 +1181,7 @@ export default function EventsPage() {
                     onEdit={openEdit}
                     onDelete={handleDelete}
                     onAttendance={openAttendance}
+                    onManageConference={manageConference}
                   />
                 ))}
               </div>
@@ -1112,7 +1222,7 @@ export default function EventsPage() {
         event={attendanceEvent}
         open={attendanceOpen}
         onClose={() => setAttendanceOpen(false)}
-        onSaved={fetchEvents}
+        onSaved={fetchAll}
       />
     </div>
   );

@@ -29,6 +29,7 @@ import {
   User,
   Flame,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import {Button} from "@/components/ui/Button";
 import {cn} from "@/lib/utils";
@@ -94,17 +95,23 @@ function GlobalSearch() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Cerrar con Escape
+  // ⌘K / Ctrl+K abre la búsqueda; Escape la cierra
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "Escape") {
         setOpen(false);
         inputRef.current?.blur();
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+        setOpen(results ? true : false);
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, []);
+  }, [results]);
 
   const go = (href) => {
     setOpen(false);
@@ -130,8 +137,8 @@ function GlobalSearch() {
           value={query}
           onChange={handleChange}
           onFocus={() => results && setOpen(true)}
-          placeholder="Buscar miembros, grupos, eventos..."
-          className="w-full pl-9 pr-9 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition-colors"
+          placeholder="Buscar… (⌘K)"
+          className="w-full pl-9 pr-16 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition-colors"
         />
         {loading && (
           <Loader2 className="absolute right-3 w-4 h-4 text-gray-400 animate-spin" />
@@ -147,6 +154,11 @@ function GlobalSearch() {
           >
             <X className="w-3.5 h-3.5" />
           </button>
+        )}
+        {!loading && !query && (
+          <kbd className="absolute right-3 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-slate-600 text-[10px] font-medium text-slate-500 bg-slate-800 pointer-events-none">
+            ⌘K
+          </kbd>
         )}
       </div>
 

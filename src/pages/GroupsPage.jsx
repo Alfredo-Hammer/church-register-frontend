@@ -60,7 +60,7 @@ const fmtDate = (d) =>
         month: "short",
         year: "numeric",
       })
-    : "\u2014";
+    : "—";
 
 const fmtDateTime = (d) =>
   d
@@ -71,7 +71,7 @@ const fmtDateTime = (d) =>
         hour: "2-digit",
         minute: "2-digit",
       })
-    : "\u2014";
+    : "—";
 
 const fmtCurrency = (n) =>
   new Intl.NumberFormat("es", {
@@ -794,7 +794,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                         }
                         className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${txForm.type === "INGRESO" ? "bg-green-500/20 border-green-500/40 text-green-400" : "border-slate-600 text-gray-500 hover:text-gray-300"}`}
                       >
-                        \u2191 Ingreso
+                        ↑ Ingreso
                       </button>
                       <button
                         onClick={() =>
@@ -802,11 +802,11 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                         }
                         className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${txForm.type === "EGRESO" ? "bg-red-500/20 border-red-500/40 text-red-400" : "border-slate-600 text-gray-500 hover:text-gray-300"}`}
                       >
-                        \u2193 Egreso
+                        ↓ Egreso
                       </button>
                     </div>
                     <Input
-                      placeholder="Descripci\u00f3n *"
+                      placeholder="Descripción *"
                       value={txForm.description}
                       onChange={(e) =>
                         setTxForm((f) => ({...f, description: e.target.value}))

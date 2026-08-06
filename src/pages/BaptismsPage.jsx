@@ -46,6 +46,7 @@ export default function BaptismsPage() {
   const [stats, setStats] = useState(null);
   const [members, setMembers] = useState([]);
   const [churchName, setChurchName] = useState("Iglesia Cristiana");
+  const [churchLogo, setChurchLogo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -105,6 +106,9 @@ export default function BaptismsPage() {
       .then((church) => {
         if (church?.name) {
           setChurchName(church.name);
+        }
+        if (church?.logoUrl) {
+          setChurchLogo(church.logoUrl);
         }
       })
       .catch(() => {});
@@ -207,7 +211,7 @@ export default function BaptismsPage() {
 
   // ─── Print Certificate ────────────────────────────────────────────────────
   const handlePrintCertificate = (baptism) => {
-    const html = buildBaptismCertificate(baptism, churchName);
+    const html = buildBaptismCertificate(baptism, churchName, churchLogo);
     const win = window.open("", "_blank");
     if (win) {
       win.document.write(html);

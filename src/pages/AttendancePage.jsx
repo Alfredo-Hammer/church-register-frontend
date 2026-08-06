@@ -580,9 +580,227 @@ const fmtTimePrayer = (t) => {
   return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`;
 };
 
+// ─── Prayer History Modal ──────────────────────────────────────────────────────
+
+function PrayerHistoryModal({session, open, onClose, onEditDate}) {
+  const [history, setHistory] = useState([]);
+  const [expandedDates, setExpandedDates] = useState(new Set());
+  const [dateDetails, setDateDetails] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [loadingDates, setLoadingDates] = useState(new Set());
+
+  useEffect(() => {
+    if (!open || !session) return;
+    setLoading(true);
+    setExpandedDates(new Set());
+    setDateDetails({});
+    setLoadingDates(new Set());
+    prayerService
+      .getAttendanceHistory(session.id, 52)
+      .then((d) => setHistory(d.history || []))
+      .catch(() => setHistory([]))
+      .finally(() => setLoading(false));
+  }, [open, session]);
+
+  const formatDateKey = (dateValue) => {
+    // Convertir fecha a formato YYYY-MM-DD
+    if (!dateValue) return "";
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  };
+
+  const toggleDate = async (dateValue) => {
+    const dateKey = formatDateKey(dateValue);
+    if (!dateKey) return;
+
+    const newExpanded = new Set(expandedDates);
+    if (newExpanded.has(dateKey)) {
+      newExpanded.delete(dateKey);
+      setExpandedDates(newExpanded);
+    } else {
+      newExpanded.add(dateKey);
+      setExpandedDates(newExpanded);
+
+      // Cargar detalles si no están cargados
+      if (!dateDetails[dateKey]) {
+        setLoadingDates((prev) => new Set(prev).add(dateKey));
+        try {
+          const data = await prayerService.getAttendance(session.id, dateKey);
+          setDateDetails((prev) => ({
+            ...prev,
+            [dateKey]: data.attendance || [],
+          }));
+        } catch (err) {
+          console.error("Error loading date details:", err);
+          setDateDetails((prev) => ({
+            ...prev,
+            [dateKey]: [],
+          }));
+        } finally {
+          setLoadingDates((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(dateKey);
+            return newSet;
+          });
+        }
+      }
+    }
+  };
+
+  if (!session) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="bg-slate-800 border-slate-700 max-w-3xl w-full max-h-[85vh] flex flex-col">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="text-white text-lg flex items-center gap-3">
+            <span className="w-9 h-9 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0">
+              <History className="w-5 h-5 text-orange-400" />
+            </span>
+            <div>
+              <p>Historial de Asistencias</p>
+              <p className="text-gray-400 text-sm font-normal mt-0.5">
+                {session.name} — {DAYS_ES[session.day_of_week]}
+              </p>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto mt-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : history.length === 0 ? (
+            <div className="text-center py-12">
+              <History className="h-12 w-12 mx-auto mb-3 text-gray-600" />
+              <p className="text-gray-400">No hay registros de asistencia</p>
+              <p className="text-gray-500 text-sm mt-1">
+                Comienza a pasar lista para ver el historial
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {history.map((record) => {
+                const dateKey = formatDateKey(record.attendance_date);
+                const isExpanded = expandedDates.has(dateKey);
+                const details = dateDetails[dateKey] || [];
+                const loadingDetails = loadingDates.has(dateKey);
+
+                // Formatear fecha para mostrar
+                const dateObj = new Date(record.attendance_date);
+                const displayDate = isNaN(dateObj.getTime())
+                  ? "Fecha no válida"
+                  : dateObj.toLocaleDateString("es-ES", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+
+                return (
+                  <div
+                    key={dateKey}
+                    className="border border-slate-700 rounded-xl overflow-hidden bg-slate-800/50"
+                  >
+                    <div
+                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                      onClick={() => toggleDate(record.attendance_date)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-white capitalize">
+                            {displayDate}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs">
+                          <span className="text-emerald-400 font-medium">
+                            {record.total} miembros
+                          </span>
+                          {record.guest_count > 0 && (
+                            <span className="text-amber-400 font-medium">
+                              +{record.guest_count} visitantes
+                            </span>
+                          )}
+                          <span className="text-gray-500">•</span>
+                          <span className="text-white font-semibold">
+                            Total: {record.grand_total}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditDate(dateKey);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition-colors"
+                      >
+                        Editar
+                      </button>
+                      <ChevronRight
+                        className={`w-4 h-4 text-gray-400 transition-transform ${
+                          isExpanded ? "rotate-90" : ""
+                        }`}
+                      />
+                    </div>
+
+                    {isExpanded && (
+                      <div className="border-t border-slate-700 px-4 py-3 bg-slate-900/30">
+                        {loadingDetails ? (
+                          <div className="flex justify-center py-4">
+                            <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        ) : details.length === 0 ? (
+                          <p className="text-sm text-gray-500 text-center py-2">
+                            Sin miembros registrados
+                          </p>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="text-xs text-gray-500 font-medium mb-2">
+                              Miembros asistentes:
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {details.map((member) => (
+                                <div
+                                  key={member.member_id}
+                                  className="flex items-center gap-2 text-sm text-gray-300 bg-slate-800/50 rounded px-2.5 py-1.5"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <span>
+                                    {member.first_name} {member.last_name}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-slate-700 pt-4 mt-4 shrink-0">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="w-full border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+          >
+            Cerrar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Prayer Attendance Modal ──────────────────────────────────────────────────
 
-function PrayerAttendanceModal({session, open, onClose, onSaved}) {
+function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
   const [allMembers, setAllMembers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState(new Set());
   const [date, setDate] = useState("");
@@ -595,7 +813,7 @@ function PrayerAttendanceModal({session, open, onClose, onSaved}) {
 
   useEffect(() => {
     if (!open || !session) return;
-    const defaultDate = lastOccurrence(session.day_of_week);
+    const defaultDate = initialDate || lastOccurrence(session.day_of_week);
     setDate(defaultDate);
     setMemberSearch("");
     setFormError("");
@@ -616,7 +834,7 @@ function PrayerAttendanceModal({session, open, onClose, onSaved}) {
       })
       .catch(console.error)
       .finally(() => setDataLoading(false));
-  }, [open, session]);
+  }, [open, session, initialDate]);
 
   // Reload attendance when date changes
   useEffect(() => {
@@ -685,6 +903,11 @@ function PrayerAttendanceModal({session, open, onClose, onSaved}) {
               <p className="text-gray-400 text-sm font-normal mt-0.5">
                 {session &&
                   `${DAYS_ES[session.day_of_week]} · ${fmtTimePrayer(session.start_time)}`}
+                {initialDate && (
+                  <span className="text-blue-400 ml-2">
+                    — Editando registro
+                  </span>
+                )}
               </p>
             </div>
           </DialogTitle>
@@ -901,7 +1124,7 @@ const nextOccurrence = (dow) => {
   return d.toISOString().slice(0, 10);
 };
 
-function PrayerSessionRow({session, onRegister}) {
+function PrayerSessionRow({session, onRegister, onViewHistory}) {
   const [history, setHistory] = useState([]);
   const [loadingH, setLoadingH] = useState(true);
 
@@ -994,14 +1217,23 @@ function PrayerSessionRow({session, onRegister}) {
         </div>
       </div>
 
-      {/* Button */}
-      <button
-        onClick={() => onRegister(session)}
-        className="hidden group-hover:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/30"
-      >
-        <CheckSquare className="w-3.5 h-3.5" />
-        <span className="hidden md:inline">Pasar lista</span>
-      </button>
+      {/* Buttons */}
+      <div className="hidden group-hover:flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => onViewHistory(session)}
+          className="items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-slate-700 hover:bg-slate-600 text-gray-300 border border-slate-600"
+          title="Ver historial completo"
+        >
+          <History className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => onRegister(session)}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/30"
+        >
+          <CheckSquare className="w-3.5 h-3.5" />
+          <span className="hidden md:inline">Pasar lista</span>
+        </button>
+      </div>
       <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
     </div>
   );
@@ -1014,6 +1246,9 @@ function PrayerSection() {
   const [loading, setLoading] = useState(true);
   const [activeSession, setActiveSession] = useState(null);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
+  const [historySession, setHistorySession] = useState(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [editDate, setEditDate] = useState("");
 
   useEffect(() => {
     prayerService
@@ -1028,7 +1263,28 @@ function PrayerSection() {
 
   const openRegister = (session) => {
     setActiveSession(session);
+    setEditDate("");
     setAttendanceOpen(true);
+  };
+
+  const openHistory = (session) => {
+    setHistorySession(session);
+    setHistoryOpen(true);
+  };
+
+  const openEditFromHistory = (date) => {
+    setHistoryOpen(false);
+    setActiveSession(historySession);
+    setEditDate(date);
+    setAttendanceOpen(true);
+  };
+
+  const handleSaved = () => {
+    // Recargar sesiones para actualizar estadísticas
+    prayerService
+      .getAll()
+      .then((d) => setSessions(d.prayer_days || []))
+      .catch(() => {});
   };
 
   if (loading) {
@@ -1067,6 +1323,7 @@ function PrayerSection() {
                   key={s.id}
                   session={s}
                   onRegister={openRegister}
+                  onViewHistory={openHistory}
                 />
               ))}
             </div>
@@ -1085,6 +1342,7 @@ function PrayerSection() {
                   key={s.id}
                   session={s}
                   onRegister={openRegister}
+                  onViewHistory={openHistory}
                 />
               ))}
             </div>
@@ -1092,14 +1350,26 @@ function PrayerSection() {
         )}
       </div>
 
+      <PrayerHistoryModal
+        session={historySession}
+        open={historyOpen}
+        onClose={() => {
+          setHistoryOpen(false);
+          setHistorySession(null);
+        }}
+        onEditDate={openEditFromHistory}
+      />
+
       <PrayerAttendanceModal
         session={activeSession}
         open={attendanceOpen}
+        initialDate={editDate}
         onClose={() => {
           setAttendanceOpen(false);
           setActiveSession(null);
+          setEditDate("");
         }}
-        onSaved={() => {}}
+        onSaved={handleSaved}
       />
     </>
   );

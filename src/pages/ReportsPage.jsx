@@ -1,4 +1,8 @@
 import React, {useState, useEffect, useCallback} from "react";
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -15,6 +19,7 @@ import {
   Award,
   Eye,
   FileDown,
+  Flame,
 } from "lucide-react";
 import {
   membersService,
@@ -24,6 +29,7 @@ import {
   groupsService,
   eventsService,
   settingsService,
+  prayerService,
 } from "@/services/api";
 import {
   buildOverviewReport,
@@ -32,6 +38,7 @@ import {
   buildDonationsReport,
   buildBaptismsReport,
   buildAttendanceReport,
+  buildPrayerReport,
 } from "@/utils/reportPrint";
 
 // ── Util ──────────────────────────────────────────────────────────────────────
@@ -140,71 +147,128 @@ function ProgressBar({label, value, total, colorClass = "bg-cyan-500"}) {
   );
 }
 
-function CssBarChart({data, colorClass = "bg-cyan-500"}) {
-  const max = Math.max(...data.map((d) => d.value), 1);
+// ── Tooltip personalizado oscuro ──────────────────────────────────────────────
+const DarkTooltip = ({active, payload, label, money = false}) => {
+  if (!active || !payload?.length) return null;
+  const fmt = (v) => money
+    ? "$" + Number(v || 0).toLocaleString("en-US", {minimumFractionDigits: 0, maximumFractionDigits: 0})
+    : Number(v || 0).toLocaleString("es-MX");
   return (
-    <div className="flex items-end gap-1 h-32">
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div
-            className="w-full flex items-end justify-center"
-            style={{height: "100px"}}
-          >
-            <div
-              className={`w-full rounded-t ${colorClass} opacity-80 hover:opacity-100 transition-opacity`}
-              style={{
-                height: `${Math.max((d.value / max) * 100, d.value > 0 ? 6 : 0)}px`,
-              }}
-              title={`${d.label}: ${d.value}`}
-            />
-          </div>
-          <span className="text-[10px] text-gray-500">{d.label}</span>
-        </div>
+    <div className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs">
+      {label && <p className="text-slate-400 mb-1 font-medium">{label}</p>}
+      {payload.map((p) => (
+        <p key={p.dataKey} style={{color: p.color}} className="font-semibold">
+          {p.name}: {fmt(p.value)}
+        </p>
       ))}
     </div>
   );
+};
+
+// Barra simple por mes (reemplaza CssBarChart)
+function MonthBarChart({data, color = "#06b6d4", money = false}) {
+  if (!data?.length) return null;
+  return (
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart data={data} margin={{top: 4, right: 4, left: -20, bottom: 0}}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+        <XAxis dataKey="label" tick={{fill: "#64748b", fontSize: 11}} axisLine={false} tickLine={false} />
+        <YAxis tick={{fill: "#64748b", fontSize: 10}} axisLine={false} tickLine={false} width={36} />
+        <Tooltip content={<DarkTooltip money={money} />} cursor={{fill: "#1e293b"}} />
+        <Bar dataKey="value" name="Cantidad" fill={color} radius={[4, 4, 0, 0]} maxBarSize={40} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
 }
 
-// Gráfica multi-serie con barras agrupadas (sin dependencias externas)
-function MultiBarChart({data = [], series = []}) {
+// Barras agrupadas multi-serie (reemplaza MultiBarChart)
+function MultiBarChart({data = [], series = [], money = false}) {
   if (!data.length) return null;
-  const allVals = data.flatMap((d) =>
-    series.map((s) => parseFloat(d[s.key] || 0)),
-  );
-  const max = Math.max(...allVals, 1);
-  const barW = `${Math.floor(60 / series.length)}%`;
+  const COLORS = {"bg-green-500": "#22c55e", "bg-red-500": "#ef4444", "bg-purple-500": "#a855f7",
+                  "bg-blue-500": "#3b82f6", "bg-amber-500": "#f59e0b", "bg-cyan-500": "#06b6d4"};
   return (
-    <div className="space-y-3">
-      <div className="flex items-end gap-1 h-36">
-        {data.map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-            <div
-              className="w-full flex items-end justify-center gap-0.5"
-              style={{height: "120px"}}
-            >
-              {series.map((s) => {
-                const val = parseFloat(d[s.key] || 0);
-                const h = Math.max((val / max) * 120, val > 0 ? 4 : 0);
-                return (
-                  <div
-                    key={s.key}
-                    className={`rounded-t ${s.color} opacity-80 hover:opacity-100 transition-opacity`}
-                    style={{height: `${h}px`, width: barW}}
-                    title={`${s.label}: ${val.toLocaleString("es-MX")}`}
-                  />
-                );
-              })}
-            </div>
-            <span className="text-[10px] text-gray-500">{d.label}</span>
-          </div>
-        ))}
-      </div>
-      {/* Leyenda */}
-      <div className="flex items-center gap-4 flex-wrap">
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data} margin={{top: 4, right: 4, left: -20, bottom: 0}} barGap={2}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+        <XAxis dataKey="label" tick={{fill: "#64748b", fontSize: 11}} axisLine={false} tickLine={false} />
+        <YAxis tick={{fill: "#64748b", fontSize: 10}} axisLine={false} tickLine={false} width={40} />
+        <Tooltip content={<DarkTooltip money={money} />} cursor={{fill: "#1e293b"}} />
+        <Legend wrapperStyle={{fontSize: "11px", color: "#94a3b8", paddingTop: "8px"}} />
         {series.map((s) => (
-          <div key={s.key} className="flex items-center gap-1.5">
-            <div className={`w-3 h-3 rounded-sm ${s.color}`} />
-            <span className="text-xs text-gray-400">{s.label}</span>
+          <Bar key={s.key} dataKey={s.key} name={s.label}
+            fill={COLORS[s.color] || "#64748b"} radius={[3, 3, 0, 0]} maxBarSize={28} />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// AreaChart para finanzas (ingresos vs egresos con gradiente)
+function FinanceAreaChart({data = []}) {
+  if (!data.length) return null;
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <AreaChart data={data} margin={{top: 8, right: 4, left: -10, bottom: 0}}>
+        <defs>
+          <linearGradient id="gradIngresos" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="gradEgresos" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="gradDonaciones" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+        <XAxis dataKey="label" tick={{fill: "#64748b", fontSize: 11}} axisLine={false} tickLine={false} />
+        <YAxis tick={{fill: "#64748b", fontSize: 10}} axisLine={false} tickLine={false} width={50}
+          tickFormatter={(v) => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`} />
+        <Tooltip content={<DarkTooltip money />} />
+        <Legend wrapperStyle={{fontSize: "11px", color: "#94a3b8", paddingTop: "8px"}} />
+        <Area type="monotone" dataKey="ingresos" name="Ingresos" stroke="#22c55e" strokeWidth={2}
+          fill="url(#gradIngresos)" dot={false} activeDot={{r: 4}} />
+        <Area type="monotone" dataKey="egresos" name="Egresos" stroke="#ef4444" strokeWidth={2}
+          fill="url(#gradEgresos)" dot={false} activeDot={{r: 4}} />
+        <Area type="monotone" dataKey="donaciones" name="Diezmos" stroke="#a855f7" strokeWidth={2}
+          fill="url(#gradDonaciones)" dot={false} activeDot={{r: 4}} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+// PieChart para distribuciones (género, estado, edad)
+const PIE_COLORS = ["#3b82f6", "#ec4899", "#f59e0b", "#22c55e", "#a855f7", "#06b6d4", "#64748b"];
+function DistPieChart({data = [], nameKey = "name", valueKey = "value"}) {
+  if (!data.length) return null;
+  const total = data.reduce((s, d) => s + parseInt(d[valueKey] || 0), 0);
+  return (
+    <div className="flex items-center gap-4">
+      <ResponsiveContainer width={120} height={120}>
+        <PieChart>
+          <Pie data={data} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%"
+            innerRadius={32} outerRadius={54} paddingAngle={3} strokeWidth={0}>
+            {data.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+          </Pie>
+          <Tooltip content={<DarkTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="flex-1 space-y-2">
+        {data.map((d, i) => (
+          <div key={i} className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{background: PIE_COLORS[i % PIE_COLORS.length]}} />
+              <span className="text-gray-300 text-sm truncate">{d[nameKey]}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-white text-sm font-semibold">{parseInt(d[valueKey] || 0)}</span>
+              <span className="text-gray-500 text-xs w-10 text-right">
+                {total > 0 ? ((parseInt(d[valueKey] || 0) / total) * 100).toFixed(0) + "%" : ""}
+              </span>
+            </div>
           </div>
         ))}
       </div>
@@ -260,6 +324,7 @@ const TABS = [
   {id: "donations", label: "Diezmos", icon: Heart},
   {id: "baptisms", label: "Bautismos", icon: Droplet},
   {id: "attendance", label: "Asistencia", icon: Calendar},
+  {id: "prayer", label: "Días de Oración", icon: Flame},
 ];
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -298,6 +363,12 @@ export default function ReportsPage() {
   // attendance
   const [attendanceData, setAttendanceData] = useState(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  // prayer
+  const [prayerStart, setPrayerStart] = useState("");
+  const [prayerEnd, setPrayerEnd] = useState("");
+  const [prayerData, setPrayerData] = useState(null);
+  const [prayerLoading, setPrayerLoading] = useState(false);
 
   // ─── Fetch helpers ─────────────────────────────────────────────────────────
   const fetchOverview = useCallback(async () => {
@@ -380,6 +451,21 @@ export default function ReportsPage() {
     setAttendanceLoading(false);
   }, []);
 
+  const fetchPrayer = useCallback(async () => {
+    setPrayerLoading(true);
+    try {
+      setPrayerData(
+        await prayerService.getReports(
+          prayerStart || undefined,
+          prayerEnd || undefined,
+        ),
+      );
+    } catch {
+      /* silent */
+    }
+    setPrayerLoading(false);
+  }, [prayerStart, prayerEnd]);
+
   // Carga de iglesia al montar
   useEffect(() => {
     settingsService
@@ -396,6 +482,7 @@ export default function ReportsPage() {
     if (activeTab === "donations" && !donData) fetchDonations();
     if (activeTab === "baptisms" && !baptismData) fetchBaptisms();
     if (activeTab === "attendance" && !attendanceData) fetchAttendance();
+    if (activeTab === "prayer" && !prayerData) fetchPrayer();
   }, [activeTab]); // eslint-disable-line
 
   // ─── Vista previa / Exportar PDF ─────────────────────────────────────────
@@ -427,6 +514,11 @@ export default function ReportsPage() {
       html = buildBaptismsReport(baptismData, church);
     if (activeTab === "attendance" && attendanceData)
       html = buildAttendanceReport(attendanceData, church);
+    if (activeTab === "prayer" && prayerData)
+      html = buildPrayerReport(prayerData, church, {
+        start: prayerStart,
+        end: prayerEnd,
+      });
     if (!html) return;
 
     const win = window.open("", "_blank", "width=960,height=720");
@@ -453,6 +545,7 @@ export default function ReportsPage() {
     donations: !!donData,
     baptisms: !!baptismData,
     attendance: !!attendanceData,
+    prayer: !!prayerData,
   };
 
   // Re-fetch al cambiar filtros
@@ -462,6 +555,9 @@ export default function ReportsPage() {
   useEffect(() => {
     if (activeTab === "donations") fetchDonations();
   }, [donStart, donEnd]); // eslint-disable-line
+  useEffect(() => {
+    if (activeTab === "prayer") fetchPrayer();
+  }, [prayerStart, prayerEnd]); // eslint-disable-line
   useEffect(() => {
     if (activeTab === "baptisms") fetchBaptisms();
   }, [baptismYear]); // eslint-disable-line
@@ -613,69 +709,48 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white text-base">
-                Distribución por Género
-              </CardTitle>
+              <CardTitle className="text-white text-base">Por Género</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               {byGender.length === 0 ? (
                 <p className="text-gray-500 text-sm">Sin datos</p>
               ) : (
-                byGender.map((g) => (
-                  <ProgressBar
-                    key={g.gender}
-                    label={GENDER_LABELS[g.gender] || g.gender}
-                    value={parseInt(g.count)}
-                    total={total}
-                    colorClass="bg-blue-500"
-                  />
-                ))
+                <DistPieChart
+                  data={byGender.map((g) => ({name: GENDER_LABELS[g.gender] || g.gender, value: parseInt(g.count)}))}
+                  nameKey="name" valueKey="value"
+                />
               )}
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white text-base">
-                Distribución por Estado
-              </CardTitle>
+              <CardTitle className="text-white text-base">Por Estado</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               {byStatus.length === 0 ? (
                 <p className="text-gray-500 text-sm">Sin datos</p>
               ) : (
-                byStatus.map((s) => (
-                  <ProgressBar
-                    key={s.status}
-                    label={s.status}
-                    value={parseInt(s.count)}
-                    total={total}
-                    colorClass={STATUS_COLORS[s.status] || "bg-slate-500"}
-                  />
-                ))
+                <DistPieChart
+                  data={byStatus.map((s) => ({name: s.status, value: parseInt(s.count)}))}
+                  nameKey="name" valueKey="value"
+                />
               )}
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white text-base">
-                Distribución por Grupo de Edad
-              </CardTitle>
+              <CardTitle className="text-white text-base">Por Grupo de Edad</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               {byAgeGroup.length === 0 ? (
                 <p className="text-gray-500 text-sm">Sin datos</p>
               ) : (
-                byAgeGroup.map((a) => (
-                  <ProgressBar
-                    key={a.age_group}
-                    label={a.age_group}
-                    value={parseInt(a.count)}
-                    total={total}
-                    colorClass={AGE_GROUP_COLORS[a.age_group] || "bg-slate-500"}
-                  />
-                ))
+                <DistPieChart
+                  data={byAgeGroup.map((a) => ({name: a.age_group, value: parseInt(a.count)}))}
+                  nameKey="name" valueKey="value"
+                />
               )}
             </CardContent>
           </Card>
@@ -753,7 +828,7 @@ export default function ReportsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <MultiBarChart data={monthlyChartData} series={FINANCE_SERIES} />
+              <FinanceAreaChart data={monthlyChartData} />
             </CardContent>
           </Card>
         )}
@@ -993,7 +1068,7 @@ export default function ReportsPage() {
                 Sin bautismos registrados en {year}
               </p>
             ) : (
-              <CssBarChart data={monthlyData} colorClass="bg-cyan-500" />
+              <MonthBarChart data={monthlyData} color="#06b6d4" />
             )}
           </CardContent>
         </Card>
@@ -1189,6 +1264,198 @@ export default function ReportsPage() {
     );
   };
 
+  const renderPrayer = () => {
+    if (prayerLoading) return <Spinner />;
+    if (!prayerData) return null;
+
+    const {stats, byMonth = [], topSessions = [], byWeekday = []} = prayerData;
+
+    const DAY_LABELS = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+    ];
+
+    const maxWeekday = Math.max(
+      ...byWeekday.map((d) => parseInt(d.total_attendance || 0)),
+      1,
+    );
+
+    const PRAYER_SERIES = [
+      {
+        key: "total_attendance",
+        label: "Total Asistencias",
+        color: "bg-amber-500",
+      },
+      {
+        key: "sessions",
+        label: "Sesiones",
+        color: "bg-blue-500",
+      },
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Filters */}
+        <Card className="bg-slate-800 border-slate-700">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-sm text-gray-300 mb-2 block">
+                  Fecha Inicio
+                </label>
+                <Input
+                  type="date"
+                  value={prayerStart}
+                  onChange={(e) => setPrayerStart(e.target.value)}
+                  className="bg-slate-900 border-slate-600 text-white"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-sm text-gray-300 mb-2 block">
+                  Fecha Fin
+                </label>
+                <Input
+                  type="date"
+                  value={prayerEnd}
+                  onChange={(e) => setPrayerEnd(e.target.value)}
+                  className="bg-slate-900 border-slate-600 text-white"
+                />
+              </div>
+              <Button
+                onClick={fetchPrayer}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                Filtrar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MetricCard
+            label="Total Sesiones"
+            value={stats?.total_sessions || 0}
+            icon={Flame}
+            color="amber"
+          />
+          <MetricCard
+            label="Total Asistencias"
+            value={stats?.total_attendance || 0}
+            icon={Users}
+            color="blue"
+          />
+          <MetricCard
+            label="Promedio por Sesión"
+            value={stats?.avg_attendance || 0}
+            icon={TrendingUp}
+            color="cyan"
+          />
+        </div>
+
+        {/* Monthly Chart */}
+        {byMonth.length > 0 && (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base">
+                Asistencia Mensual
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MultiBarChart data={byMonth} series={PRAYER_SERIES} />
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* By Weekday */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base">
+                Asistencia por Día de la Semana
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {byWeekday.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sin datos</p>
+              ) : (
+                byWeekday.map((d) => (
+                  <div key={d.day_of_week} className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm">
+                        {DAY_LABELS[d.day_of_week] || `Día ${d.day_of_week}`}
+                      </span>
+                      <span className="text-white text-sm font-semibold">
+                        {parseInt(d.total_attendance || 0).toLocaleString()}
+                        <span className="text-gray-500 font-normal ml-1 text-xs">
+                          ({d.sessions} sesiones)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${(parseInt(d.total_attendance || 0) / maxWeekday) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Sessions */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-400" />
+                Sesiones con Mayor Asistencia
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {topSessions.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sin datos</p>
+              ) : (
+                topSessions.map((s, i) => (
+                  <div
+                    key={s.occurrence_date}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-700/40"
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                        ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-gray-400 text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-slate-600 text-gray-300"}`}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-200 text-sm font-medium truncate">
+                        {s.prayer_day_name || "Día de Oración"}
+                      </p>
+                      <p className="text-gray-500 text-xs">
+                        {fmtDate(s.occurrence_date)}
+                        {s.guest_count > 0 && ` · ${s.guest_count} invitados`}
+                      </p>
+                    </div>
+                    <span className="text-white text-sm font-semibold shrink-0">
+                      {parseInt(s.attendance_count || 0).toLocaleString()}
+                    </span>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -1257,6 +1524,7 @@ export default function ReportsPage() {
         {activeTab === "donations" && renderDonations()}
         {activeTab === "baptisms" && renderBaptisms()}
         {activeTab === "attendance" && renderAttendance()}
+        {activeTab === "prayer" && renderPrayer()}
       </div>
     </div>
   );

@@ -27,6 +27,8 @@ import CommunionPage from "@/pages/CommunionPage";
 import PrayerPage from "@/pages/PrayerPage";
 import ProfilePage from "@/pages/ProfilePage";
 import LettersPage from "@/pages/LettersPage";
+import ConferencePage from "@/pages/ConferencePage";
+import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 
 function App() {
   return (
@@ -224,6 +226,26 @@ function App() {
               }
             />
 
+            <Route
+              path="/dashboard/conference"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <ConferencePage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/conference/:id"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <ConferenceDetailPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard/profile"
               element={

@@ -491,6 +491,88 @@ export function buildAttendanceReport(data, church = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// 7. REPORTE DE DÍAS DE ORACIÓN
+// ─────────────────────────────────────────────────────────────────────────
+export function buildPrayerReport(data, church = {}, dateRange = {}) {
+  const { stats, byMonth = [], topSessions = [], byWeekday = [] } = data;
+  const DAY_LABELS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+  const maxWeekday = Math.max(...byWeekday.map((d) => parseInt(d.total_attendance || 0)), 1);
+
+  const periodLabel = dateRange.start && dateRange.end
+    ? `${dateRange.start} — ${dateRange.end}`
+    : dateRange.start
+      ? `Desde ${dateRange.start}`
+      : dateRange.end
+        ? `Hasta ${dateRange.end}`
+        : "Histórico completo";
+
+  // Gráfico mensual
+  const monthlyRows = byMonth.length === 0
+    ? `<p style="color:#94a3b8;font-size:12px;text-align:center;padding:16px">Sin datos en el período seleccionado</p>`
+    : byMonth.map((m) => {
+      const sessions = parseInt(m.sessions || 0);
+      const attendance = parseInt(m.total_attendance || 0);
+      const maxVal = Math.max(...byMonth.map(x => parseInt(x.total_attendance || 0)), 1);
+      return `<div class="bar-row">
+          <div class="bar-lbl">${m.month}</div>
+          <div class="bar-wrap">
+            <div class="bar" style="background:#f59e0b;width:${(attendance / maxVal) * 100}%"></div>
+          </div>
+          <div class="bar-val">${attendance.toLocaleString()} <span style="color:#94a3b8;font-size:10px">(${sessions} ses.)</span></div>
+        </div>`;
+    }).join("");
+
+  // Asistencia por día de la semana
+  const weekdayRows = byWeekday.length === 0
+    ? `<p style="color:#94a3b8;font-size:12px">Sin datos</p>`
+    : byWeekday.map((d) => `<div class="bar-row">
+        <div class="bar-lbl">${DAY_LABELS[d.day_of_week] || `Día ${d.day_of_week}`}</div>
+        <div class="bar-wrap"><div class="bar" style="background:#f59e0b;width:${(parseInt(d.total_attendance || 0) / maxWeekday) * 100}%"></div></div>
+        <div class="bar-val">${parseInt(d.total_attendance || 0).toLocaleString()} <span style="color:#94a3b8;font-size:10px">(${d.sessions} ses.)</span></div>
+      </div>`).join("");
+
+  // Top sesiones
+  const topRows = topSessions.length === 0
+    ? `<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">Sin datos</td></tr>`
+    : topSessions.map((s, i) => {
+      const medals = ["🥇", "🥈", "🥉"];
+      const fmtDate = s.occurrence_date ? s.occurrence_date.split("T")[0].split("-").reverse().join("/") : "—";
+      const guestInfo = s.guest_count > 0 ? ` · ${s.guest_count} invitado${s.guest_count > 1 ? 's' : ''}` : '';
+      return `<tr>
+          <td style="text-align:center;font-weight:700">${medals[i] || i + 1}</td>
+          <td>${s.prayer_day_name || "Día de Oración"}</td>
+          <td>${fmtDate}${guestInfo}</td>
+          <td style="text-align:right;font-weight:600">${parseInt(s.attendance_count || 0).toLocaleString()}</td>
+        </tr>`;
+    }).join("");
+
+  return doc("Reporte de Días de Oración", `
+    ${hdr("Reporte de Días de Oración", "Estadísticas de asistencia a días de oración", periodLabel, church)}
+
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">Total Sesiones</div><div class="metric-val">${stats?.total_sessions || 0}</div></div>
+      <div class="metric"><div class="metric-lbl">Total Asistencias</div><div class="metric-val">${parseInt(stats?.total_attendance || 0).toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-lbl">Promedio por Sesión</div><div class="metric-val">${parseFloat(stats?.avg_attendance || 0).toFixed(1)}</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="section"><h2>Asistencia Mensual</h2>${monthlyRows}</div>
+      <div class="section"><h2>Por Día de la Semana</h2>${weekdayRows}</div>
+    </div>
+
+    <div class="section">
+      <h2>Sesiones con Mayor Asistencia</h2>
+      <table>
+        <thead><tr><th style="text-align:center">#</th><th>Día de Oración</th><th>Fecha</th><th style="text-align:right">Asistencia</th></tr></thead>
+        <tbody>${topRows}</tbody>
+      </table>
+    </div>
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // 8. LISTA DE ASISTENCIA — EVENTO ESPECÍFICO
 // ─────────────────────────────────────────────────────────────────────────
 export function buildEventAttendancePDF(event, attendees = [], guestCount = 0, church = {}) {
@@ -651,7 +733,7 @@ export function buildLeadersDirectoryPDF(leaders = [], church = {}) {
 // ─────────────────────────────────────────────────────────────────────────
 // 12. CERTIFICADO DE BAUTISMO INDIVIDUAL
 // ─────────────────────────────────────────────────────────────────────────
-export function buildBaptismCertificate(baptismData, churchName = "Iglesia Cristiana") {
+export function buildBaptismCertificate(baptismData, churchName = "Iglesia Cristiana", logoUrl = null) {
   const { first_name, last_name, baptism_date, minister, place } = baptismData;
 
   const formatFullDate = (dateStr) => {
@@ -726,6 +808,16 @@ export function buildBaptismCertificate(baptismData, churchName = "Iglesia Crist
       border-right:1px solid #e8d07a;
       padding-right:20px;
       margin-right:28px;
+    }
+    .church-logo{
+      width:90px;height:90px;
+      object-fit:cover;
+      margin-bottom:8px;
+      border-radius:50%;
+      border:3px solid #c9a227;
+      box-shadow:0 0 0 2px #fffdf5, 0 4px 12px rgba(201,162,39,0.3);
+      background:#fffdf5;
+      padding:2px;
     }
     .lp-cross{
       font-size:72px;color:#c9a227;
@@ -912,7 +1004,7 @@ export function buildBaptismCertificate(baptismData, churchName = "Iglesia Crist
   <div class="body-row">
     <!-- Left decorative column -->
     <div class="left-panel">
-      <div class="lp-cross">✝</div>
+      ${logoUrl ? `<img src="${logoUrl}" alt="Logo Iglesia" class="church-logo">` : '<div class="lp-cross">✝</div>'}
       <div class="lp-line"></div>
       <div class="lp-ornament">❧</div>
     </div>
