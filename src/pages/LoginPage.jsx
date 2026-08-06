@@ -41,26 +41,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo y título */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg mb-4">
             <Church className="h-9 w-9 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Sistema de Control Eclesiástico
           </h1>
-          <p className="text-gray-400">Inicia sesión para continuar</p>
+          <p className="text-muted-foreground">Inicia sesión para continuar</p>
         </div>
 
         {/* Card de login */}
-        <Card className="shadow-xl border-slate-700 bg-slate-800">
+        <Card className="shadow-xl border-border bg-card">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold text-center text-white">
+            <CardTitle className="text-2xl font-bold text-center text-foreground">
               Bienvenido
             </CardTitle>
-            <CardDescription className="text-center text-gray-400">
+            <CardDescription className="text-center text-muted-foreground">
               Ingresa tus credenciales para acceder
             </CardDescription>
           </CardHeader>
@@ -68,7 +68,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Error message */}
               {error && (
-                <div className="bg-red-900/20 border border-red-800 text-red-300 rounded-lg p-3 flex items-start space-x-2">
+                <div className="bg-red-500/10 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg p-3 flex items-start space-x-2">
                   <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                   <span className="text-sm">{error}</span>
                 </div>
@@ -78,12 +78,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="email"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-muted-foreground"
                 >
                   Correo electrónico
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -101,12 +101,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-muted-foreground"
                 >
                   Contraseña
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
@@ -139,20 +139,20 @@ export default function LoginPage() {
 
             {/* Footer */}
             <div className="mt-6 text-center space-y-3">
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 ¿No tienes una cuenta?{" "}
                 <Link
                   to="/register"
-                  className="text-blue-400 hover:text-blue-300 hover:underline font-medium"
+                  className="text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 hover:underline font-medium"
                 >
                   Registra tu iglesia aquí
                 </Link>
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 ¿Necesitas ayuda?{" "}
                 <a
                   href="#"
-                  className="text-blue-400 hover:text-blue-300 hover:underline font-medium"
+                  className="text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 hover:underline font-medium"
                 >
                   Contacta al administrador
                 </a>
@@ -162,7 +162,7 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer text */}
-        <p className="mt-8 text-center text-sm text-gray-600">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           © 2026 Sistema de Control Eclesiástico. Todos los derechos reservados.
         </p>
       </div>

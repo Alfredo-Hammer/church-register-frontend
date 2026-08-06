@@ -34,16 +34,16 @@ import {useAuth} from "@/contexts/AuthContext";
 const ROLES = ["ADMIN", "PASTOR", "TESORERO", "LIDER"];
 
 const ROLE_BADGE = {
-  ADMIN: "bg-red-500/20 text-red-300 border-red-500/30",
-  PASTOR: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-  TESORERO: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-  LIDER: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  ADMIN: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30",
+  PASTOR: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30",
+  TESORERO: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  LIDER: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30",
 };
 
 function RoleBadge({role}) {
   return (
     <span
-      className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${ROLE_BADGE[role] || "bg-slate-500/20 text-gray-300 border-slate-500/30"}`}
+      className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${ROLE_BADGE[role] || "bg-muted text-muted-foreground border-border"}`}
     >
       {role}
     </span>
@@ -60,7 +60,7 @@ function Toast({msg, type, onClose}) {
   return (
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border
-      ${isErr ? "bg-red-900/90 border-red-700 text-red-200" : "bg-green-900/90 border-green-700 text-green-200"}`}
+      ${isErr ? "bg-red-500/10 dark:bg-red-900/90 border-red-300 dark:border-red-700 text-red-700 dark:text-red-200" : "bg-green-500/10 dark:bg-green-900/90 border-green-300 dark:border-green-700 text-green-700 dark:text-green-200"}`}
     >
       {isErr ? (
         <AlertCircle className="w-5 h-5 shrink-0" />
@@ -83,12 +83,12 @@ function PasswordInput({value, onChange, placeholder, name}) {
         onChange={onChange}
         placeholder={placeholder}
         autoComplete="new-password"
-        className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500 pr-10"
+        className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500 pr-10"
       />
       <button
         type="button"
         onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
       >
         {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
@@ -380,16 +380,16 @@ export default function SettingsPage() {
   const renderProfile = () => (
     <div className="space-y-6 max-w-xl md:max-w-2xl lg:max-w-3xl">
       {/* Info de sesión actual */}
-      <div className="flex items-center gap-4 p-4 bg-slate-700/40 rounded-xl border border-slate-600">
+      <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl border border-border">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
           {(profile?.fullName || user?.fullName)?.charAt(0)?.toUpperCase() ||
             "U"}
         </div>
         <div>
-          <p className="text-white font-semibold text-lg">
+          <p className="text-foreground font-semibold text-lg">
             {profile?.fullName || user?.fullName}
           </p>
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             {profile?.email || user?.email}
           </p>
           <RoleBadge role={profile?.role || user?.role} />
@@ -397,17 +397,17 @@ export default function SettingsPage() {
       </div>
 
       {/* Editar nombre */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white text-base flex items-center gap-2">
-            <User className="w-4 h-4 text-violet-400" />
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <User className="w-4 h-4 text-violet-700 dark:text-violet-400" />
             Información Personal
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleProfileSave} className="space-y-4">
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Nombre Completo
               </label>
               <Input
@@ -416,19 +416,19 @@ export default function SettingsPage() {
                   setProfForm((f) => ({...f, fullName: e.target.value}))
                 }
                 placeholder="Tu nombre completo"
-                className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500"
+                className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
               />
             </div>
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Email
               </label>
               <Input
                 value={profile?.email || user?.email || ""}
                 disabled
-                className="bg-slate-700/50 border-slate-600 text-gray-500 cursor-not-allowed"
+                className="bg-muted/50 border-border text-muted-foreground cursor-not-allowed"
               />
-              <p className="text-gray-600 text-xs mt-1">
+              <p className="text-muted-foreground text-xs mt-1">
                 El email no puede modificarse.
               </p>
             </div>
@@ -453,17 +453,17 @@ export default function SettingsPage() {
       </Card>
 
       {/* Cambiar contraseña */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white text-base flex items-center gap-2">
-            <Lock className="w-4 h-4 text-violet-400" />
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Lock className="w-4 h-4 text-violet-700 dark:text-violet-400" />
             Cambiar Contraseña
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePasswordSave} className="space-y-4">
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Contraseña Actual
               </label>
               <PasswordInput
@@ -476,7 +476,7 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Nueva Contraseña
               </label>
               <PasswordInput
@@ -489,7 +489,7 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Confirmar Nueva Contraseña
               </label>
               <PasswordInput
@@ -526,17 +526,17 @@ export default function SettingsPage() {
   const renderChurch = () => (
     <div className="space-y-5 max-w-xl md:max-w-2xl lg:max-w-3xl">
       {/* Logo Card */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white text-base flex items-center gap-2">
-            <ImagePlus className="w-4 h-4 text-violet-400" />
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <ImagePlus className="w-4 h-4 text-violet-700 dark:text-violet-400" />
             Logo de la Iglesia
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Preview */}
-            <div className="w-24 h-24 rounded-2xl bg-slate-700 border-2 border-slate-600 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-24 h-24 rounded-2xl bg-background border-2 border-border flex items-center justify-center overflow-hidden shrink-0">
               {church?.logoUrl ? (
                 <img
                   src={church.logoUrl}
@@ -544,17 +544,17 @@ export default function SettingsPage() {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <span className="text-4xl text-slate-500">✝</span>
+                <span className="text-4xl text-muted-foreground">✝</span>
               )}
             </div>
             <div className="flex-1 space-y-3">
-              <p className="text-gray-400 text-sm">
+              <p className="text-muted-foreground text-sm">
                 El logo aparece en la barra lateral del sistema. Usa una imagen cuadrada en PNG o JPG (máx. 2MB).
               </p>
               {isAdmin && (
                 <div className="flex flex-wrap gap-2">
                   <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors
-                    ${logoUploading ? "bg-slate-700 text-gray-500 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
+                    ${logoUploading ? "bg-background text-muted-foreground cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
                     <ImagePlus className="w-4 h-4" />
                     {logoUploading ? "Subiendo..." : church?.logoUrl ? "Cambiar logo" : "Subir logo"}
                     <input
@@ -569,7 +569,7 @@ export default function SettingsPage() {
                     <button
                       disabled={logoUploading}
                       onClick={handleLogoDelete}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors disabled:opacity-40"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 transition-colors disabled:opacity-40"
                     >
                       <Trash className="w-4 h-4" />
                       Eliminar
@@ -583,10 +583,10 @@ export default function SettingsPage() {
       </Card>
 
       {/* Church data Card */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-white text-base flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-violet-400" />
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-violet-700 dark:text-violet-400" />
             Datos de la Iglesia
           </CardTitle>
           {isAdmin && !churchEditing && (
@@ -594,7 +594,7 @@ export default function SettingsPage() {
               variant="outline"
               size="sm"
               onClick={() => setChurchEditing(true)}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-violet-500"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-violet-500"
             >
               <Edit2 className="w-3.5 h-3.5 mr-1.5" />
               Editar
@@ -603,13 +603,13 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           {!church ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               Cargando información...
             </div>
           ) : churchEditing ? (
             <form onSubmit={handleChurchSave} className="space-y-4">
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Nombre de la Iglesia *
                 </label>
                 <Input
@@ -618,13 +618,13 @@ export default function SettingsPage() {
                     setChurchForm((f) => ({...f, name: e.target.value}))
                   }
                   placeholder="Nombre de la iglesia"
-                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
                 />
               </div>
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Dirección{" "}
-                  <span className="text-gray-500 font-normal">(opcional)</span>
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <Input
                   value={churchForm.address}
@@ -632,13 +632,13 @@ export default function SettingsPage() {
                     setChurchForm((f) => ({...f, address: e.target.value}))
                   }
                   placeholder="Dirección de la iglesia"
-                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
                 />
               </div>
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Teléfono{" "}
-                  <span className="text-gray-500 font-normal">(opcional)</span>
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <Input
                   value={churchForm.phone}
@@ -646,7 +646,7 @@ export default function SettingsPage() {
                     setChurchForm((f) => ({...f, phone: e.target.value}))
                   }
                   placeholder="Número de teléfono"
-                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
@@ -661,7 +661,7 @@ export default function SettingsPage() {
                       phone: church.phone || "",
                     });
                   }}
-                  className="border-slate-600 text-gray-300 hover:text-white"
+                  className="border-border text-muted-foreground hover:text-foreground"
                 >
                   Cancelar
                 </Button>
@@ -689,16 +689,16 @@ export default function SettingsPage() {
                 {label: "Teléfono", value: church.phone || "—"},
               ].map(({label, value}) => (
                 <div key={label} className="flex items-start gap-3">
-                  <span className="text-gray-500 text-sm w-24 shrink-0 pt-0.5">
+                  <span className="text-muted-foreground text-sm w-24 shrink-0 pt-0.5">
                     {label}
                   </span>
-                  <span className="text-white text-sm font-medium">
+                  <span className="text-foreground text-sm font-medium">
                     {value}
                   </span>
                 </div>
               ))}
               {!isAdmin && (
-                <p className="text-gray-600 text-xs mt-2 flex items-center gap-1">
+                <p className="text-muted-foreground text-xs mt-2 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Solo el ADMIN puede modificar estos datos.
                 </p>
@@ -713,7 +713,7 @@ export default function SettingsPage() {
   const renderUsers = () => {
     if (!isAdmin) {
       return (
-        <div className="text-center py-16 text-gray-500">
+        <div className="text-center py-16 text-muted-foreground">
           <ShieldCheck className="w-12 h-12 mx-auto mb-3 opacity-20" />
           <p className="text-lg font-medium">Acceso restringido</p>
           <p className="text-sm mt-1">
@@ -725,7 +725,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             {usersData?.length || 0} usuarios registrados
           </p>
           <Button
@@ -738,54 +738,54 @@ export default function SettingsPage() {
         </div>
 
         {!usersData ? (
-          <div className="text-center py-10 text-gray-500">
+          <div className="text-center py-10 text-muted-foreground">
             Cargando usuarios...
           </div>
         ) : (
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-700 text-left">
-                      <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <tr className="border-b border-border text-left">
+                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                         Usuario
                       </th>
-                      <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                         Email
                       </th>
-                      <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                         Rol
                       </th>
-                      <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider text-center">
+                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-center">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-700/50">
+                  <tbody className="divide-y divide-border">
                     {usersData.map((u) => (
                       <tr
                         key={u.id}
-                        className="hover:bg-slate-700/30 transition-colors"
+                        className="hover:bg-muted/50 transition-colors"
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold text-sm shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-700 dark:text-violet-400 font-bold text-sm shrink-0">
                               {u.fullName?.charAt(0)?.toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-white text-sm font-medium">
+                              <p className="text-foreground text-sm font-medium">
                                 {u.fullName}
                               </p>
                               {u.id === user?.userId && (
-                                <span className="text-xs text-violet-400">
+                                <span className="text-xs text-violet-700 dark:text-violet-400">
                                   (tú)
                                 </span>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-400 text-sm">
+                        <td className="px-4 py-3 text-muted-foreground text-sm">
                           {u.email}
                         </td>
                         <td className="px-4 py-3">
@@ -795,7 +795,7 @@ export default function SettingsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => openEditUser(u)}
-                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 flex items-center justify-center transition-colors"
+                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center transition-colors"
                               title="Editar"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -803,7 +803,7 @@ export default function SettingsPage() {
                             <button
                               onClick={() => confirmDeleteUser(u)}
                               disabled={u.id === user?.userId}
-                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                               title="Eliminar"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -827,13 +827,13 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
             <Settings className="w-5 h-5 text-white" />
           </span>
           Configuración
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Administra tu perfil, iglesia y usuarios del sistema
         </p>
       </div>
@@ -851,7 +851,7 @@ export default function SettingsPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 activeTab === t.id
                   ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
-                  : "bg-slate-700 text-gray-400 hover:text-white hover:bg-slate-600"
+                  : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -873,9 +873,9 @@ export default function SettingsPage() {
         open={userModal}
         onOpenChange={(open) => !open && setUserModal(false)}
       >
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-md w-full">
+        <DialogContent className="bg-card border-border max-w-md w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3 text-xl">
+            <DialogTitle className="text-foreground flex items-center gap-3 text-xl">
               <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </span>
@@ -884,7 +884,7 @@ export default function SettingsPage() {
           </DialogHeader>
           <form onSubmit={handleUserSave} className="mt-4 space-y-4">
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Nombre Completo
               </label>
               <Input
@@ -894,13 +894,13 @@ export default function SettingsPage() {
                 }
                 placeholder="Nombre completo"
                 required
-                className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500"
+                className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
               />
             </div>
 
             {!editUserId && (
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Email
                 </label>
                 <Input
@@ -911,14 +911,14 @@ export default function SettingsPage() {
                   }
                   placeholder="correo@ejemplo.com"
                   required
-                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
                 />
               </div>
             )}
 
             {!editUserId && (
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Contraseña
                 </label>
                 <PasswordInput
@@ -933,7 +933,7 @@ export default function SettingsPage() {
             )}
 
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Rol
               </label>
               <div className="relative">
@@ -942,7 +942,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setUserForm((f) => ({...f, role: e.target.value}))
                   }
-                  className="w-full px-3 py-2 pr-8 bg-slate-700 border border-slate-600 text-white rounded-md text-sm focus:outline-none focus:border-violet-500 appearance-none"
+                  className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-violet-500 appearance-none"
                 >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -950,20 +950,20 @@ export default function SettingsPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               </div>
-              <p className="text-gray-600 text-xs mt-1">
+              <p className="text-muted-foreground text-xs mt-1">
                 ADMIN: acceso total · PASTOR: gestión pastoral · TESORERO:
                 finanzas · LIDER: solo lectura
               </p>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+            <div className="flex justify-end gap-3 pt-2 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setUserModal(false)}
-                className="border-slate-600 text-gray-300 hover:text-white"
+                className="border-border text-muted-foreground hover:text-foreground"
               >
                 Cancelar
               </Button>
@@ -988,18 +988,18 @@ export default function SettingsPage() {
         open={deleteUserModal}
         onOpenChange={(open) => !open && setDeleteUserModal(false)}
       >
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-sm w-full">
+        <DialogContent className="bg-card border-border max-w-sm w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3">
+            <DialogTitle className="text-foreground flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
               </span>
               Confirmar eliminación
             </DialogTitle>
           </DialogHeader>
-          <p className="mt-3 text-gray-300 text-sm">
+          <p className="mt-3 text-muted-foreground text-sm">
             ¿Eliminar al usuario{" "}
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               {deleteUserTarget?.fullName}
             </span>
             ? Esta acción no puede deshacerse.
@@ -1008,7 +1008,7 @@ export default function SettingsPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteUserModal(false)}
-              className="border-slate-600 text-gray-300 hover:text-white"
+              className="border-border text-muted-foreground hover:text-foreground"
             >
               Cancelar
             </Button>

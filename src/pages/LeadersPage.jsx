@@ -75,23 +75,23 @@ const AREAS = [
 ];
 
 const AREA_COLORS = {
-  Pastoral: "bg-violet-500/15 text-violet-300 border-violet-500/25",
+  Pastoral: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/25",
   "Adoración / Alabanza":
-    "bg-yellow-500/15 text-yellow-300 border-yellow-500/25",
-  Jóvenes: "bg-blue-500/15 text-blue-300 border-blue-500/25",
-  Niños: "bg-pink-500/15 text-pink-300 border-pink-500/25",
+    "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/25",
+  Jóvenes: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/25",
+  Niños: "bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-500/25",
   "Células / Grupos Pequeños":
-    "bg-teal-500/15 text-teal-300 border-teal-500/25",
-  Evangelismo: "bg-orange-500/15 text-orange-300 border-orange-500/25",
-  Misiones: "bg-red-500/15 text-red-300 border-red-500/25",
-  Finanzas: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
-  Administración: "bg-slate-500/15 text-slate-300 border-slate-500/25",
-  Damas: "bg-rose-500/15 text-rose-300 border-rose-500/25",
-  Varones: "bg-cyan-500/15 text-cyan-300 border-cyan-500/25",
-  Parejas: "bg-indigo-500/15 text-indigo-300 border-indigo-500/25",
+    "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/25",
+  Evangelismo: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/25",
+  Misiones: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/25",
+  Finanzas: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25",
+  Administración: "bg-muted text-muted-foreground border-border",
+  Damas: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25",
+  Varones: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/25",
+  Parejas: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/25",
 };
 const areaColor = (area) =>
-  AREA_COLORS[area] || "bg-slate-500/15 text-slate-300 border-slate-500/25";
+  AREA_COLORS[area] || "bg-muted text-muted-foreground border-border";
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 
@@ -156,17 +156,17 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-md bg-slate-800 border-l border-slate-700 h-full flex flex-col overflow-hidden shadow-2xl"
+        className="relative w-full max-w-md bg-card border-l border-border h-full flex flex-col overflow-hidden shadow-2xl"
         style={{animation: "slideInRight .25s ease-out"}}
       >
         {/* Top bar */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 shrink-0">
-          <span className="text-sm text-gray-400 font-medium">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <span className="text-sm text-muted-foreground font-medium">
             Perfil del Líder
           </span>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition-colors"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -175,7 +175,7 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
           {/* Avatar + name */}
-          <div className="flex flex-col items-center px-5 pt-8 pb-5 border-b border-slate-700">
+          <div className="flex flex-col items-center px-5 pt-8 pb-5 border-b border-border">
             {/* Crown badge over avatar */}
             <div className="relative mb-1">
               <LeaderAvatar leader={leader} size="lg" />
@@ -183,11 +183,11 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
                 <Crown className="w-3.5 h-3.5 text-white" />
               </span>
             </div>
-            <h2 className="mt-3 text-xl font-bold text-white text-center">
+            <h2 className="mt-3 text-xl font-bold text-foreground text-center">
               {leader.firstName} {leader.lastName}
             </h2>
             {leader.position && (
-              <p className="text-amber-400 font-medium text-sm mt-1">
+              <p className="text-amber-700 dark:text-amber-400 font-medium text-sm mt-1">
                 {leader.position}
               </p>
             )}
@@ -202,8 +202,8 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
               <span
                 className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
                   leader.status === "ACTIVO"
-                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                    : "bg-slate-500/15 text-slate-400 border-slate-500/30"
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                    : "bg-muted text-muted-foreground border-border"
                 }`}
               >
                 {leader.status}
@@ -213,17 +213,17 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
 
           {/* Quick contact */}
           {(leader.phone || leader.email) && (
-            <div className="px-5 py-4 border-b border-slate-700">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <div className="px-5 py-4 border-b border-border">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Contacto
               </h3>
               <div className="flex flex-wrap gap-2">
                 {leader.phone && (
                   <a
                     href={`tel:${leader.phone}`}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-200 text-sm transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background hover:bg-accent text-foreground text-sm transition-colors"
                   >
-                    <Phone className="w-4 h-4 text-blue-400" /> {leader.phone}
+                    <Phone className="w-4 h-4 text-blue-700 dark:text-blue-400" /> {leader.phone}
                   </a>
                 )}
                 {wa && (
@@ -231,7 +231,7 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
                     href={wa}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600/20 hover:bg-green-600/35 border border-green-600/30 text-green-300 text-sm transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600/20 hover:bg-green-600/35 border border-green-600/30 text-green-700 dark:text-green-300 text-sm transition-colors"
                   >
                     <svg
                       className="w-4 h-4"
@@ -246,9 +246,9 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
                 {leader.email && (
                   <a
                     href={`mailto:${leader.email}`}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-200 text-sm transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background hover:bg-accent text-foreground text-sm transition-colors"
                   >
-                    <Mail className="w-4 h-4 text-violet-400" /> {leader.email}
+                    <Mail className="w-4 h-4 text-violet-700 dark:text-violet-400" /> {leader.email}
                   </a>
                 )}
               </div>
@@ -257,7 +257,7 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
 
           {/* Info */}
           <div className="px-5 py-4 space-y-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Información
             </h3>
             {leader.groupName && (
@@ -280,7 +280,7 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
               value={leader.memberStatus}
             />
             {leader.notes && (
-              <div className="mt-3 p-3 bg-slate-700/50 rounded-lg text-sm text-gray-300 border-l-2 border-amber-500 italic">
+              <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground border-l-2 border-amber-500 italic">
                 {leader.notes}
               </div>
             )}
@@ -288,7 +288,7 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
         </div>
 
         {/* Footer actions */}
-        <div className="px-5 py-4 border-t border-slate-700 flex gap-3 shrink-0">
+        <div className="px-5 py-4 border-t border-border flex gap-3 shrink-0">
           <Button
             onClick={() => onEdit(leader)}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
@@ -298,7 +298,7 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
           <Button
             onClick={() => onDelete(leader)}
             variant="outline"
-            className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500"
+            className="border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10 hover:border-red-500"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -312,10 +312,10 @@ function DetailPanel({leader, onClose, onEdit, onDelete}) {
 function InfoRow({icon, label, value}) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-gray-500 mt-0.5 shrink-0">{icon}</span>
+      <span className="text-muted-foreground mt-0.5 shrink-0">{icon}</span>
       <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm text-gray-200 mt-0.5">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm text-foreground mt-0.5">{value}</p>
       </div>
     </div>
   );
@@ -372,7 +372,7 @@ function MemberPicker({value, onChange, excludeIds = []}) {
   return (
     <div ref={ref} className="relative">
       {value.memberName ? (
-        <div className="flex items-center gap-2 px-3 py-2 bg-slate-700 border border-slate-600 rounded-md">
+        <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-md">
           <div
             className={`w-7 h-7 rounded-full shrink-0 overflow-hidden bg-gradient-to-br ${grad(value.memberName)} flex items-center justify-center text-xs font-bold text-white`}
           >
@@ -382,33 +382,33 @@ function MemberPicker({value, onChange, excludeIds = []}) {
               .slice(0, 2)
               .join("")}
           </div>
-          <span className="text-white text-sm flex-1">{value.memberName}</span>
+          <span className="text-foreground text-sm flex-1">{value.memberName}</span>
           <button
             type="button"
             onClick={() => onChange({memberId: "", memberName: ""})}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       ) : (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setOpen(true)}
             placeholder="Buscar miembro..."
-            className="pl-9 bg-slate-700 border-slate-600 text-white placeholder-gray-500"
+            className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground"
           />
         </div>
       )}
 
       {open && !value.memberName && (
-        <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-slate-700 border border-slate-600 rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="px-3 py-2 border-b border-slate-600 flex items-center justify-between">
-            <span className="text-xs text-gray-500 font-medium">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-medium">
               Solo miembros activos
             </span>
             {loading && (
@@ -418,7 +418,7 @@ function MemberPicker({value, onChange, excludeIds = []}) {
 
           <div className="max-h-52 overflow-y-auto">
             {!loading && results.length === 0 && (
-              <p className="px-3 py-4 text-sm text-gray-500 text-center">
+              <p className="px-3 py-4 text-sm text-muted-foreground text-center">
                 {query.trim() ? "Sin resultados" : "No hay miembros activos"}
               </p>
             )}
@@ -427,7 +427,7 @@ function MemberPicker({value, onChange, excludeIds = []}) {
                 key={m.id}
                 type="button"
                 onClick={() => select(m)}
-                className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-slate-600 transition-colors text-left"
+                className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-accent transition-colors text-left"
               >
                 <div
                   className={`w-8 h-8 rounded-full shrink-0 overflow-hidden bg-gradient-to-br ${grad(m.first_name + m.last_name)} flex items-center justify-center text-xs font-bold text-white`}
@@ -443,17 +443,17 @@ function MemberPicker({value, onChange, excludeIds = []}) {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm text-white font-medium truncate">
+                  <p className="text-sm text-foreground font-medium truncate">
                     {m.first_name} {m.last_name}
                   </p>
                   {m.phone && (
-                    <p className="text-xs text-gray-400">{m.phone}</p>
+                    <p className="text-xs text-muted-foreground">{m.phone}</p>
                   )}
                 </div>
               </button>
             ))}
             {!loading && results.length === 10 && (
-              <p className="px-3 py-2 text-xs text-gray-600 text-center border-t border-slate-600">
+              <p className="px-3 py-2 text-xs text-muted-foreground text-center border-t border-border">
                 Escribe para filtrar más resultados
               </p>
             )}
@@ -487,10 +487,10 @@ function AddOptionDialog({open, onClose, label, onAdd}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-sm w-full">
+      <DialogContent className="bg-card border-border max-w-sm w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
-            <Plus className="w-4 h-4 text-amber-400" />
+          <DialogTitle className="text-foreground flex items-center gap-2">
+            <Plus className="w-4 h-4 text-amber-700 dark:text-amber-400" />
             Nuevo {label}
           </DialogTitle>
         </DialogHeader>
@@ -506,16 +506,16 @@ function AddOptionDialog({open, onClose, label, onAdd}) {
               e.key === "Enter" && (e.preventDefault(), handleSave())
             }
             placeholder={`Nombre del ${label.toLowerCase()}...`}
-            className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-amber-500"
+            className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-amber-500"
           />
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="text-red-700 dark:text-red-400 text-xs">{error}</p>}
         </div>
         <DialogFooter className="mt-4">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="border-slate-600 text-gray-300 hover:bg-slate-700"
+            className="border-border text-muted-foreground hover:bg-accent"
           >
             Cancelar
           </Button>
@@ -630,18 +630,18 @@ function LeaderModal({
   };
 
   const fieldCls =
-    "bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-violet-500";
+    "bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500";
   const selectCls =
-    "flex-1 px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500";
+    "flex-1 px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500";
 
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-w-lg w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white text-xl flex items-center gap-3">
+            <DialogTitle className="text-foreground text-xl flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                <Crown className="w-4 h-4 text-amber-400" />
+                <Crown className="w-4 h-4 text-amber-700 dark:text-amber-400" />
               </span>
               {editing ? "Editar Líder" : "Registrar Líder"}
             </DialogTitle>
@@ -649,25 +649,25 @@ function LeaderModal({
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             {error && (
-              <div className="flex items-start gap-2 p-3 bg-red-900/20 border border-red-800 rounded-lg text-red-300 text-sm">
+              <div className="flex items-start gap-2 p-3 bg-red-500/10 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {error}
               </div>
             )}
             {success && (
-              <div className="flex items-start gap-2 p-3 bg-green-900/20 border border-green-800 rounded-lg text-green-300 text-sm">
+              <div className="flex items-start gap-2 p-3 bg-green-500/10 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg text-green-700 dark:text-green-300 text-sm">
                 <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" /> {success}
               </div>
             )}
 
             {/* Member picker */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Miembro *
               </label>
               {editing ? (
-                <div className="px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-md text-gray-400 text-sm">
+                <div className="px-3 py-2 bg-muted/50 border border-border rounded-md text-muted-foreground text-sm">
                   {form.memberName}{" "}
-                  <span className="text-gray-600">(no se puede cambiar)</span>
+                  <span className="text-muted-foreground">(no se puede cambiar)</span>
                 </div>
               ) : (
                 <MemberPicker
@@ -680,7 +680,7 @@ function LeaderModal({
 
             {/* Position */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Posición / Cargo
               </label>
               <div className="flex gap-2">
@@ -700,7 +700,7 @@ function LeaderModal({
                   type="button"
                   onClick={() => setAddPos(true)}
                   title="Agregar nueva posición"
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-md bg-slate-700 border border-slate-600 text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
+                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-md bg-background border border-border text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -709,7 +709,7 @@ function LeaderModal({
 
             {/* Area */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Área / Ministerio
               </label>
               <div className="flex gap-2">
@@ -729,7 +729,7 @@ function LeaderModal({
                   type="button"
                   onClick={() => setAddArea(true)}
                   title="Agregar nueva área"
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-md bg-slate-700 border border-slate-600 text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
+                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-md bg-background border border-border text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -739,13 +739,13 @@ function LeaderModal({
             <div className="grid grid-cols-2 gap-4">
               {/* Group */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Grupo asignado
                 </label>
                 <select
                   value={form.groupId}
                   onChange={(e) => set("groupId", e.target.value)}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                 >
                   <option value="">Ninguno</option>
                   {groups.map((g) => (
@@ -757,13 +757,13 @@ function LeaderModal({
               </div>
               {/* Status */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Estado
                 </label>
                 <select
                   value={form.status}
                   onChange={(e) => set("status", e.target.value)}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                 >
                   <option value="ACTIVO">Activo</option>
                   <option value="INACTIVO">Inactivo</option>
@@ -773,7 +773,7 @@ function LeaderModal({
 
             {/* Start date */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Fecha de inicio en el liderazgo
               </label>
               <Input
@@ -786,13 +786,13 @@ function LeaderModal({
 
             {/* Notes */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">Notas</label>
+              <label className="text-sm font-medium text-muted-foreground">Notas</label>
               <textarea
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 rows={3}
                 placeholder="Notas o descripción del ministerio..."
-                className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
 
@@ -801,7 +801,7 @@ function LeaderModal({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                className="border-border text-muted-foreground hover:bg-accent"
               >
                 Cancelar
               </Button>
@@ -966,13 +966,13 @@ export default function LeadersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Crown className="w-5 h-5 text-amber-400" />
+              <Crown className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             </span>
             Líderes
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Gestiona el equipo de liderazgo de tu iglesia
           </p>
         </div>
@@ -981,7 +981,7 @@ export default function LeadersPage() {
             <Button
               variant="outline"
               onClick={handlePrint}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
             >
               <Printer className="w-4 h-4" /> PDF
             </Button>
@@ -1004,25 +1004,25 @@ export default function LeadersPage() {
             {
               label: "Total Líderes",
               value: stats.total,
-              color: "text-white",
+              color: "text-foreground",
               bg: "bg-amber-500/10 border-amber-500/20",
             },
             {
               label: "Activos",
               value: stats.activos,
-              color: "text-emerald-400",
+              color: "text-emerald-700 dark:text-emerald-400",
               bg: "bg-emerald-500/10 border-emerald-500/20",
             },
             {
               label: "Áreas activas",
               value: stats.areas,
-              color: "text-blue-400",
+              color: "text-blue-700 dark:text-blue-400",
               bg: "bg-blue-500/10 border-blue-500/20",
             },
           ].map((s) => (
             <div key={s.label} className={`rounded-xl p-4 border ${s.bg}`}>
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
             </div>
           ))}
         </div>
@@ -1031,18 +1031,18 @@ export default function LeadersPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o posición..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-slate-800 border-slate-600 text-white placeholder-gray-500"
+            className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="h-10 px-3 rounded-md border border-slate-600 bg-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-40"
+          className="h-10 px-3 rounded-md border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-40"
         >
           <option value="">Todos</option>
           <option value="ACTIVO">Activos</option>
@@ -1051,7 +1051,7 @@ export default function LeadersPage() {
         <select
           value={filterArea}
           onChange={(e) => setFilterArea(e.target.value)}
-          className="h-10 px-3 rounded-md border border-slate-600 bg-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-48"
+          className="h-10 px-3 rounded-md border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-48"
         >
           <option value="">Todas las áreas</option>
           {uniqueAreas.map((a) => (
@@ -1063,11 +1063,11 @@ export default function LeadersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700">
-          <span className="text-sm font-semibold text-white">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border">
+          <span className="text-sm font-semibold text-foreground">
             Equipo de Liderazgo
-            <span className="ml-2 text-gray-400 font-normal">
+            <span className="ml-2 text-muted-foreground font-normal">
               ({leaders.length})
             </span>
           </span>
@@ -1078,7 +1078,7 @@ export default function LeadersPage() {
             <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : leaders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Crown className="w-10 h-10 mb-3 opacity-30" />
             <p className="font-medium">No hay líderes registrados</p>
             <p className="text-sm mt-1">
@@ -1089,35 +1089,35 @@ export default function LeadersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-800/60">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                     Líder
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
                     Posición
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden md:table-cell">
                     Área
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
                     Contacto
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
                     Grupo
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                  <th className="text-right py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-border">
                 {leaders.map((l) => (
                   <tr
                     key={l.id}
-                    className="hover:bg-slate-700/40 transition-colors cursor-pointer"
+                    className="hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => setDetail(l)}
                   >
                     {/* Leader */}
@@ -1130,11 +1130,11 @@ export default function LeadersPage() {
                           </span>
                         </div>
                         <div>
-                          <p className="text-white font-medium text-sm">
+                          <p className="text-foreground font-medium text-sm">
                             {l.firstName} {l.lastName}
                           </p>
                           {l.startDate && (
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               Desde {fmtDate(l.startDate)}
                             </p>
                           )}
@@ -1144,7 +1144,7 @@ export default function LeadersPage() {
 
                     {/* Position */}
                     <td className="py-3 px-4 hidden sm:table-cell">
-                      <span className="text-sm text-gray-200">
+                      <span className="text-sm text-foreground">
                         {l.position || "—"}
                       </span>
                     </td>
@@ -1158,7 +1158,7 @@ export default function LeadersPage() {
                           {l.area}
                         </span>
                       ) : (
-                        <span className="text-gray-600 text-sm">—</span>
+                        <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </td>
 
@@ -1170,7 +1170,7 @@ export default function LeadersPage() {
                       <div className="space-y-1">
                         {l.phone && (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-muted-foreground">
                               {l.phone}
                             </span>
                             {l.phone && (
@@ -1178,7 +1178,7 @@ export default function LeadersPage() {
                                 href={`https://wa.me/${l.phone.replace(/\D/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-1 rounded bg-green-600/20 hover:bg-green-600/40 text-green-400 transition-colors"
+                                className="p-1 rounded bg-green-600/20 hover:bg-green-600/40 text-green-700 dark:text-green-400 transition-colors"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <svg
@@ -1193,12 +1193,12 @@ export default function LeadersPage() {
                           </div>
                         )}
                         {l.email && (
-                          <p className="text-xs text-gray-400 truncate max-w-[160px]">
+                          <p className="text-xs text-muted-foreground truncate max-w-[160px]">
                             {l.email}
                           </p>
                         )}
                         {!l.phone && !l.email && (
-                          <span className="text-gray-600 text-xs">—</span>
+                          <span className="text-muted-foreground text-xs">—</span>
                         )}
                       </div>
                     </td>
@@ -1206,12 +1206,12 @@ export default function LeadersPage() {
                     {/* Group */}
                     <td className="py-3 px-4 hidden lg:table-cell">
                       {l.groupName ? (
-                        <span className="text-xs text-blue-300 flex items-center gap-1">
+                        <span className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
                           <Users className="w-3 h-3" />
                           {l.groupName}
                         </span>
                       ) : (
-                        <span className="text-gray-600 text-sm">—</span>
+                        <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </td>
 
@@ -1220,8 +1220,8 @@ export default function LeadersPage() {
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                           l.status === "ACTIVO"
-                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                            : "bg-slate-500/15 text-slate-400 border-slate-500/30"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                            : "bg-muted text-muted-foreground border-border"
                         }`}
                       >
                         {l.status}
@@ -1237,13 +1237,13 @@ export default function LeadersPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openEdit(l)}
-                            className="p-2 text-blue-400 hover:bg-slate-600 rounded-lg transition-colors"
+                            className="p-2 text-blue-700 dark:text-blue-400 hover:bg-accent rounded-lg transition-colors"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeleteTarget(l)}
-                            className="p-2 text-red-400 hover:bg-slate-600 rounded-lg transition-colors"
+                            className="p-2 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1295,18 +1295,18 @@ export default function LeadersPage() {
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
       >
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-sm w-full">
+        <DialogContent className="bg-card border-border max-w-sm w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3">
+            <DialogTitle className="text-foreground flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
               </span>
               Confirmar eliminación
             </DialogTitle>
           </DialogHeader>
-          <p className="mt-3 text-gray-300 text-sm">
+          <p className="mt-3 text-muted-foreground text-sm">
             ¿Quitar a{" "}
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               {deleteTarget?.firstName} {deleteTarget?.lastName}
             </span>{" "}
             del equipo de liderazgo?
@@ -1315,7 +1315,7 @@ export default function LeadersPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteTarget(null)}
-              className="border-slate-600 text-gray-300 hover:text-white"
+              className="border-border text-muted-foreground hover:text-foreground"
             >
               Cancelar
             </Button>

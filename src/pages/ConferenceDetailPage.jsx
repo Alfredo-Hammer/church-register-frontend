@@ -18,11 +18,11 @@ import { generateProgramaPDF, generateCertificadoPDF } from "@/utils/pdf/confere
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const SESSION_TYPES = [
-  { value: "CLASE_BIBLICA",  label: "Clase Bíblica",      icon: GraduationCap, color: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
-  { value: "CULTO_ALABANZA", label: "Culto / Alabanza",    icon: Music2,        color: "bg-violet-500/20 text-violet-300 border-violet-500/40" },
-  { value: "ORACION",        label: "Oración",             icon: FlameKindling, color: "bg-amber-500/20 text-amber-300 border-amber-500/40" },
-  { value: "ESPECIAL",       label: "Especial",             icon: Star,          color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" },
-  { value: "OTRO",           label: "Otro",                 icon: MoreHorizontal,color: "bg-slate-500/20 text-slate-300 border-slate-500/40" },
+  { value: "CLASE_BIBLICA",  label: "Clase Bíblica",      icon: GraduationCap, color: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40" },
+  { value: "CULTO_ALABANZA", label: "Culto / Alabanza",    icon: Music2,        color: "bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/40" },
+  { value: "ORACION",        label: "Oración",             icon: FlameKindling, color: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40" },
+  { value: "ESPECIAL",       label: "Especial",             icon: Star,          color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
+  { value: "OTRO",           label: "Otro",                 icon: MoreHorizontal,color: "bg-muted text-muted-foreground border-border" },
 ];
 
 const typeConfig = (type) => SESSION_TYPES.find(t => t.value === type) || SESSION_TYPES[4];
@@ -286,7 +286,7 @@ export default function ConferenceDetailPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
-    <div className="flex justify-center items-center py-32 text-slate-500">
+    <div className="flex justify-center items-center py-32 text-muted-foreground">
       <Loader2 size={36} className="animate-spin" />
     </div>
   );
@@ -301,24 +301,24 @@ export default function ConferenceDetailPage() {
       {/* ── Back + Header ── */}
       <div>
         <button onClick={() => navigate('/dashboard/conference')}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-white text-sm mb-4 transition-colors">
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-4 transition-colors">
           <ArrowLeft size={16} /> Todas las conferencias
         </button>
 
-        <div className="bg-slate-800 rounded-xl border border-slate-700/50 p-5">
+        <div className="bg-card rounded-xl border border-border p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <BookOpen size={20} className="text-amber-400 flex-shrink-0" />
-                <h1 className="text-xl font-bold text-white truncate">{conference.name}</h1>
+                <BookOpen size={20} className="text-amber-700 dark:text-amber-400 flex-shrink-0" />
+                <h1 className="text-xl font-bold text-foreground truncate">{conference.name}</h1>
               </div>
               {conference.theme && (
-                <p className="text-slate-300 italic text-sm mb-1">{conference.theme}</p>
+                <p className="text-muted-foreground italic text-sm mb-1">{conference.theme}</p>
               )}
               {conference.theme_verse && (
-                <p className="text-slate-500 text-xs italic">"{conference.theme_verse}"</p>
+                <p className="text-muted-foreground text-xs italic">"{conference.theme_verse}"</p>
               )}
-              <div className="flex flex-wrap gap-3 mt-3 text-xs text-slate-400">
+              <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <CalendarDays size={12} />
                   {new Date(String(conference.start_date).slice(0,10) + 'T00:00:00').toLocaleDateString('es', { day:'numeric', month:'short', year:'numeric' })}
@@ -337,7 +337,7 @@ export default function ConferenceDetailPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex gap-1 bg-slate-800/50 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-muted/50 p-1 rounded-lg w-fit">
         {[
           { key: "programa",   label: "Programa",   icon: CalendarDays },
           { key: "asistentes", label: "Asistentes", icon: Users },
@@ -346,8 +346,8 @@ export default function ConferenceDetailPage() {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
               activeTab === key
-                ? "bg-slate-700 text-white shadow"
-                : "text-slate-400 hover:text-white"
+                ? "bg-background text-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
             )}>
             <Icon size={15} /> {label}
           </button>
@@ -361,7 +361,7 @@ export default function ConferenceDetailPage() {
         <div className="space-y-4">
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setAddDayDialog(true)}
-              className="flex items-center gap-2 text-sm border-slate-600 text-slate-300 hover:text-white hover:border-slate-400">
+              className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40">
               <Plus size={14} /> Agregar Día
             </Button>
             <Button variant="outline" disabled={pdfLoading === 'programa'}
@@ -370,7 +370,7 @@ export default function ConferenceDetailPage() {
                 () => setPdfLoading('programa'),
                 () => setPdfLoading(null),
               )}
-              className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-400 hover:text-emerald-300 hover:border-emerald-500 disabled:opacity-50">
+              className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 dark:text-emerald-300 hover:border-emerald-500 disabled:opacity-50">
               {pdfLoading === 'programa'
                 ? <Loader2 size={14} className="animate-spin" />
                 : <FileDown size={14} />}
@@ -379,9 +379,9 @@ export default function ConferenceDetailPage() {
           </div>
 
           {days.length === 0 ? (
-            <div className="bg-slate-800 rounded-xl border border-slate-700/50 p-12 text-center text-slate-500">
+            <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
               <CalendarDays size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium text-slate-400">Sin días en el programa</p>
+              <p className="font-medium text-muted-foreground">Sin días en el programa</p>
               <p className="text-sm mt-1">Usa "Agregar Día" para construir el calendario</p>
             </div>
           ) : (
@@ -389,18 +389,18 @@ export default function ConferenceDetailPage() {
             <div className="overflow-x-auto pb-2">
               <div className="flex gap-4 min-w-max">
                 {days.map((day) => (
-                  <div key={day.id} className="w-72 flex-shrink-0 bg-slate-800 rounded-xl border border-slate-700/50 flex flex-col">
+                  <div key={day.id} className="w-72 flex-shrink-0 bg-card rounded-xl border border-border flex flex-col">
 
                     {/* Cabecera del día */}
-                    <div className="bg-slate-700/50 rounded-t-xl px-4 py-3 flex items-center justify-between border-b border-slate-700/50">
+                    <div className="bg-muted/50 rounded-t-xl px-4 py-3 flex items-center justify-between border-b border-border">
                       <div>
-                        <p className="text-xs font-bold text-amber-400 uppercase tracking-wide">Día {day.day_number}</p>
-                        <p className="text-sm font-semibold text-white capitalize">{formatDate(day.day_date)}</p>
+                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Día {day.day_number}</p>
+                        <p className="text-sm font-semibold text-foreground capitalize">{formatDate(day.day_date)}</p>
                       </div>
                       <button
                         onClick={() => handleDeleteDay(day.id)}
                         disabled={deletingDay === day.id}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                         title="Eliminar día"
                       >
                         {deletingDay === day.id
@@ -412,39 +412,39 @@ export default function ConferenceDetailPage() {
                     {/* Sesiones */}
                     <div className="flex flex-col gap-2 p-3 flex-1">
                       {day.sessions.length === 0 && (
-                        <p className="text-center text-slate-600 text-xs py-4 italic">Sin sesiones aún</p>
+                        <p className="text-center text-muted-foreground text-xs py-4 italic">Sin sesiones aún</p>
                       )}
                       {day.sessions.map((session) => {
                         const cfg = typeConfig(session.session_type);
                         const Icon = cfg.icon;
                         return (
                           <div key={session.id}
-                            className="bg-slate-700/40 rounded-lg p-3 border border-slate-700/50 group relative">
+                            className="bg-muted/50 rounded-lg p-3 border border-border group relative">
                             <div className="flex items-start justify-between gap-2 mb-1.5">
                               <TypeBadge type={session.session_type} />
                               <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                 <button onClick={() => openEditSession(session, day.id)}
-                                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-600 transition-colors">
+                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                                   <Pencil size={11} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteSession(session.id)}
                                   disabled={deletingSession === session.id}
-                                  className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                                  className="p-1 rounded text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
                                   {deletingSession === session.id
                                     ? <Loader2 size={11} className="animate-spin" />
                                     : <Trash2 size={11} />}
                                 </button>
                               </div>
                             </div>
-                            <p className="text-sm font-semibold text-white leading-tight">{session.title}</p>
+                            <p className="text-sm font-semibold text-foreground leading-tight">{session.title}</p>
                             {session.time_start && (
-                              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                 <Clock size={10} /> {formatTime(session.time_start)}
                               </p>
                             )}
                             {session.speaker && (
-                              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                                 <Users size={10} /> {session.speaker}
                               </p>
                             )}
@@ -461,7 +461,7 @@ export default function ConferenceDetailPage() {
                     {/* Botón agregar sesión */}
                     <div className="p-3 pt-0">
                       <button onClick={() => openAddSession(day.id)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-slate-600 text-slate-500 hover:text-white hover:border-slate-400 text-xs font-medium transition-colors">
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 text-xs font-medium transition-colors">
                         <Plus size={13} /> Agregar Sesión
                       </button>
                     </div>
@@ -480,13 +480,13 @@ export default function ConferenceDetailPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" placeholder="Buscar por nombre, iglesia o teléfono…"
                 value={regSearch}
                 onChange={(e) => { setRegSearch(e.target.value); setRegPage(0); fetchRegistrations(e.target.value, 0); }} />
               {regSearch && (
                 <button onClick={() => { setRegSearch(""); setRegPage(0); fetchRegistrations("", 0); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   <X size={14} />
                 </button>
               )}
@@ -496,49 +496,49 @@ export default function ConferenceDetailPage() {
             </Button>
           </div>
 
-          <div className="bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700">
+                  <tr className="border-b border-border">
                     {["Nombre","Iglesia","Ciudad","Teléfono",""].map(h => (
-                      <th key={h} className="text-left text-xs font-semibold text-slate-400 px-4 py-3 uppercase tracking-wide">{h}</th>
+                      <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {regLoading ? (
-                    <tr><td colSpan={5} className="text-center py-12 text-slate-500">
+                    <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
                       <Loader2 size={24} className="animate-spin mx-auto" />
                     </td></tr>
                   ) : registrations.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-12 text-slate-500">
+                    <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
                       <Users size={28} className="mx-auto mb-2 opacity-30" />
                       <p>Sin asistentes registrados</p>
                     </td></tr>
                   ) : registrations.map((reg) => (
-                    <tr key={reg.id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-white">
+                    <tr key={reg.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-foreground">
                         {reg.full_name}
-                        {reg.notes && <StickyNote size={11} className="inline ml-1.5 text-slate-500" title={reg.notes} />}
+                        {reg.notes && <StickyNote size={11} className="inline ml-1.5 text-muted-foreground" title={reg.notes} />}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{reg.origin_church || <span className="text-slate-600 italic text-xs">—</span>}</td>
-                      <td className="px-4 py-3 text-slate-400">{reg.city || <span className="text-slate-600 italic text-xs">—</span>}</td>
-                      <td className="px-4 py-3 text-slate-400">{reg.phone || <span className="text-slate-600 italic text-xs">—</span>}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{reg.origin_church || <span className="text-muted-foreground italic text-xs">—</span>}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{reg.city || <span className="text-muted-foreground italic text-xs">—</span>}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{reg.phone || <span className="text-muted-foreground italic text-xs">—</span>}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           <button
                             title="Vista previa del certificado"
                             onClick={() => setPreviewReg(reg)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors">
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 transition-colors">
                             <Award size={13} />
                           </button>
                           <button onClick={() => openEditReg(reg)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-600 transition-colors">
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                             <Pencil size={13} />
                           </button>
                           <button onClick={() => setDeletingReg(reg)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
                             <Trash2 size={13} />
                           </button>
                         </div>
@@ -550,16 +550,16 @@ export default function ConferenceDetailPage() {
             </div>
 
             {regTotal > LIMIT && (
-              <div className="px-4 py-3 border-t border-slate-700 flex items-center justify-between text-sm">
-                <span className="text-slate-400">{regPage * LIMIT + 1}–{Math.min((regPage + 1) * LIMIT, regTotal)} de {regTotal}</span>
+              <div className="px-4 py-3 border-t border-border flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{regPage * LIMIT + 1}–{Math.min((regPage + 1) * LIMIT, regTotal)} de {regTotal}</span>
                 <div className="flex gap-2">
                   <button disabled={regPage === 0} onClick={() => setRegPage(p => p - 1)}
-                    className="p-1.5 rounded-lg hover:bg-slate-700 disabled:opacity-30 text-slate-300">
+                    className="p-1.5 rounded-lg hover:bg-accent disabled:opacity-30 text-muted-foreground">
                     <ChevronLeft size={16} />
                   </button>
-                  <span className="px-2 py-1 text-slate-400">{regPage + 1}/{totalRegPages}</span>
+                  <span className="px-2 py-1 text-muted-foreground">{regPage + 1}/{totalRegPages}</span>
                   <button disabled={regPage + 1 >= totalRegPages} onClick={() => setRegPage(p => p + 1)}
-                    className="p-1.5 rounded-lg hover:bg-slate-700 disabled:opacity-30 text-slate-300">
+                    className="p-1.5 rounded-lg hover:bg-accent disabled:opacity-30 text-muted-foreground">
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -573,8 +573,8 @@ export default function ConferenceDetailPage() {
       <Dialog open={sessionDialog} onOpenChange={setSessionDialog}>
         <DialogContent>
           <DialogHeader>
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <CalendarDays size={18} className="text-amber-400" />
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <CalendarDays size={18} className="text-amber-700 dark:text-amber-400" />
               {editingSession ? "Editar Sesión" : "Nueva Sesión"}
             </h2>
           </DialogHeader>
@@ -582,7 +582,7 @@ export default function ConferenceDetailPage() {
           <div className="space-y-4 mt-2">
             {/* Tipo */}
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Tipo de sesión</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Tipo de sesión</label>
               <div className="grid grid-cols-2 gap-2">
                 {SESSION_TYPES.map((t) => {
                   const Icon = t.icon;
@@ -591,7 +591,7 @@ export default function ConferenceDetailPage() {
                       onClick={() => setSessionForm(p => ({ ...p, sessionType: t.value }))}
                       className={cn(
                         "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-bold transition-all",
-                        sessionForm.sessionType === t.value ? t.color : "bg-slate-700/40 text-slate-500 border-slate-600 hover:border-slate-500"
+                        sessionForm.sessionType === t.value ? t.color : "bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/40"
                       )}>
                       <Icon size={14} /> {t.label}
                     </button>
@@ -601,8 +601,8 @@ export default function ConferenceDetailPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-                Título <span className="text-red-400">*</span>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                Título <span className="text-red-700 dark:text-red-400">*</span>
               </label>
               <Input placeholder="Ej. La Implicancia del Amor"
                 value={sessionForm.title}
@@ -611,14 +611,14 @@ export default function ConferenceDetailPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                   <Clock size={10} className="inline mr-1" />Hora
                 </label>
                 <Input type="time" value={sessionForm.timeStart}
                   onChange={(e) => setSessionForm(p => ({ ...p, timeStart: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                   <BookOpen size={10} className="inline mr-1" />Versículo
                 </label>
                 <Input placeholder="Ej. Juan 3:16"
@@ -628,7 +628,7 @@ export default function ConferenceDetailPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 <Users size={10} className="inline mr-1" />Expositor / Speaker
               </label>
               <Input placeholder="Nombre del predicador o equipo"
@@ -637,15 +637,15 @@ export default function ConferenceDetailPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Notas</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notas</label>
               <textarea rows={2} placeholder="Detalles adicionales…"
                 value={sessionForm.notes}
                 onChange={(e) => setSessionForm(p => ({ ...p, notes: e.target.value }))}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500" />
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-muted-foreground" />
             </div>
 
             {sessionError && (
-              <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{sessionError}</p>
+              <p className="text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{sessionError}</p>
             )}
           </div>
 
@@ -663,12 +663,12 @@ export default function ConferenceDetailPage() {
       <Dialog open={addDayDialog} onOpenChange={setAddDayDialog}>
         <DialogContent>
           <DialogHeader>
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <CalendarDays size={18} className="text-amber-400" /> Agregar Día
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <CalendarDays size={18} className="text-amber-700 dark:text-amber-400" /> Agregar Día
             </h2>
           </DialogHeader>
           <div className="mt-2">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Fecha</label>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Fecha</label>
             <Input type="date" value={newDayDate} onChange={(e) => setNewDayDate(e.target.value)} />
           </div>
           <DialogFooter>
@@ -685,29 +685,29 @@ export default function ConferenceDetailPage() {
       <Dialog open={regDialog} onOpenChange={setRegDialog}>
         <DialogContent>
           <DialogHeader>
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users size={18} className="text-amber-400" />
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Users size={18} className="text-amber-700 dark:text-amber-400" />
               {editingReg ? "Editar Asistente" : "Registrar Asistente"}
             </h2>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-                Nombre Completo <span className="text-red-400">*</span>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                Nombre Completo <span className="text-red-700 dark:text-red-400">*</span>
               </label>
               <Input placeholder="Nombre y apellido" value={regForm.fullName}
                 onChange={(e) => setRegForm(p => ({ ...p, fullName: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                   <Church size={10} className="inline mr-1" />Iglesia
                 </label>
                 <Input placeholder="Iglesia que representa" value={regForm.originChurch}
                   onChange={(e) => setRegForm(p => ({ ...p, originChurch: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                   <MapPin size={10} className="inline mr-1" />Ciudad
                 </label>
                 <Input placeholder="Ciudad, Estado" value={regForm.city}
@@ -715,20 +715,20 @@ export default function ConferenceDetailPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 <Phone size={10} className="inline mr-1" />Teléfono
               </label>
               <Input placeholder="(000) 000-0000" value={regForm.phone}
                 onChange={(e) => setRegForm(p => ({ ...p, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Notas</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notas</label>
               <textarea rows={2} placeholder="Observaciones…" value={regForm.notes}
                 onChange={(e) => setRegForm(p => ({ ...p, notes: e.target.value }))}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500" />
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-muted-foreground" />
             </div>
             {regError && (
-              <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{regError}</p>
+              <p className="text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{regError}</p>
             )}
           </div>
           <DialogFooter>
@@ -745,10 +745,10 @@ export default function ConferenceDetailPage() {
       <Dialog open={Boolean(deletingReg)} onOpenChange={(v) => !v && setDeletingReg(null)}>
         <DialogContent>
           <DialogHeader>
-            <h2 className="text-lg font-semibold text-white">Eliminar Asistente</h2>
+            <h2 className="text-lg font-semibold text-foreground">Eliminar Asistente</h2>
           </DialogHeader>
-          <p className="text-slate-300 mt-2">
-            ¿Eliminar a <strong className="text-white">{deletingReg?.full_name}</strong> del registro?
+          <p className="text-muted-foreground mt-2">
+            ¿Eliminar a <strong className="text-foreground">{deletingReg?.full_name}</strong> del registro?
           </p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeletingReg(null)}>Cancelar</Button>

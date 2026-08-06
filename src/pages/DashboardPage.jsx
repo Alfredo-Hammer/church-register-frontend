@@ -47,23 +47,23 @@ const fmtTime = (t) => {
 };
 
 const EVENT_META = {
-  CULTO:    { label: "Culto",      dot: "bg-blue-400",   text: "text-blue-300"   },
-  REUNION:  { label: "Reunión",    dot: "bg-purple-400", text: "text-purple-300" },
-  ESPECIAL: { label: "Especial",   dot: "bg-amber-400",  text: "text-amber-300"  },
-  COMMUNION:{ label: "Santa Cena", dot: "bg-red-400",    text: "text-red-300"    },
+  CULTO:    { label: "Culto",      dot: "bg-blue-400",   text: "text-blue-700 dark:text-blue-300"   },
+  REUNION:  { label: "Reunión",    dot: "bg-purple-400", text: "text-purple-700 dark:text-purple-300" },
+  ESPECIAL: { label: "Especial",   dot: "bg-amber-400",  text: "text-amber-700 dark:text-amber-300"  },
+  COMMUNION:{ label: "Santa Cena", dot: "bg-red-400",    text: "text-red-700 dark:text-red-300"    },
 };
 
 // ── Subcomponentes ────────────────────────────────────────────────────────────
 
 function KpiCard({ icon: Icon, label, value, sub, trend, color, href, loading }) {
   const inner = (
-    <div className={`bg-slate-800 border rounded-xl p-5 flex flex-col gap-3 hover:border-slate-500 transition-colors ${color.border}`}>
+    <div className={`bg-card border rounded-xl p-5 flex flex-col gap-3 hover:border-muted-foreground/40 transition-colors ${color.border}`}>
       <div className="flex items-center justify-between">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color.bg}`}>
           <Icon className={`h-5 w-5 ${color.icon}`} />
         </div>
         {trend !== undefined && !loading && (
-          <span className={`text-xs font-semibold flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+          <span className={`text-xs font-semibold flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
             {trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {Math.abs(trend)}
           </span>
@@ -71,12 +71,12 @@ function KpiCard({ icon: Icon, label, value, sub, trend, color, href, loading })
       </div>
       <div>
         {loading ? (
-          <div className="h-8 w-20 bg-slate-700 animate-pulse rounded" />
+          <div className="h-8 w-20 bg-background animate-pulse rounded" />
         ) : (
-          <p className="text-2xl font-bold text-white leading-none">{value ?? "—"}</p>
+          <p className="text-2xl font-bold text-foreground leading-none">{value ?? "—"}</p>
         )}
-        <p className="text-xs text-slate-400 font-medium mt-1">{label}</p>
-        {sub && !loading && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
+        <p className="text-xs text-muted-foreground font-medium mt-1">{label}</p>
+        {sub && !loading && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -93,10 +93,10 @@ function QuickAction({ icon: Icon, label, href, color }) {
   );
 }
 
-function SectionHeader({ title, linkTo, linkLabel = "Ver todos", color = "text-slate-400 hover:text-white" }) {
+function SectionHeader({ title, linkTo, linkLabel = "Ver todos", color = "text-muted-foreground hover:text-foreground" }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{title}</h2>
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</h2>
       {linkTo && (
         <Link to={linkTo} className={`flex items-center gap-1 text-xs transition-colors ${color}`}>
           {linkLabel} <ArrowUpRight className="h-3 w-3" />
@@ -193,16 +193,16 @@ export default function DashboardPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <p className="text-slate-400 text-sm">
-            {greeting()}, <span className="text-white font-semibold">{firstName}</span>
+          <p className="text-muted-foreground text-sm">
+            {greeting()}, <span className="text-foreground font-semibold">{firstName}</span>
           </p>
-          <p className="text-xs text-slate-500 capitalize mt-0.5">
+          <p className="text-xs text-muted-foreground capitalize mt-0.5">
             {todayLabel()}{user?.churchName && ` · ${user.churchName}`}
           </p>
         </div>
         {prayerToday && (
           <Link to="/dashboard/prayer"
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-medium hover:bg-orange-500/25 transition-colors self-start sm:self-auto">
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-700 dark:text-orange-300 text-xs font-medium hover:bg-orange-500/25 transition-colors self-start sm:self-auto">
             <Flame className="h-3 w-3" />
             Día de Oración hoy{prayerToday.start_time && ` · ${fmtTime(prayerToday.start_time)}`}
           </Link>
@@ -215,7 +215,7 @@ export default function DashboardPage() {
           icon={Users} label="Miembros Activos"
           value={memberStats?.active ?? memberStats?.total}
           sub={memberStats?.total ? `${memberStats.total} registrados` : undefined}
-          color={{ bg: "bg-blue-500/15", icon: "text-blue-400", border: "border-slate-700" }}
+          color={{ bg: "bg-blue-500/15", icon: "text-blue-700 dark:text-blue-400", border: "border-border" }}
           href="/dashboard/members" loading={loading}
         />
         <KpiCard
@@ -223,13 +223,13 @@ export default function DashboardPage() {
           value={visitorStats?.total}
           sub={visitorStats?.nuevos_este_mes ? `+${visitorStats.nuevos_este_mes} este mes` : undefined}
           trend={visitorStats?.nuevos_este_mes}
-          color={{ bg: "bg-teal-500/15", icon: "text-teal-400", border: "border-slate-700" }}
+          color={{ bg: "bg-teal-500/15", icon: "text-teal-700 dark:text-teal-400", border: "border-border" }}
           href="/dashboard/visitors" loading={loading}
         />
         <KpiCard
           icon={UsersRound} label="Grupos"
           value={groupTotal}
-          color={{ bg: "bg-purple-500/15", icon: "text-purple-400", border: "border-slate-700" }}
+          color={{ bg: "bg-purple-500/15", icon: "text-purple-700 dark:text-purple-400", border: "border-border" }}
           href="/dashboard/groups" loading={loading}
         />
         <KpiCard
@@ -237,18 +237,18 @@ export default function DashboardPage() {
           value={balance !== null ? fmtMoney(balance) : undefined}
           sub={balance >= 0 ? "Superávit" : "Déficit"}
           color={balance >= 0
-            ? { bg: "bg-emerald-500/15", icon: "text-emerald-400", border: "border-slate-700" }
-            : { bg: "bg-red-500/15",     icon: "text-red-400",     border: "border-red-900/40" }}
+            ? { bg: "bg-emerald-500/15", icon: "text-emerald-700 dark:text-emerald-400", border: "border-border" }
+            : { bg: "bg-red-500/15",     icon: "text-red-700 dark:text-red-400",     border: "border-red-900/40" }}
           href="/dashboard/finances" loading={loading}
         />
       </div>
 
       {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <QuickAction icon={UserPlus}     label="Nuevo Miembro"     href="/dashboard/members"  color="bg-blue-600/10 border-blue-600/30 text-blue-300 hover:bg-blue-600/20" />
-        <QuickAction icon={UserSearch}   label="Nuevo Visitante"   href="/dashboard/visitors" color="bg-teal-600/10 border-teal-600/30 text-teal-300 hover:bg-teal-600/20" />
-        <QuickAction icon={CalendarDays} label="Nuevo Evento"      href="/dashboard/events"   color="bg-purple-600/10 border-purple-600/30 text-purple-300 hover:bg-purple-600/20" />
-        <QuickAction icon={PlusCircle}   label="Registrar Ofrenda" href="/dashboard/finances" color="bg-emerald-600/10 border-emerald-600/30 text-emerald-300 hover:bg-emerald-600/20" />
+        <QuickAction icon={UserPlus}     label="Nuevo Miembro"     href="/dashboard/members"  color="bg-blue-600/10 border-blue-600/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600/20" />
+        <QuickAction icon={UserSearch}   label="Nuevo Visitante"   href="/dashboard/visitors" color="bg-teal-600/10 border-teal-600/30 text-teal-700 dark:text-teal-300 hover:bg-teal-600/20" />
+        <QuickAction icon={CalendarDays} label="Nuevo Evento"      href="/dashboard/events"   color="bg-purple-600/10 border-purple-600/30 text-purple-700 dark:text-purple-300 hover:bg-purple-600/20" />
+        <QuickAction icon={PlusCircle}   label="Registrar Ofrenda" href="/dashboard/finances" color="bg-emerald-600/10 border-emerald-600/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600/20" />
       </div>
 
 
@@ -258,42 +258,42 @@ export default function DashboardPage() {
 
           {/* Próxima agenda */}
           {hasEvents && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-700">
-                <SectionHeader title="Próxima Agenda" linkTo="/dashboard/events" color="text-slate-500 hover:text-blue-400" />
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <SectionHeader title="Próxima Agenda" linkTo="/dashboard/events" color="text-muted-foreground hover:text-blue-700 dark:text-blue-400" />
               </div>
-              <div className="divide-y divide-slate-700/50">
+              <div className="divide-y divide-border">
                 {loading
                   ? [1,2,3].map(i => (
                       <div key={i} className="px-5 py-3.5 flex items-center gap-4">
-                        <div className="w-10 h-10 bg-slate-700 animate-pulse rounded-lg shrink-0" />
+                        <div className="w-10 h-10 bg-background animate-pulse rounded-lg shrink-0" />
                         <div className="flex-1 space-y-1.5">
-                          <div className="h-3.5 bg-slate-700 animate-pulse rounded w-40" />
-                          <div className="h-3 bg-slate-700/60 animate-pulse rounded w-24" />
+                          <div className="h-3.5 bg-background animate-pulse rounded w-40" />
+                          <div className="h-3 bg-muted/50 animate-pulse rounded w-24" />
                         </div>
                       </div>
                     ))
                   : events.map(event => {
-                      const meta = EVENT_META[event.event_type] || { label: event.event_type, dot: "bg-slate-400", text: "text-slate-300" };
+                      const meta = EVENT_META[event.event_type] || { label: event.event_type, dot: "bg-muted-foreground", text: "text-muted-foreground" };
                       const { day, mon } = fmtDay(event.date);
                       const t0 = new Date(); t0.setHours(0,0,0,0);
                       const isToday = new Date(event.date.slice(0,10) + "T00:00:00").getTime() === t0.getTime();
                       return (
                         <div key={`${event._kind}-${event.id}`}
-                          className={`px-5 py-3.5 flex items-center gap-4 transition-colors ${isToday ? "bg-blue-500/5" : "hover:bg-slate-700/30"}`}>
-                          <div className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${isToday ? "bg-blue-600/20 border-blue-500/40" : "bg-slate-700/50 border-slate-600/40"}`}>
-                            <span className={`text-base font-bold leading-none ${isToday ? "text-blue-300" : "text-white"}`}>{day}</span>
-                            <span className={`text-[9px] uppercase font-semibold mt-0.5 ${isToday ? "text-blue-400" : "text-slate-500"}`}>{mon}</span>
+                          className={`px-5 py-3.5 flex items-center gap-4 transition-colors ${isToday ? "bg-blue-500/5" : "hover:bg-muted/50"}`}>
+                          <div className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border ${isToday ? "bg-blue-600/20 border-blue-500/40" : "bg-muted/50 border-border"}`}>
+                            <span className={`text-base font-bold leading-none ${isToday ? "text-blue-700 dark:text-blue-300" : "text-foreground"}`}>{day}</span>
+                            <span className={`text-[9px] uppercase font-semibold mt-0.5 ${isToday ? "text-blue-700 dark:text-blue-400" : "text-muted-foreground"}`}>{mon}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                            <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dot}`} />
                               <span className={`text-xs ${meta.text}`}>{meta.label}</span>
-                              {isToday && <span className="text-xs font-semibold text-blue-400">· Hoy</span>}
+                              {isToday && <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">· Hoy</span>}
                             </div>
                           </div>
-                          <ChevronRight className="h-4 w-4 text-slate-600 shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                         </div>
                       );
                     })
@@ -304,10 +304,10 @@ export default function DashboardPage() {
 
           {/* Gráfica finanzas */}
           {hasFinance && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-700">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
                 <SectionHeader title="Finanzas · 6 meses" linkTo="/dashboard/finances"
-                  color="text-slate-500 hover:text-emerald-400" linkLabel="Detalles" />
+                  color="text-muted-foreground hover:text-emerald-700 dark:text-emerald-400" linkLabel="Detalles" />
               </div>
               <div className="px-2 pt-4 pb-2">
                 <ResponsiveContainer width="100%" height={180}>
@@ -337,10 +337,10 @@ export default function DashboardPage() {
                   </AreaChart>
                 </ResponsiveContainer>
                 <div className="flex items-center gap-4 px-4 pb-2">
-                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />Ingresos
                   </span>
-                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="w-2 h-2 rounded-full bg-red-500" />Egresos
                   </span>
                 </div>
@@ -352,11 +352,11 @@ export default function DashboardPage() {
 
       {/* ── Cumpleaños — solo si hay, ancho completo compacto ────────────── */}
       {hasBirthdays && (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
             <SectionHeader
               title={`Cumpleaños — ${new Date().toLocaleDateString("es-MX", { month: "long" })}`}
-              linkTo="/dashboard/members" color="text-slate-500 hover:text-pink-400"
+              linkTo="/dashboard/members" color="text-muted-foreground hover:text-pink-700 dark:text-pink-400"
             />
           </div>
           <div className="px-4 py-3 flex flex-wrap gap-2.5">
@@ -369,15 +369,15 @@ export default function DashboardPage() {
                 <div key={m.id}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
                     isToday ? "border-pink-500/40 bg-pink-500/10" :
-                    isPast  ? "border-slate-700/40 opacity-40" :
-                              "border-slate-700 bg-slate-800/60"
+                    isPast  ? "border-border opacity-40" :
+                              "border-border bg-muted/50"
                   }`}>
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                     {m.first_name[0]}{m.last_name[0]}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-white leading-tight">{m.first_name} {m.last_name}</p>
-                    <p className={`text-[10px] leading-tight ${isToday ? "text-pink-400 font-semibold" : "text-slate-500"}`}>
+                    <p className="text-xs font-semibold text-foreground leading-tight">{m.first_name} {m.last_name}</p>
+                    <p className={`text-[10px] leading-tight ${isToday ? "text-pink-700 dark:text-pink-400 font-semibold" : "text-muted-foreground"}`}>
                       {isToday ? "🎂 Hoy" : `día ${day}`}
                     </p>
                   </div>
@@ -389,8 +389,8 @@ export default function DashboardPage() {
       )}
 
       {/* ── Acceso a módulos — siempre visible ──────────────────────────── */}
-      <div className="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Acceso rápido</p>
+      <div className="bg-muted/50 border border-border rounded-xl p-4">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Acceso rápido</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {[
             { label: "Familias",    href: "/dashboard/families",   icon: "👨‍👩‍👧" },
@@ -403,7 +403,7 @@ export default function DashboardPage() {
             { label: "Oración",     href: "/dashboard/prayer",     icon: "🔥" },
           ].map(({ label, href, icon }) => (
             <Link key={href} to={href}
-              className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors text-center">
+              className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-center">
               <span className="text-xl leading-none">{icon}</span>
               <span className="text-[11px] font-medium leading-tight">{label}</span>
             </Link>

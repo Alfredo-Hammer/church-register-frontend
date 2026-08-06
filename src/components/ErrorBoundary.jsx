@@ -17,11 +17,11 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 max-w-md w-full text-center">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-lg p-8 max-w-md w-full text-center">
             <div className="flex justify-center mb-4">
               <svg
-                className="h-12 w-12 text-red-400"
+                className="h-12 w-12 text-red-700 dark:text-red-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -34,10 +34,10 @@ class ErrorBoundary extends React.Component {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Algo salió mal
             </h2>
-            <p className="text-gray-400 mb-6 text-sm">
+            <p className="text-muted-foreground mb-6 text-sm">
               Ocurrió un error inesperado en esta sección. Por favor recarga la
               página.
             </p>

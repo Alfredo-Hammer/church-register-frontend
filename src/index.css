@@ -3,7 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Tema claro (por defecto) ──────────────────────────────────────────
+     Fondo gris muy claro + tarjetas blancas: separa las tarjetas sin
+     necesidad de bordes pesados, y coincide con la salida impresa.
+     Los tonos de texto y `primary` están elegidos para cumplir el
+     contraste mínimo AA (4.5:1) sobre fondo claro. */
   :root {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 18% 40%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.5rem;
+  }
+
+  /* ── Tema oscuro (la paleta original del proyecto, intacta) ─────────── */
+  .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 217 33% 17%;
@@ -16,14 +45,13 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 215 28% 17%;
     --muted-foreground: 217 11% 65%;
-    --accent: 217 33% 17%;
+    --accent: 217 33% 22%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 20%;
     --input: 217 33% 20%;
     --ring: 217 91% 60%;
-    --radius: 0.5rem;
   }
 }
 

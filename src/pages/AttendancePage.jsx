@@ -56,19 +56,19 @@ const TYPE_LABEL = {
 };
 const TYPE_COLOR = {
   CULTO: {
-    badge: "bg-blue-600/20 text-blue-400 border-blue-600/40",
+    badge: "bg-blue-600/20 text-blue-700 dark:text-blue-400 border-blue-600/40",
     dot: "bg-blue-400",
-    text: "text-blue-400",
+    text: "text-blue-700 dark:text-blue-400",
   },
   REUNION: {
-    badge: "bg-purple-600/20 text-purple-400 border-purple-600/40",
+    badge: "bg-purple-600/20 text-purple-700 dark:text-purple-400 border-purple-600/40",
     dot: "bg-purple-400",
-    text: "text-purple-400",
+    text: "text-purple-700 dark:text-purple-400",
   },
   ESPECIAL: {
-    badge: "bg-amber-600/20 text-amber-400 border-amber-600/40",
+    badge: "bg-amber-600/20 text-amber-700 dark:text-amber-400 border-amber-600/40",
     dot: "bg-amber-400",
-    text: "text-amber-400",
+    text: "text-amber-700 dark:text-amber-400",
   },
 };
 
@@ -97,15 +97,15 @@ function DetailModal({event, open, onClose, onEdit}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <DialogContent className="bg-card border-border max-w-2xl w-full max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="text-white flex items-start gap-3">
+          <DialogTitle className="text-foreground flex items-start gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5
-              ${isPast ? "bg-slate-700" : "bg-emerald-600/20"}`}
+              ${isPast ? "bg-background" : "bg-emerald-600/20"}`}
             >
               <Calendar
-                className={`w-5 h-5 ${isPast ? "text-gray-400" : "text-emerald-400"}`}
+                className={`w-5 h-5 ${isPast ? "text-muted-foreground" : "text-emerald-700 dark:text-emerald-400"}`}
               />
             </div>
             <div className="min-w-0">
@@ -117,12 +117,12 @@ function DetailModal({event, open, onClose, onEdit}) {
                   {TYPE_LABEL[event.event_type]}
                 </span>
                 {isPast && (
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-slate-700 text-gray-400 border border-slate-600">
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-background text-muted-foreground border border-border">
                     Pasado
                   </span>
                 )}
               </div>
-              <p className="text-gray-400 text-sm font-normal mt-1 capitalize">
+              <p className="text-muted-foreground text-sm font-normal mt-1 capitalize">
                 {fmtDateLong(event.date)} · {fmtTime(event.date)}
               </p>
             </div>
@@ -132,8 +132,8 @@ function DetailModal({event, open, onClose, onEdit}) {
         <div className="overflow-y-auto flex-1 space-y-5 mt-2">
           {/* Description */}
           {event.description && (
-            <div className="flex items-start gap-2.5 text-sm text-gray-400 bg-slate-700/40 rounded-xl px-4 py-3">
-              <FileText className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />
+            <div className="flex items-start gap-2.5 text-sm text-muted-foreground bg-muted/50 rounded-xl px-4 py-3">
+              <FileText className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
               <p>{event.description}</p>
             </div>
           )}
@@ -145,22 +145,22 @@ function DetailModal({event, open, onClose, onEdit}) {
                 icon: UserCheck,
                 label: "Miembros",
                 value: members,
-                color: "text-emerald-400",
+                color: "text-emerald-700 dark:text-emerald-400",
                 bg: "bg-emerald-500/10 border-emerald-500/20",
               },
               {
                 icon: UserPlus,
                 label: "Visitantes",
                 value: guests,
-                color: "text-amber-400",
+                color: "text-amber-700 dark:text-amber-400",
                 bg: "bg-amber-500/10 border-amber-500/20",
               },
               {
                 icon: UsersRound,
                 label: "Total",
                 value: total,
-                color: "text-white",
-                bg: "bg-slate-700/60 border-slate-600/50",
+                color: "text-foreground",
+                bg: "bg-muted/50 border-border",
               },
             ].map(({icon: Icon, label, value, color, bg}) => (
               <div
@@ -169,18 +169,18 @@ function DetailModal({event, open, onClose, onEdit}) {
               >
                 <Icon className={`w-5 h-5 mx-auto mb-1 ${color}`} />
                 <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
               </div>
             ))}
           </div>
 
           {/* Attendees list */}
           <div>
-            <p className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-emerald-400" />
+            <p className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
               Lista de miembros asistentes
               {!loading && (
-                <span className="text-gray-500 font-normal">
+                <span className="text-muted-foreground font-normal">
                   ({attendees.length})
                 </span>
               )}
@@ -191,26 +191,26 @@ function DetailModal({event, open, onClose, onEdit}) {
                 <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : attendees.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 bg-slate-700/30 rounded-xl">
+              <div className="text-center py-8 text-muted-foreground bg-muted/50 rounded-xl">
                 <UserCheck className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">No hay miembros registrados aún</p>
               </div>
             ) : (
-              <div className="bg-slate-700/30 rounded-xl overflow-hidden">
+              <div className="bg-muted/50 rounded-xl overflow-hidden">
                 {attendees.map((a, i) => (
                   <div
                     key={a.id}
-                    className={`flex items-center gap-3 px-4 py-2.5 ${i < attendees.length - 1 ? "border-b border-slate-700/50" : ""}`}
+                    className={`flex items-center gap-3 px-4 py-2.5 ${i < attendees.length - 1 ? "border-b border-border" : ""}`}
                   >
                     <div className="w-7 h-7 rounded-full bg-emerald-600/20 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium">
+                      <p className="text-foreground text-sm font-medium">
                         {a.first_name} {a.last_name}
                       </p>
                       {a.phone && (
-                        <p className="text-gray-500 text-xs">{a.phone}</p>
+                        <p className="text-muted-foreground text-xs">{a.phone}</p>
                       )}
                     </div>
                   </div>
@@ -222,8 +222,8 @@ function DetailModal({event, open, onClose, onEdit}) {
           {/* Guest note */}
           {guests > 0 && (
             <div className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
-              <UserPlus className="w-4 h-4 text-amber-400 shrink-0" />
-              <p className="text-sm text-amber-300">
+              <UserPlus className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+              <p className="text-sm text-amber-700 dark:text-amber-300">
                 <strong>{guests}</strong> persona{guests !== 1 ? "s" : ""}{" "}
                 adicionale{guests !== 1 ? "s" : ""} asistió como público general
                 (sin registro).
@@ -233,11 +233,11 @@ function DetailModal({event, open, onClose, onEdit}) {
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 pt-4 border-t border-slate-700 shrink-0">
+        <div className="flex gap-3 pt-4 border-t border-border shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
-            className="flex-1 border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+            className="flex-1 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
           >
             Cerrar
           </Button>
@@ -259,7 +259,7 @@ function DetailModal({event, open, onClose, onEdit}) {
                 new Date(event.date).toDateString() ===
                 new Date().toDateString()
                   ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                  : "bg-slate-700 text-gray-500"
+                  : "bg-background text-muted-foreground"
               }`}
             >
               <Clock className="w-4 h-4" />
@@ -360,15 +360,15 @@ function AttendanceModal({event, open, onClose, onSaved}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl w-full">
+      <DialogContent className="bg-card border-border max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle className="text-white text-lg flex items-center gap-3">
+          <DialogTitle className="text-foreground text-lg flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg bg-emerald-600/20 flex items-center justify-center shrink-0">
-              <CheckSquare className="w-5 h-5 text-emerald-400" />
+              <CheckSquare className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
             </span>
             <div>
               <p>{event?.title}</p>
-              <p className="text-gray-400 text-sm font-normal mt-0.5 capitalize">
+              <p className="text-muted-foreground text-sm font-normal mt-0.5 capitalize">
                 {event && `${fmtDateLong(event.date)} · ${fmtTime(event.date)}`}
               </p>
             </div>
@@ -382,13 +382,13 @@ function AttendanceModal({event, open, onClose, onSaved}) {
         ) : (
           <div className="mt-2 space-y-4">
             {formError && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {formError}
               </div>
             )}
             {formSuccess && (
-              <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
                 <CheckCircle className="w-4 h-4 shrink-0" />
                 {formSuccess}
               </div>
@@ -399,13 +399,13 @@ function AttendanceModal({event, open, onClose, onSaved}) {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                    <UserPlus className="w-5 h-5 text-amber-400" />
+                    <UserPlus className="w-5 h-5 text-amber-700 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-white text-sm font-semibold">
+                    <p className="text-foreground text-sm font-semibold">
                       Público general / Visitantes
                     </p>
-                    <p className="text-gray-400 text-xs">
+                    <p className="text-muted-foreground text-xs">
                       Personas sin registro previo (libre entrada)
                     </p>
                   </div>
@@ -414,7 +414,7 @@ function AttendanceModal({event, open, onClose, onSaved}) {
                   <button
                     type="button"
                     onClick={() => setGuestCount((v) => Math.max(0, v - 1))}
-                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-white transition-colors"
+                    className="w-8 h-8 rounded-lg bg-background hover:bg-accent border border-border flex items-center justify-center text-foreground transition-colors"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -425,12 +425,12 @@ function AttendanceModal({event, open, onClose, onSaved}) {
                     onChange={(e) =>
                       setGuestCount(Math.max(0, parseInt(e.target.value) || 0))
                     }
-                    className="w-20 text-center bg-slate-700 border border-slate-600 text-white text-lg font-bold rounded-lg py-1.5 focus:outline-none focus:border-amber-500"
+                    className="w-20 text-center bg-background border border-border text-foreground text-lg font-bold rounded-lg py-1.5 focus:outline-none focus:border-amber-500"
                   />
                   <button
                     type="button"
                     onClick={() => setGuestCount((v) => v + 1)}
-                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-white transition-colors"
+                    className="w-8 h-8 rounded-lg bg-background hover:bg-accent border border-border flex items-center justify-center text-foreground transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -441,8 +441,8 @@ function AttendanceModal({event, open, onClose, onSaved}) {
             {/* Miembros */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                   Miembros registrados
                 </p>
                 <div className="flex gap-2">
@@ -450,30 +450,30 @@ function AttendanceModal({event, open, onClose, onSaved}) {
                     onClick={() =>
                       setSelectedMembers(new Set(allMembers.map((m) => m.id)))
                     }
-                    className="text-xs text-gray-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded px-2 py-1 transition-colors"
+                    className="text-xs text-muted-foreground hover:text-foreground border border-border hover:border-muted-foreground/40 rounded px-2 py-1 transition-colors"
                   >
                     Todos
                   </button>
                   <button
                     onClick={() => setSelectedMembers(new Set())}
-                    className="text-xs text-gray-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded px-2 py-1 transition-colors"
+                    className="text-xs text-muted-foreground hover:text-foreground border border-border hover:border-muted-foreground/40 rounded px-2 py-1 transition-colors"
                   >
                     Ninguno
                   </button>
                 </div>
               </div>
               <div className="relative mb-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar miembro..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white"
+                  className="pl-10 bg-background border-border text-foreground"
                 />
               </div>
-              <div className="max-h-56 overflow-y-auto space-y-1 rounded-xl bg-slate-700/40 p-2">
+              <div className="max-h-56 overflow-y-auto space-y-1 rounded-xl bg-muted/50 p-2">
                 {filteredMembers.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-6">
+                  <p className="text-sm text-muted-foreground text-center py-6">
                     Sin miembros encontrados
                   </p>
                 ) : (
@@ -484,20 +484,20 @@ function AttendanceModal({event, open, onClose, onSaved}) {
                       ${
                         selectedMembers.has(m.id)
                           ? "bg-emerald-600/15 border border-emerald-500/30"
-                          : "hover:bg-slate-700 border border-transparent"
+                          : "hover:bg-accent border border-transparent"
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedMembers.has(m.id)}
                         onChange={() => toggleMember(m.id)}
-                        className="h-4 w-4 rounded border-slate-500 accent-emerald-500"
+                        className="h-4 w-4 rounded border-border accent-emerald-500"
                       />
-                      <span className="flex-1 text-sm text-white">
+                      <span className="flex-1 text-sm text-foreground">
                         {m.first_name} {m.last_name}
                       </span>
                       {selectedMembers.has(m.id) && (
-                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
                       )}
                     </label>
                   ))
@@ -506,18 +506,18 @@ function AttendanceModal({event, open, onClose, onSaved}) {
             </div>
 
             {/* Resumen */}
-            <div className="bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-              <span className="text-gray-400">
+            <div className="bg-muted/50 border border-border rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-muted-foreground">
                 Miembros:{" "}
-                <strong className="text-white">{selectedMembers.size}</strong>
+                <strong className="text-foreground">{selectedMembers.size}</strong>
               </span>
-              <span className="text-gray-400">
+              <span className="text-muted-foreground">
                 Visitantes:{" "}
-                <strong className="text-amber-400">{guestCount}</strong>
+                <strong className="text-amber-700 dark:text-amber-400">{guestCount}</strong>
               </span>
-              <span className="text-gray-400">
+              <span className="text-muted-foreground">
                 Total:{" "}
-                <strong className="text-emerald-400 text-base">{total}</strong>
+                <strong className="text-emerald-700 dark:text-emerald-400 text-base">{total}</strong>
               </span>
             </div>
           </div>
@@ -528,7 +528,7 @@ function AttendanceModal({event, open, onClose, onSaved}) {
             variant="outline"
             onClick={onClose}
             disabled={isSaving}
-            className="flex-1 border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+            className="flex-1 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
           >
             Cancelar
           </Button>
@@ -652,15 +652,15 @@ function PrayerHistoryModal({session, open, onClose, onEditDate}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-3xl w-full max-h-[85vh] flex flex-col">
+      <DialogContent className="bg-card border-border max-w-3xl w-full max-h-[85vh] flex flex-col">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="text-white text-lg flex items-center gap-3">
+          <DialogTitle className="text-foreground text-lg flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0">
-              <History className="w-5 h-5 text-orange-400" />
+              <History className="w-5 h-5 text-orange-700 dark:text-orange-400" />
             </span>
             <div>
               <p>Historial de Asistencias</p>
-              <p className="text-gray-400 text-sm font-normal mt-0.5">
+              <p className="text-muted-foreground text-sm font-normal mt-0.5">
                 {session.name} — {DAYS_ES[session.day_of_week]}
               </p>
             </div>
@@ -674,9 +674,9 @@ function PrayerHistoryModal({session, open, onClose, onEditDate}) {
             </div>
           ) : history.length === 0 ? (
             <div className="text-center py-12">
-              <History className="h-12 w-12 mx-auto mb-3 text-gray-600" />
-              <p className="text-gray-400">No hay registros de asistencia</p>
-              <p className="text-gray-500 text-sm mt-1">
+              <History className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-muted-foreground">No hay registros de asistencia</p>
+              <p className="text-muted-foreground text-sm mt-1">
                 Comienza a pasar lista para ver el historial
               </p>
             </div>
@@ -702,29 +702,29 @@ function PrayerHistoryModal({session, open, onClose, onEditDate}) {
                 return (
                   <div
                     key={dateKey}
-                    className="border border-slate-700 rounded-xl overflow-hidden bg-slate-800/50"
+                    className="border border-border rounded-xl overflow-hidden bg-muted/50"
                   >
                     <div
-                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => toggleDate(record.attendance_date)}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold text-white capitalize">
+                          <span className="text-sm font-semibold text-foreground capitalize">
                             {displayDate}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-xs">
-                          <span className="text-emerald-400 font-medium">
+                          <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                             {record.total} miembros
                           </span>
                           {record.guest_count > 0 && (
-                            <span className="text-amber-400 font-medium">
+                            <span className="text-amber-700 dark:text-amber-400 font-medium">
                               +{record.guest_count} visitantes
                             </span>
                           )}
-                          <span className="text-gray-500">•</span>
-                          <span className="text-white font-semibold">
+                          <span className="text-muted-foreground">•</span>
+                          <span className="text-foreground font-semibold">
                             Total: {record.grand_total}
                           </span>
                         </div>
@@ -734,39 +734,39 @@ function PrayerHistoryModal({session, open, onClose, onEditDate}) {
                           e.stopPropagation();
                           onEditDate(dateKey);
                         }}
-                        className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition-colors"
+                        className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-700 dark:text-blue-300 border border-blue-500/30 transition-colors"
                       >
                         Editar
                       </button>
                       <ChevronRight
-                        className={`w-4 h-4 text-gray-400 transition-transform ${
+                        className={`w-4 h-4 text-muted-foreground transition-transform ${
                           isExpanded ? "rotate-90" : ""
                         }`}
                       />
                     </div>
 
                     {isExpanded && (
-                      <div className="border-t border-slate-700 px-4 py-3 bg-slate-900/30">
+                      <div className="border-t border-border px-4 py-3 bg-muted/50">
                         {loadingDetails ? (
                           <div className="flex justify-center py-4">
                             <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
                           </div>
                         ) : details.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-2">
+                          <p className="text-sm text-muted-foreground text-center py-2">
                             Sin miembros registrados
                           </p>
                         ) : (
                           <div className="space-y-1">
-                            <p className="text-xs text-gray-500 font-medium mb-2">
+                            <p className="text-xs text-muted-foreground font-medium mb-2">
                               Miembros asistentes:
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                               {details.map((member) => (
                                 <div
                                   key={member.member_id}
-                                  className="flex items-center gap-2 text-sm text-gray-300 bg-slate-800/50 rounded px-2.5 py-1.5"
+                                  className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded px-2.5 py-1.5"
                                 >
-                                  <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <UserCheck className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
                                   <span>
                                     {member.first_name} {member.last_name}
                                   </span>
@@ -784,11 +784,11 @@ function PrayerHistoryModal({session, open, onClose, onEditDate}) {
           )}
         </div>
 
-        <div className="border-t border-slate-700 pt-4 mt-4 shrink-0">
+        <div className="border-t border-border pt-4 mt-4 shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
-            className="w-full border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+            className="w-full border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
           >
             Cerrar
           </Button>
@@ -892,19 +892,19 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl w-full">
+      <DialogContent className="bg-card border-border max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle className="text-white text-lg flex items-center gap-3">
+          <DialogTitle className="text-foreground text-lg flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0">
-              <Flame className="w-5 h-5 text-orange-400" />
+              <Flame className="w-5 h-5 text-orange-700 dark:text-orange-400" />
             </span>
             <div>
               <p>{session?.name}</p>
-              <p className="text-gray-400 text-sm font-normal mt-0.5">
+              <p className="text-muted-foreground text-sm font-normal mt-0.5">
                 {session &&
                   `${DAYS_ES[session.day_of_week]} · ${fmtTimePrayer(session.start_time)}`}
                 {initialDate && (
-                  <span className="text-blue-400 ml-2">
+                  <span className="text-blue-700 dark:text-blue-400 ml-2">
                     — Editando registro
                   </span>
                 )}
@@ -920,26 +920,26 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
         ) : (
           <div className="mt-2 space-y-4">
             {formError && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {formError}
               </div>
             )}
             {formSuccess && (
-              <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
                 <CheckCircle className="w-4 h-4 shrink-0" />
                 {formSuccess}
               </div>
             )}
 
             {/* Selector de fecha */}
-            <div className="bg-slate-700/40 border border-slate-600/50 rounded-xl p-4">
+            <div className="bg-muted/50 border border-border rounded-xl p-4">
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-foreground">
                     Fecha de la sesión
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Solo fechas pasadas o de hoy
                   </p>
                 </div>
@@ -948,7 +948,7 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
                   max={today}
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="bg-background border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
             </div>
@@ -958,13 +958,13 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                    <UserPlus className="w-5 h-5 text-amber-400" />
+                    <UserPlus className="w-5 h-5 text-amber-700 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-white text-sm font-semibold">
+                    <p className="text-foreground text-sm font-semibold">
                       Público general / Visitantes
                     </p>
-                    <p className="text-gray-400 text-xs">
+                    <p className="text-muted-foreground text-xs">
                       Personas sin registro previo
                     </p>
                   </div>
@@ -973,7 +973,7 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
                   <button
                     type="button"
                     onClick={() => setGuestCount((v) => Math.max(0, v - 1))}
-                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-white transition-colors"
+                    className="w-8 h-8 rounded-lg bg-background hover:bg-accent border border-border flex items-center justify-center text-foreground transition-colors"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -984,12 +984,12 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
                     onChange={(e) =>
                       setGuestCount(Math.max(0, parseInt(e.target.value) || 0))
                     }
-                    className="w-20 text-center bg-slate-700 border border-slate-600 text-white text-lg font-bold rounded-lg py-1.5 focus:outline-none focus:border-amber-500"
+                    className="w-20 text-center bg-background border border-border text-foreground text-lg font-bold rounded-lg py-1.5 focus:outline-none focus:border-amber-500"
                   />
                   <button
                     type="button"
                     onClick={() => setGuestCount((v) => v + 1)}
-                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-white transition-colors"
+                    className="w-8 h-8 rounded-lg bg-background hover:bg-accent border border-border flex items-center justify-center text-foreground transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -1000,8 +1000,8 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
             {/* Miembros */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                   Miembros ({selectedMembers.size} marcados)
                 </p>
                 <div className="flex gap-2">
@@ -1009,30 +1009,30 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
                     onClick={() =>
                       setSelectedMembers(new Set(allMembers.map((m) => m.id)))
                     }
-                    className="text-xs text-gray-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded px-2 py-1 transition-colors"
+                    className="text-xs text-muted-foreground hover:text-foreground border border-border hover:border-muted-foreground/40 rounded px-2 py-1 transition-colors"
                   >
                     Todos
                   </button>
                   <button
                     onClick={() => setSelectedMembers(new Set())}
-                    className="text-xs text-gray-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded px-2 py-1 transition-colors"
+                    className="text-xs text-muted-foreground hover:text-foreground border border-border hover:border-muted-foreground/40 rounded px-2 py-1 transition-colors"
                   >
                     Ninguno
                   </button>
                 </div>
               </div>
               <div className="relative mb-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar miembro..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white"
+                  className="pl-10 bg-background border-border text-foreground"
                 />
               </div>
-              <div className="max-h-56 overflow-y-auto space-y-1 rounded-xl bg-slate-700/40 p-2">
+              <div className="max-h-56 overflow-y-auto space-y-1 rounded-xl bg-muted/50 p-2">
                 {filteredMembers.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-6">
+                  <p className="text-sm text-muted-foreground text-center py-6">
                     Sin miembros encontrados
                   </p>
                 ) : (
@@ -1043,20 +1043,20 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
                       ${
                         selectedMembers.has(m.id)
                           ? "bg-emerald-600/15 border border-emerald-500/30"
-                          : "hover:bg-slate-700 border border-transparent"
+                          : "hover:bg-accent border border-transparent"
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedMembers.has(m.id)}
                         onChange={() => toggleMember(m.id)}
-                        className="h-4 w-4 rounded border-slate-500 accent-emerald-500"
+                        className="h-4 w-4 rounded border-border accent-emerald-500"
                       />
-                      <span className="flex-1 text-sm text-white">
+                      <span className="flex-1 text-sm text-foreground">
                         {m.first_name} {m.last_name}
                       </span>
                       {selectedMembers.has(m.id) && (
-                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
                       )}
                     </label>
                   ))
@@ -1065,18 +1065,18 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
             </div>
 
             {/* Resumen */}
-            <div className="bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-              <span className="text-gray-400">
+            <div className="bg-muted/50 border border-border rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-muted-foreground">
                 Miembros:{" "}
-                <strong className="text-white">{selectedMembers.size}</strong>
+                <strong className="text-foreground">{selectedMembers.size}</strong>
               </span>
-              <span className="text-gray-400">
+              <span className="text-muted-foreground">
                 Visitantes:{" "}
-                <strong className="text-amber-400">{guestCount}</strong>
+                <strong className="text-amber-700 dark:text-amber-400">{guestCount}</strong>
               </span>
-              <span className="text-gray-400">
+              <span className="text-muted-foreground">
                 Total:{" "}
-                <strong className="text-emerald-400 text-base">
+                <strong className="text-emerald-700 dark:text-emerald-400 text-base">
                   {selectedMembers.size + guestCount}
                 </strong>
               </span>
@@ -1089,7 +1089,7 @@ function PrayerAttendanceModal({session, open, onClose, onSaved, initialDate}) {
             variant="outline"
             onClick={onClose}
             disabled={isSaving}
-            className="flex-1 border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+            className="flex-1 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
           >
             Cancelar
           </Button>
@@ -1152,41 +1152,41 @@ function PrayerSessionRow({session, onRegister, onViewHistory}) {
   });
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30 transition-colors group">
+    <div className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
       {/* Flame dot */}
       <div
-        className={`w-2 h-2 rounded-full shrink-0 ${isToday ? "bg-orange-400" : "bg-slate-600"}`}
+        className={`w-2 h-2 rounded-full shrink-0 ${isToday ? "bg-orange-400" : "bg-muted"}`}
       />
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-white">
+          <span className="text-sm font-semibold text-foreground">
             {session.name}
           </span>
           <span
             className={`px-1.5 py-0.5 rounded text-[11px] border ${
               isToday
-                ? "bg-orange-500/20 text-orange-300 border-orange-500/40"
-                : "bg-orange-500/10 text-orange-400 border-orange-500/30"
+                ? "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40"
+                : "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30"
             }`}
           >
             {isToday ? "Hoy" : DAYS_ES[session.day_of_week]}
           </span>
           {!session.is_active && (
-            <span className="px-1.5 py-0.5 rounded text-[11px] border bg-slate-700 text-gray-500 border-slate-600">
+            <span className="px-1.5 py-0.5 rounded text-[11px] border bg-background text-muted-foreground border-border">
               Inactiva
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           {fmtTimePrayer(session.start_time)}
           {session.end_time && ` – ${fmtTimePrayer(session.end_time)}`}
           {session.location && ` · ${session.location}`}
           {!isToday && (
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               {" "}
-              · Próx: <span className="text-gray-500">{nextFmt}</span>
+              · Próx: <span className="text-muted-foreground">{nextFmt}</span>
             </span>
           )}
         </p>
@@ -1195,16 +1195,16 @@ function PrayerSessionRow({session, onRegister, onViewHistory}) {
       {/* Última asistencia */}
       <div className="hidden sm:flex items-center gap-5 shrink-0 text-sm">
         <div className="text-center">
-          <p className="text-gray-500 text-xs">Última sesión</p>
+          <p className="text-muted-foreground text-xs">Última sesión</p>
           {loadingH ? (
-            <div className="h-4 w-8 bg-slate-700 animate-pulse rounded mx-auto mt-1" />
+            <div className="h-4 w-8 bg-background animate-pulse rounded mx-auto mt-1" />
           ) : (
             <p
-              className={`font-bold ${lastTotal !== null ? "text-emerald-400" : "text-gray-600"}`}
+              className={`font-bold ${lastTotal !== null ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}
             >
               {lastTotal !== null ? lastTotal : "—"}
               {lastGuests !== null && lastGuests > 0 && (
-                <span className="text-amber-400 text-xs ml-1">
+                <span className="text-amber-700 dark:text-amber-400 text-xs ml-1">
                   +{lastGuests}v
                 </span>
               )}
@@ -1212,8 +1212,8 @@ function PrayerSessionRow({session, onRegister, onViewHistory}) {
           )}
         </div>
         <div className="text-center">
-          <p className="text-gray-500 text-xs">Sesiones</p>
-          <p className="text-white font-semibold">{history.length}</p>
+          <p className="text-muted-foreground text-xs">Sesiones</p>
+          <p className="text-foreground font-semibold">{history.length}</p>
         </div>
       </div>
 
@@ -1221,20 +1221,20 @@ function PrayerSessionRow({session, onRegister, onViewHistory}) {
       <div className="hidden group-hover:flex items-center gap-2 shrink-0">
         <button
           onClick={() => onViewHistory(session)}
-          className="items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-slate-700 hover:bg-slate-600 text-gray-300 border border-slate-600"
+          className="items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-background hover:bg-accent text-muted-foreground border border-border"
           title="Ver historial completo"
         >
           <History className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onRegister(session)}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/30"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-orange-600/20 hover:bg-orange-600/30 text-orange-700 dark:text-orange-300 border border-orange-500/30"
         >
           <CheckSquare className="w-3.5 h-3.5" />
           <span className="hidden md:inline">Pasar lista</span>
         </button>
       </div>
-      <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
+      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
     </div>
   );
 }
@@ -1291,7 +1291,7 @@ function PrayerSection() {
     return (
       <div className="text-center py-16">
         <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-gray-400">Cargando sesiones de oración...</p>
+        <p className="text-muted-foreground">Cargando sesiones de oración...</p>
       </div>
     );
   }
@@ -1299,9 +1299,9 @@ function PrayerSection() {
   if (sessions.length === 0) {
     return (
       <div className="text-center py-20">
-        <Flame className="h-12 w-12 mx-auto mb-4 text-gray-600" />
-        <p className="text-gray-400">No hay sesiones de oración configuradas</p>
-        <p className="text-gray-500 text-sm mt-1">
+        <Flame className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <p className="text-muted-foreground">No hay sesiones de oración configuradas</p>
+        <p className="text-muted-foreground text-sm mt-1">
           Ve a <strong>Días de Oración</strong> para crear sesiones recurrentes
         </p>
       </div>
@@ -1313,11 +1313,11 @@ function PrayerSection() {
       <div className="space-y-6">
         {activeSessions.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Flame className="h-4 w-4 text-orange-400" />
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Flame className="h-4 w-4 text-orange-700 dark:text-orange-400" />
               Sesiones activas — {activeSessions.length}
             </h2>
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               {activeSessions.map((s) => (
                 <PrayerSessionRow
                   key={s.id}
@@ -1332,11 +1332,11 @@ function PrayerSection() {
 
         {inactiveSessions.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-600" />
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
               Inactivas — {inactiveSessions.length}
             </h2>
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden opacity-60">
+            <div className="bg-card border border-border rounded-xl overflow-hidden opacity-60">
               {inactiveSessions.map((s) => (
                 <PrayerSessionRow
                   key={s.id}
@@ -1436,19 +1436,19 @@ export default function AttendancePage() {
 
     return (
       <div
-        className={`flex items-center gap-4 px-4 py-3 border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30 transition-colors cursor-pointer group`}
+        className={`flex items-center gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer group`}
         onClick={() => openDetail(event)}
       >
         {/* Status dot */}
         <div
-          className={`w-2 h-2 rounded-full shrink-0 ${past ? "bg-slate-600" : tc.dot}`}
+          className={`w-2 h-2 rounded-full shrink-0 ${past ? "bg-muted" : tc.dot}`}
         />
 
         {/* Title + type */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className={`text-sm font-semibold ${past ? "text-gray-400" : "text-white"}`}
+              className={`text-sm font-semibold ${past ? "text-muted-foreground" : "text-foreground"}`}
             >
               {event.title}
             </span>
@@ -1458,7 +1458,7 @@ export default function AttendancePage() {
               {TYPE_LABEL[event.event_type]}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5 capitalize">
+          <p className="text-xs text-muted-foreground mt-0.5 capitalize">
             {fmtDateShort(event.date)} · {fmtTime(event.date)}
           </p>
         </div>
@@ -1466,17 +1466,17 @@ export default function AttendancePage() {
         {/* Counts */}
         <div className="hidden sm:flex items-center gap-5 shrink-0 text-sm">
           <div className="text-center">
-            <p className="text-gray-500 text-xs">Miembros</p>
-            <p className="text-white font-semibold">{members}</p>
+            <p className="text-muted-foreground text-xs">Miembros</p>
+            <p className="text-foreground font-semibold">{members}</p>
           </div>
           <div className="text-center">
-            <p className="text-gray-500 text-xs">Visitantes</p>
-            <p className="text-amber-400 font-semibold">{guests}</p>
+            <p className="text-muted-foreground text-xs">Visitantes</p>
+            <p className="text-amber-700 dark:text-amber-400 font-semibold">{guests}</p>
           </div>
           <div className="text-center min-w-[48px]">
-            <p className="text-gray-500 text-xs">Total</p>
+            <p className="text-muted-foreground text-xs">Total</p>
             <p
-              className={`font-bold text-base ${past ? "text-gray-300" : "text-emerald-400"}`}
+              className={`font-bold text-base ${past ? "text-muted-foreground" : "text-emerald-700 dark:text-emerald-400"}`}
             >
               {total}
             </p>
@@ -1485,9 +1485,9 @@ export default function AttendancePage() {
 
         {/* Mobile total */}
         <div className="sm:hidden shrink-0 text-right">
-          <p className="text-xs text-gray-500">Total</p>
+          <p className="text-xs text-muted-foreground">Total</p>
           <p
-            className={`font-bold ${past ? "text-gray-300" : "text-emerald-400"}`}
+            className={`font-bold ${past ? "text-muted-foreground" : "text-emerald-700 dark:text-emerald-400"}`}
           >
             {total}
           </p>
@@ -1501,7 +1501,7 @@ export default function AttendancePage() {
                 e.stopPropagation();
                 openAttendance(event);
               }}
-              className="hidden group-hover:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-slate-700 hover:bg-slate-600 text-gray-300"
+              className="hidden group-hover:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-background hover:bg-accent text-muted-foreground"
               title="Registrar asistencia"
             >
               <CheckSquare className="w-3.5 h-3.5" />
@@ -1515,7 +1515,7 @@ export default function AttendancePage() {
                   new Date(event.date).toDateString() ===
                   new Date().toDateString()
                     ? "bg-amber-500/10 text-amber-600/80 border border-amber-500/20"
-                    : "bg-slate-700/50 text-gray-500"
+                    : "bg-muted/50 text-muted-foreground"
                 }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -1527,7 +1527,7 @@ export default function AttendancePage() {
               </span>
             </span>
           )}
-          <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         </div>
       </div>
     );
@@ -1545,8 +1545,8 @@ export default function AttendancePage() {
         className={`rounded-xl border p-4 cursor-pointer transition-all duration-200 space-y-3
           ${
             past
-              ? "bg-slate-800/50 border-slate-700/50 opacity-80 hover:opacity-100"
-              : "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5"
+              ? "bg-muted/50 border-border opacity-80 hover:opacity-100"
+              : "bg-gradient-to-br from-card to-background border-border hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5"
           }`}
         onClick={() => openDetail(event)}
       >
@@ -1554,10 +1554,10 @@ export default function AttendancePage() {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div
-              className={`w-2 h-2 rounded-full shrink-0 mt-1 ${past ? "bg-slate-600" : tc.dot}`}
+              className={`w-2 h-2 rounded-full shrink-0 mt-1 ${past ? "bg-muted" : tc.dot}`}
             />
             <p
-              className={`text-sm font-semibold leading-snug ${past ? "text-gray-400" : "text-white"}`}
+              className={`text-sm font-semibold leading-snug ${past ? "text-muted-foreground" : "text-foreground"}`}
             >
               {event.title}
             </p>
@@ -1570,24 +1570,24 @@ export default function AttendancePage() {
         </div>
 
         {/* Date */}
-        <p className="text-xs text-gray-500 capitalize">
+        <p className="text-xs text-muted-foreground capitalize">
           {fmtDateShort(event.date)} · {fmtTime(event.date)}
         </p>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            {label: "Miembros", value: members, color: "text-white"},
-            {label: "Visitantes", value: guests, color: "text-amber-400"},
+            {label: "Miembros", value: members, color: "text-foreground"},
+            {label: "Visitantes", value: guests, color: "text-amber-700 dark:text-amber-400"},
             {
               label: "Total",
               value: total,
-              color: past ? "text-gray-300" : "text-emerald-400",
+              color: past ? "text-muted-foreground" : "text-emerald-700 dark:text-emerald-400",
             },
           ].map(({label, value, color}) => (
-            <div key={label} className="bg-slate-700/50 rounded-lg py-2">
+            <div key={label} className="bg-muted/50 rounded-lg py-2">
               <p className={`text-lg font-bold ${color}`}>{value}</p>
-              <p className="text-[10px] text-gray-500">{label}</p>
+              <p className="text-[10px] text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
@@ -1599,7 +1599,7 @@ export default function AttendancePage() {
               e.stopPropagation();
               openDetail(event);
             }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-slate-700 hover:bg-slate-600 text-gray-300 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-background hover:bg-accent text-muted-foreground transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             Ver detalles
@@ -1610,7 +1610,7 @@ export default function AttendancePage() {
                 e.stopPropagation();
                 openAttendance(event);
               }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-slate-700 hover:bg-slate-600 text-gray-300"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors bg-background hover:bg-accent text-muted-foreground"
             >
               <CheckSquare className="w-3.5 h-3.5" />
               Registrar
@@ -1623,7 +1623,7 @@ export default function AttendancePage() {
                   new Date(event.date).toDateString() ===
                   new Date().toDateString()
                     ? "bg-amber-500/10 text-amber-600/80 border border-amber-500/20"
-                    : "bg-slate-700/40 text-gray-600"
+                    : "bg-muted/50 text-muted-foreground"
                 }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -1638,7 +1638,7 @@ export default function AttendancePage() {
   };
 
   const SectionList = ({events: evs, past}) => (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
       {evs.map((e) => (
         <ListRow key={e.id} event={e} past={past} />
       ))}
@@ -1659,21 +1659,21 @@ export default function AttendancePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Asistencia</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Asistencia</h1>
+          <p className="text-muted-foreground mt-1">
             Control de asistencia a servicios, eventos y oración
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800 border border-slate-700 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-card border border-border rounded-xl p-1 w-fit">
         <button
           onClick={() => setActiveTab("events")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "events"
-              ? "bg-slate-700 text-white shadow"
-              : "text-gray-400 hover:text-white"
+              ? "bg-background text-foreground shadow"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -1683,8 +1683,8 @@ export default function AttendancePage() {
           onClick={() => setActiveTab("prayer")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "prayer"
-              ? "bg-slate-700 text-white shadow"
-              : "text-gray-400 hover:text-white"
+              ? "bg-background text-foreground shadow"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <Flame className="w-4 h-4" />
@@ -1698,29 +1698,29 @@ export default function AttendancePage() {
           {/* Filters + view toggle */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar evento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-800 border-slate-700 text-white"
+                className="pl-10 bg-card border-border text-foreground"
               />
             </div>
             <select
               value={eventTypeFilter}
               onChange={(e) => setEventTypeFilter(e.target.value)}
-              className="h-10 rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
+              className="h-10 rounded-md border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-600"
             >
               <option value="ALL">Todos los tipos</option>
               <option value="CULTO">Cultos</option>
               <option value="REUNION">Reuniones</option>
               <option value="ESPECIAL">Eventos Especiales</option>
             </select>
-            <div className="flex gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1">
+            <div className="flex gap-1 bg-card border border-border rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                  ${viewMode === "list" ? "bg-slate-700 text-white" : "text-gray-400 hover:text-white"}`}
+                  ${viewMode === "list" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <LayoutList className="w-4 h-4" />
                 <span className="hidden sm:inline">Lista</span>
@@ -1728,7 +1728,7 @@ export default function AttendancePage() {
               <button
                 onClick={() => setViewMode("grid")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                  ${viewMode === "grid" ? "bg-slate-700 text-white" : "text-gray-400 hover:text-white"}`}
+                  ${viewMode === "grid" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
                 <span className="hidden sm:inline">Cuadrícula</span>
@@ -1739,19 +1739,19 @@ export default function AttendancePage() {
           {loading ? (
             <div className="text-center py-16">
               <div className="w-10 h-10 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-gray-400">Cargando eventos...</p>
+              <p className="text-muted-foreground">Cargando eventos...</p>
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-20">
-              <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-600" />
-              <p className="text-gray-400">No se encontraron eventos</p>
+              <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">No se encontraron eventos</p>
             </div>
           ) : (
             <div className="space-y-8">
               {upcomingEvents.length > 0 && (
                 <section>
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-emerald-400" />
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                     Próximos — {upcomingEvents.length} evento
                     {upcomingEvents.length !== 1 ? "s" : ""}
                   </h2>
@@ -1764,8 +1764,8 @@ export default function AttendancePage() {
               )}
               {pastEvents.length > 0 && (
                 <section>
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-gray-500" />
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     Pasados — {pastEvents.length} evento
                     {pastEvents.length !== 1 ? "s" : ""}
                   </h2>

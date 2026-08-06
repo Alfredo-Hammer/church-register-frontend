@@ -30,14 +30,34 @@ import {
   Flame,
   FileText,
   BookOpen,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {Button} from "@/components/ui/Button";
+import {useTheme} from "@/contexts/ThemeContext";
 import {cn} from "@/lib/utils";
 
+/** Botón para alternar entre tema claro y oscuro */
+function ThemeToggle() {
+  const {theme, toggleTheme} = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      onClick={toggleTheme}
+      title={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+      aria-label={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+      className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+    >
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </button>
+  );
+}
+
 const STATUS_COLOR = {
-  ACTIVO: "text-green-400",
-  INACTIVO: "text-gray-400",
-  VISITANTE: "text-yellow-400",
+  ACTIVO: "text-green-700 dark:text-green-400",
+  INACTIVO: "text-muted-foreground",
+  VISITANTE: "text-amber-700 dark:text-yellow-400",
 };
 
 const EVENT_TYPE_LABEL = {
@@ -130,7 +150,7 @@ function GlobalSearch() {
   return (
     <div ref={wrapperRef} className="relative w-full max-w-md">
       <div className="relative flex items-center">
-        <Search className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -138,10 +158,10 @@ function GlobalSearch() {
           onChange={handleChange}
           onFocus={() => results && setOpen(true)}
           placeholder="Buscar… (⌘K)"
-          className="w-full pl-9 pr-16 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition-colors"
+          className="w-full pl-9 pr-16 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 transition-colors"
         />
         {loading && (
-          <Loader2 className="absolute right-3 w-4 h-4 text-gray-400 animate-spin" />
+          <Loader2 className="absolute right-3 w-4 h-4 text-muted-foreground animate-spin" />
         )}
         {!loading && query && (
           <button
@@ -150,55 +170,55 @@ function GlobalSearch() {
               setResults(null);
               setOpen(false);
             }}
-            className="absolute right-3 text-gray-500 hover:text-gray-300"
+            className="absolute right-3 text-muted-foreground hover:text-foreground"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         )}
         {!loading && !query && (
-          <kbd className="absolute right-3 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-slate-600 text-[10px] font-medium text-slate-500 bg-slate-800 pointer-events-none">
+          <kbd className="absolute right-3 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border text-[10px] font-medium text-muted-foreground bg-card pointer-events-none">
             ⌘K
           </kbd>
         )}
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto">
           {!hasResults ? (
-            <p className="text-gray-500 text-sm px-4 py-5 text-center">
+            <p className="text-muted-foreground text-sm px-4 py-5 text-center">
               Sin resultados para "{query}"
             </p>
           ) : (
             <div>
               {results.members?.length > 0 && (
                 <section>
-                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Miembros
                   </p>
                   {results.members.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => go(`/dashboard/members`)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent transition-colors text-left"
                     >
-                      <div className="w-7 h-7 rounded-full bg-slate-600 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-semibold text-gray-200">
+                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <span className="text-xs font-semibold text-foreground">
                           {m.first_name?.[0]}
                           {m.last_name?.[0]}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white font-medium truncate">
+                        <p className="text-sm text-foreground font-medium truncate">
                           {m.first_name} {m.last_name}
                         </p>
                         {m.email && (
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-xs text-muted-foreground truncate">
                             {m.email}
                           </p>
                         )}
                       </div>
                       <span
-                        className={`text-xs shrink-0 ${STATUS_COLOR[m.status] || "text-gray-400"}`}
+                        className={`text-xs shrink-0 ${STATUS_COLOR[m.status] || "text-muted-foreground"}`}
                       >
                         {m.status}
                       </span>
@@ -209,17 +229,17 @@ function GlobalSearch() {
 
               {results.families?.length > 0 && (
                 <section>
-                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Familias
                   </p>
                   {results.families.map((f) => (
                     <button
                       key={f.id}
                       onClick={() => go(`/dashboard/families`)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent transition-colors text-left"
                     >
-                      <UserPlus className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="text-sm text-white">
+                      <UserPlus className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground">
                         {f.family_name}
                       </span>
                     </button>
@@ -229,20 +249,20 @@ function GlobalSearch() {
 
               {results.groups?.length > 0 && (
                 <section>
-                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Grupos
                   </p>
                   {results.groups.map((g) => (
                     <button
                       key={g.id}
                       onClick={() => go(`/dashboard/groups`)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent transition-colors text-left"
                     >
-                      <UsersRound className="w-4 h-4 text-gray-400 shrink-0" />
+                      <UsersRound className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-white truncate">{g.name}</p>
+                        <p className="text-sm text-foreground truncate">{g.name}</p>
                         {g.description && (
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-xs text-muted-foreground truncate">
                             {g.description}
                           </p>
                         )}
@@ -254,21 +274,21 @@ function GlobalSearch() {
 
               {results.events?.length > 0 && (
                 <section className="pb-1">
-                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Eventos
                   </p>
                   {results.events.map((ev) => (
                     <button
                       key={ev.id}
                       onClick={() => go(`/dashboard/events`)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent transition-colors text-left"
                     >
-                      <CalendarDays className="w-4 h-4 text-gray-400 shrink-0" />
+                      <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white truncate">
+                        <p className="text-sm text-foreground truncate">
                           {ev.title}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {EVENT_TYPE_LABEL[ev.event_type] || ev.event_type} ·{" "}
                           {ev.date?.slice(0, 10)}
                         </p>
@@ -331,11 +351,11 @@ export const DashboardLayout = ({children}) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-background">
       {/* Sidebar para móvil */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-75 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -343,13 +363,13 @@ export const DashboardLayout = ({children}) => {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-800 border-r border-slate-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
-          <div className="border-b border-slate-700 px-4 py-4">
+          <div className="border-b border-border px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
                 {/* Logo / icon */}
@@ -368,17 +388,17 @@ export const DashboardLayout = ({children}) => {
                 </div>
                 {/* Church name + tagline */}
                 <div className="min-w-0">
-                  <p className="text-white font-bold text-sm leading-tight truncate">
+                  <p className="text-foreground font-bold text-sm leading-tight truncate">
                     {user?.churchName || "Iglesia"}
                   </p>
-                  <p className="text-blue-400 text-xs mt-0.5 truncate">
+                  <p className="text-blue-700 dark:text-blue-400 text-xs mt-0.5 truncate">
                     Sistema de Gestión
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-gray-400 hover:text-gray-200 shrink-0 ml-2"
+                className="lg:hidden text-muted-foreground hover:text-foreground shrink-0 ml-2"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -397,7 +417,7 @@ export const DashboardLayout = ({children}) => {
                     "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
                     isActive
                       ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-slate-700 hover:text-white",
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -409,11 +429,11 @@ export const DashboardLayout = ({children}) => {
           </nav>
 
           {/* User section */}
-          <div className="border-t border-slate-700 p-4">
+          <div className="border-t border-border p-4">
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-300 hover:bg-slate-700 rounded-lg transition-colors"
+                className="flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent rounded-lg transition-colors"
               >
                 <div className="flex-1 flex items-center">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shrink-0">
@@ -427,10 +447,10 @@ export const DashboardLayout = ({children}) => {
                     </span>
                   </div>
                   <div className="ml-3 text-left min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {user?.fullName || "Usuario"}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {user?.role || "Rol"}
                     </p>
                   </div>
@@ -439,21 +459,21 @@ export const DashboardLayout = ({children}) => {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-700 border border-slate-600 rounded-lg shadow-lg overflow-hidden">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
                   <Link
                     to="/dashboard/profile"
                     onClick={() => {
                       setUserMenuOpen(false);
                       setSidebarOpen(false);
                     }}
-                    className="flex items-center w-full px-4 py-3 text-sm text-gray-300 hover:bg-slate-600 transition-colors"
+                    className="flex items-center w-full px-4 py-3 text-sm text-muted-foreground hover:bg-accent transition-colors"
                   >
                     <User className="h-4 w-4 mr-3" />
                     Mi Perfil
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-3 text-sm text-gray-300 hover:bg-slate-600 transition-colors"
+                    className="flex items-center w-full px-4 py-3 text-sm text-muted-foreground hover:bg-accent transition-colors"
                   >
                     <LogOut className="h-4 w-4 mr-3" />
                     Cerrar sesión
@@ -468,11 +488,11 @@ export const DashboardLayout = ({children}) => {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-slate-800 border-b border-slate-700">
+        <div className="sticky top-0 z-10 bg-card border-b border-border">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-400 hover:text-gray-200"
+              className="lg:hidden text-muted-foreground hover:text-foreground"
             >
               <Menu className="h-6 w-6" />
             </button>
@@ -481,14 +501,18 @@ export const DashboardLayout = ({children}) => {
               <GlobalSearch />
             </div>
 
-            {/* Desktop user menu */}
-            <div className="hidden lg:block">
-              <span className="text-sm text-gray-400">
-                Bienvenido,{" "}
-                <span className="font-semibold text-white">
-                  {user?.fullName}
+            <div className="flex items-center gap-3 shrink-0">
+              <ThemeToggle />
+
+              {/* Desktop user menu */}
+              <div className="hidden lg:block">
+                <span className="text-sm text-muted-foreground">
+                  Bienvenido,{" "}
+                  <span className="font-semibold text-foreground">
+                    {user?.fullName}
+                  </span>
                 </span>
-              </span>
+              </div>
             </div>
           </div>
         </div>

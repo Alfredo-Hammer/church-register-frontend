@@ -89,10 +89,15 @@ function MemberAvatar({member, size = "md", onClick}) {
   );
 }
 
+// El tinte de fondo es claro en ambos temas, así que el texto necesita un tono
+// oscuro en tema claro (-700/-800) y el claro original (-400) en tema oscuro.
 const STATUS_STYLE = {
-  ACTIVO: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
-  INACTIVO: "bg-red-500/15 text-red-400 border border-red-500/30",
-  VISITANTE: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
+  ACTIVO:
+    "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30",
+  INACTIVO:
+    "bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30",
+  VISITANTE:
+    "bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30",
 };
 function StatusBadge({status}) {
   return (
@@ -106,12 +111,12 @@ function StatusBadge({status}) {
 
 const AGE_GROUP_STYLE = {
   NIÑO: {
-    style: "bg-teal-500/15 text-teal-400 border border-teal-500/30",
+    style: "bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30",
     icon: Baby,
     label: "Niño",
   },
   JOVEN: {
-    style: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+    style: "bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30",
     icon: GraduationCap,
     label: "Joven",
   },
@@ -305,22 +310,22 @@ function DetailPanel({
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md bg-slate-800 border-l border-slate-700 h-full overflow-y-auto flex flex-col animate-slide-in-right shadow-2xl">
+      <div className="relative w-full max-w-md bg-card border-l border-border h-full overflow-y-auto flex flex-col animate-slide-in-right shadow-2xl">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
-          <span className="text-sm text-gray-400 font-medium">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card z-10">
+          <span className="text-sm text-muted-foreground font-medium">
             Perfil del Miembro
           </span>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition-colors"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Avatar + name */}
-        <div className="flex flex-col items-center px-5 pt-8 pb-6 border-b border-slate-700">
+        <div className="flex flex-col items-center px-5 pt-8 pb-6 border-b border-border">
           <div className="relative mb-4">
             <MemberAvatar member={member} size="lg" />
             <button
@@ -343,12 +348,12 @@ function DetailPanel({
             <button
               onClick={handleDeletePhoto}
               disabled={photoUploading}
-              className="text-xs text-red-400 hover:text-red-300 mb-2 flex items-center gap-1 disabled:opacity-50"
+              className="text-xs text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 mb-2 flex items-center gap-1 disabled:opacity-50"
             >
               <Trash className="w-3 h-3" /> Eliminar foto
             </button>
           )}
-          <h2 className="text-xl font-bold text-white text-center">
+          <h2 className="text-xl font-bold text-foreground text-center">
             {member.first_name} {member.last_name}
           </h2>
           <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
@@ -363,7 +368,7 @@ function DetailPanel({
         <div className="flex-1 px-5 py-4 space-y-5">
           {/* Personal */}
           <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Información Personal
             </h3>
             <div className="space-y-3">
@@ -392,18 +397,18 @@ function DetailPanel({
           {/* Children / Youth section */}
           {(isChild || isYouth) && (
             <section>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 {isChild ? (
-                  <Baby className="w-3.5 h-3.5 text-teal-400" />
+                  <Baby className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
                 ) : (
-                  <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
+                  <GraduationCap className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
                 )}
                 {isChild ? "Información del Niño" : "Información del Joven"}
               </h3>
               <div className="space-y-3">
                 {guardianName && (
                   <InfoRow
-                    icon={<UserCheck className="w-4 h-4 text-blue-400" />}
+                    icon={<UserCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                     label="Padre / Tutor"
                     value={guardianName + (member.guardian_id ? " ✓" : "")}
                   />
@@ -417,21 +422,21 @@ function DetailPanel({
                 )}
                 {member.emergency_contact && (
                   <InfoRow
-                    icon={<Phone className="w-4 h-4 text-orange-400" />}
+                    icon={<Phone className="w-4 h-4 text-orange-700 dark:text-orange-400" />}
                     label="Contacto de emergencia"
                     value={member.emergency_contact}
                   />
                 )}
                 {member.allergies && (
                   <div className="flex items-start gap-3">
-                    <span className="text-red-400 mt-0.5 shrink-0">
+                    <span className="text-red-700 dark:text-red-400 mt-0.5 shrink-0">
                       <HeartPulse className="w-4 h-4" />
                     </span>
                     <div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Alergias / Condiciones médicas
                       </p>
-                      <p className="text-sm text-red-300 mt-0.5 font-medium">
+                      <p className="text-sm text-red-700 dark:text-red-300 mt-0.5 font-medium">
                         {member.allergies}
                       </p>
                     </div>
@@ -443,7 +448,7 @@ function DetailPanel({
 
           {/* Contact */}
           <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Contacto
             </h3>
             <div className="space-y-3">
@@ -469,8 +474,8 @@ function DetailPanel({
           {/* Palabras del Pastor / Líder */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-indigo-700 dark:text-indigo-400" />
                 Palabras del Pastor / Líder
               </h3>
               {!editingNotes && (
@@ -479,7 +484,7 @@ function DetailPanel({
                     setNotesValue(member.pastor_notes || "");
                     setEditingNotes(true);
                   }}
-                  className="text-gray-500 hover:text-indigo-400 transition-colors"
+                  className="text-muted-foreground hover:text-indigo-700 dark:text-indigo-400 transition-colors"
                   title="Editar notas"
                 >
                   <Pencil className="w-3.5 h-3.5" />
@@ -490,7 +495,7 @@ function DetailPanel({
               <div className="space-y-2.5">
                 {/* Plantillas rápidas */}
                 <div>
-                  <p className="text-xs text-gray-500 mb-1.5">
+                  <p className="text-xs text-muted-foreground mb-1.5">
                     Plantillas rápidas:
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -498,7 +503,7 @@ function DetailPanel({
                       <button
                         key={tpl.label}
                         onClick={() => setNotesValue(tpl.text)}
-                        className="px-2.5 py-1 text-xs rounded-full border border-indigo-500/30 text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 hover:border-indigo-400/50 transition-colors text-left"
+                        className="px-2.5 py-1 text-xs rounded-full border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 hover:border-indigo-400/50 transition-colors text-left"
                       >
                         {tpl.label}
                       </button>
@@ -510,12 +515,12 @@ function DetailPanel({
                   onChange={(e) => setNotesValue(e.target.value)}
                   rows={4}
                   placeholder="Escribe aquí las palabras de referencia..."
-                  className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 resize-none focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40"
                 />
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => setEditingNotes(false)}
-                    className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                    className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                     disabled={notesSaving}
                   >
                     Cancelar
@@ -543,24 +548,24 @@ function DetailPanel({
                 </div>
               </div>
             ) : member.pastor_notes ? (
-              <p className="text-sm text-gray-300 leading-relaxed italic border-l-2 border-indigo-500/40 pl-3">
+              <p className="text-sm text-muted-foreground leading-relaxed italic border-l-2 border-indigo-500/40 pl-3">
                 {member.pastor_notes}
               </p>
             ) : (
-              <p className="text-sm text-gray-600 italic">
+              <p className="text-sm text-muted-foreground italic">
                 Sin notas registradas.
               </p>
             )}
           </section>
 
           <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Grupos
             </h3>
             {groups === null ? (
-              <p className="text-gray-500 text-sm">Cargando...</p>
+              <p className="text-muted-foreground text-sm">Cargando...</p>
             ) : groups.length === 0 ? (
-              <p className="text-gray-500 text-sm">
+              <p className="text-muted-foreground text-sm">
                 No pertenece a ningún grupo.
               </p>
             ) : (
@@ -568,7 +573,7 @@ function DetailPanel({
                 {groups.map((g) => (
                   <span
                     key={g.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-full text-xs font-medium"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium"
                   >
                     <UsersRound className="w-3 h-3" />
                     {g.name}
@@ -580,7 +585,7 @@ function DetailPanel({
         </div>
 
         {/* Actions */}
-        <div className="px-5 py-4 border-t border-slate-700 flex gap-3 sticky bottom-0 bg-slate-800">
+        <div className="px-5 py-4 border-t border-border flex gap-3 sticky bottom-0 bg-card">
           <Button
             onClick={() => onEdit(member)}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
@@ -590,7 +595,7 @@ function DetailPanel({
           <Button
             onClick={() => onPrint(member)}
             variant="outline"
-            className="border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500"
+            className="border-indigo-500/40 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500"
             title="Imprimir / Exportar PDF"
           >
             <FileDown className="w-4 h-4" />
@@ -598,7 +603,7 @@ function DetailPanel({
           <Button
             onClick={() => onDelete(member)}
             variant="outline"
-            className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500"
+            className="border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10 hover:border-red-500"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -616,10 +621,10 @@ function DetailPanel({
 function InfoRow({icon, label, value}) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-gray-500 mt-0.5 shrink-0">{icon}</span>
+      <span className="text-muted-foreground mt-0.5 shrink-0">{icon}</span>
       <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm text-gray-200 mt-0.5">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm text-foreground mt-0.5">{value}</p>
       </div>
     </div>
   );
@@ -641,7 +646,7 @@ function PhotoUploader({preview, onChange, onRemove}) {
     <div className="flex items-center gap-4 mb-2">
       <div
         onClick={() => ref.current?.click()}
-        className="w-16 h-16 rounded-full overflow-hidden bg-slate-700 border-2 border-dashed border-slate-500 hover:border-blue-500 cursor-pointer flex items-center justify-center transition-colors shrink-0"
+        className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border hover:border-blue-500 cursor-pointer flex items-center justify-center transition-colors shrink-0"
       >
         {preview ? (
           <img
@@ -650,14 +655,14 @@ function PhotoUploader({preview, onChange, onRemove}) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <ImagePlus className="w-6 h-6 text-gray-500" />
+          <ImagePlus className="w-6 h-6 text-muted-foreground" />
         )}
       </div>
       <div className="flex flex-col gap-1.5">
         <button
           type="button"
           onClick={() => ref.current?.click()}
-          className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+          className="text-xs text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-700 dark:text-blue-300 font-medium"
         >
           {preview ? "Cambiar foto" : "Subir foto (opcional)"}
         </button>
@@ -665,12 +670,12 @@ function PhotoUploader({preview, onChange, onRemove}) {
           <button
             type="button"
             onClick={onRemove}
-            className="text-xs text-red-400 hover:text-red-300 font-medium"
+            className="text-xs text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 font-medium"
           >
             Quitar foto
           </button>
         )}
-        <p className="text-xs text-gray-600">PNG, JPG — máx. 2MB</p>
+        <p className="text-xs text-muted-foreground">PNG, JPG — máx. 2MB</p>
       </div>
       <input
         ref={ref}
@@ -970,8 +975,8 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Miembros</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Miembros</h1>
+          <p className="text-muted-foreground mt-1">
             Gestiona los miembros de tu iglesia
           </p>
         </div>
@@ -984,16 +989,16 @@ export default function MembersPage() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardContent className="pt-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-gray-500"
+                className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <select
@@ -1002,7 +1007,7 @@ export default function MembersPage() {
                 setStatusFilter(e.target.value);
                 setPagination((p) => ({...p, offset: 0}));
               }}
-              className="h-10 w-full rounded-md border border-slate-600 bg-slate-700 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="all">Todos los estados</option>
               <option value="activo">Activos</option>
@@ -1015,7 +1020,7 @@ export default function MembersPage() {
                 setAgeGroupFilter(e.target.value);
                 setPagination((p) => ({...p, offset: 0}));
               }}
-              className="h-10 w-full rounded-md border border-slate-600 bg-slate-700 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="all">Todas las categorías</option>
               <option value="ADULTO">Adultos</option>
@@ -1027,11 +1032,11 @@ export default function MembersPage() {
       </Card>
 
       {/* Table */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white text-base">
+          <CardTitle className="text-foreground text-base">
             Lista de Miembros
-            <span className="ml-2 text-sm font-normal text-gray-400">
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({pagination.total})
             </span>
           </CardTitle>
@@ -1040,10 +1045,10 @@ export default function MembersPage() {
           {loading ? (
             <div className="text-center py-14">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto" />
-              <p className="text-gray-400 mt-4 text-sm">Cargando miembros...</p>
+              <p className="text-muted-foreground mt-4 text-sm">Cargando miembros...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-14 text-gray-400">
+            <div className="text-center py-14 text-muted-foreground">
               <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p>No se encontraron miembros</p>
             </div>
@@ -1052,25 +1057,25 @@ export default function MembersPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-700 bg-slate-800/60">
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                         Miembro
                       </th>
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden md:table-cell">
                         Contacto
                       </th>
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
                         Categoría
                       </th>
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="text-right py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-700/50">
+                  <tbody className="divide-y divide-border/50">
                     {filtered.map((member) => {
                       const isChildRow = member.age_group === "NIÑO";
                       const guardianLabel = member.guardian_id
@@ -1079,24 +1084,24 @@ export default function MembersPage() {
                       return (
                         <tr
                           key={member.id}
-                          className="hover:bg-slate-700/40 transition-colors cursor-pointer"
+                          className="hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={() => setDetailMember(member)}
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               <MemberAvatar member={member} size="md" />
                               <div>
-                                <p className="text-white font-medium text-sm">
+                                <p className="text-foreground font-medium text-sm">
                                   {member.first_name} {member.last_name}
                                 </p>
                                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                   {member.birth_date && (
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-muted-foreground">
                                       {calcAge(member.birth_date)} años
                                     </span>
                                   )}
                                   {isChildRow && guardianLabel && (
-                                    <span className="text-xs text-gray-600">
+                                    <span className="text-xs text-muted-foreground">
                                       · {guardianLabel}
                                     </span>
                                   )}
@@ -1107,19 +1112,19 @@ export default function MembersPage() {
                           <td className="py-3 px-4 hidden md:table-cell">
                             <div className="space-y-1">
                               {member.email && (
-                                <p className="text-xs text-gray-400 flex items-center gap-1">
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
                                   {member.email}
                                 </p>
                               )}
                               {member.phone && (
-                                <p className="text-xs text-gray-400 flex items-center gap-1">
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
                                   <Phone className="w-3 h-3" />
                                   {member.phone}
                                 </p>
                               )}
                               {!member.email && !member.phone && (
-                                <span className="text-gray-600 text-xs">—</span>
+                                <span className="text-muted-foreground text-xs">—</span>
                               )}
                             </div>
                           </td>
@@ -1127,7 +1132,7 @@ export default function MembersPage() {
                             <AgeBadge ageGroup={member.age_group} />
                             {(!member.age_group ||
                               member.age_group === "ADULTO") && (
-                              <span className="text-gray-500 text-xs">
+                              <span className="text-muted-foreground text-xs">
                                 Adulto
                               </span>
                             )}
@@ -1142,14 +1147,14 @@ export default function MembersPage() {
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 onClick={() => openEdit(member)}
-                                className="p-2 text-blue-400 hover:bg-slate-600 rounded-lg transition-colors"
+                                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-accent rounded-lg transition-colors"
                                 title="Editar"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => confirmDelete(member)}
-                                className="p-2 text-red-400 hover:bg-slate-600 rounded-lg transition-colors"
+                                className="p-2 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
                                 title="Eliminar"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1163,8 +1168,8 @@ export default function MembersPage() {
                 </table>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700">
-                  <p className="text-sm text-gray-400">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
                     Página {currentPage} de {totalPages}
                   </p>
                   <div className="flex gap-2">
@@ -1173,7 +1178,7 @@ export default function MembersPage() {
                       disabled={currentPage === 1}
                       variant="outline"
                       size="sm"
-                      className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
@@ -1182,7 +1187,7 @@ export default function MembersPage() {
                       disabled={currentPage === totalPages}
                       variant="outline"
                       size="sm"
-                      className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>
@@ -1252,9 +1257,9 @@ export default function MembersPage() {
 
       {/* Create / Edit modal */}
       <Dialog open={isModalOpen} onOpenChange={(o) => !o && closeModal()}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-w-lg w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white text-xl flex items-center gap-3">
+            <DialogTitle className="text-foreground text-xl flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </span>
@@ -1270,13 +1275,13 @@ export default function MembersPage() {
             />
 
             {formError && (
-              <div className="bg-red-900/20 border border-red-800 text-red-300 rounded-lg p-3 flex items-start gap-2">
+              <div className="bg-red-500/10 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg p-3 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span className="text-sm">{formError}</span>
               </div>
             )}
             {formSuccess && (
-              <div className="bg-green-900/20 border border-green-800 text-green-300 rounded-lg p-3 flex items-start gap-2">
+              <div className="bg-green-500/10 dark:bg-green-900/20 border border-green-300 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg p-3 flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span className="text-sm">{formSuccess}</span>
               </div>
@@ -1285,7 +1290,7 @@ export default function MembersPage() {
             {/* Nombre + apellido */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Nombre *
                 </label>
                 <Input
@@ -1293,12 +1298,12 @@ export default function MembersPage() {
                   value={formData.firstName}
                   onChange={handleInput}
                   required
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                   placeholder="Juan"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Apellido *
                 </label>
                 <Input
@@ -1306,7 +1311,7 @@ export default function MembersPage() {
                   value={formData.lastName}
                   onChange={handleInput}
                   required
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                   placeholder="Pérez"
                 />
               </div>
@@ -1315,7 +1320,7 @@ export default function MembersPage() {
             {/* Fecha + género + categoría */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Fecha de Nacimiento
                 </label>
                 <Input
@@ -1323,16 +1328,16 @@ export default function MembersPage() {
                   type="date"
                   value={formData.birthDate}
                   onChange={handleInput}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
                 {formData.birthDate && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {calcAge(formData.birthDate)} años
                   </p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
+                <label className="text-sm font-medium text-muted-foreground">
                   Género *
                 </label>
                 <select
@@ -1340,7 +1345,7 @@ export default function MembersPage() {
                   value={formData.gender}
                   onChange={handleInput}
                   required
-                  className="h-10 w-full rounded-md border border-slate-600 bg-slate-700 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
                   <option value="MASCULINO">Masculino</option>
                   <option value="FEMENINO">Femenino</option>
@@ -1350,7 +1355,7 @@ export default function MembersPage() {
 
             {/* Categoría de edad */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Categoría de edad
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -1379,11 +1384,11 @@ export default function MembersPage() {
                       ${
                         formData.ageGroup === value
                           ? value === "NIÑO"
-                            ? "bg-teal-500/15 border-teal-500/50 text-teal-300"
+                            ? "bg-teal-500/15 border-teal-500/50 text-teal-700 dark:text-teal-300"
                             : value === "JOVEN"
-                              ? "bg-purple-500/15 border-purple-500/50 text-purple-300"
-                              : "bg-blue-500/15 border-blue-500/50 text-blue-300"
-                          : "bg-slate-700 border-slate-600 text-gray-400 hover:border-slate-500"
+                              ? "bg-purple-500/15 border-purple-500/50 text-purple-700 dark:text-purple-300"
+                              : "bg-blue-500/15 border-blue-500/50 text-blue-700 dark:text-blue-300"
+                          : "bg-secondary border-border text-muted-foreground hover:border-primary"
                       }`}
                   >
                     {Icon && <Icon className="w-4 h-4" />}
@@ -1402,7 +1407,7 @@ export default function MembersPage() {
               >
                 <p
                   className={`text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5
-                  ${formData.ageGroup === "NIÑO" ? "text-teal-400" : "text-purple-400"}`}
+                  ${formData.ageGroup === "NIÑO" ? "text-teal-700 dark:text-teal-400" : "text-purple-700 dark:text-purple-400"}`}
                 >
                   {formData.ageGroup === "NIÑO" ? (
                     <Baby className="w-3.5 h-3.5" />
@@ -1416,12 +1421,12 @@ export default function MembersPage() {
 
                 {/* Guardian search */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
-                    <UserCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     Padre / Tutor
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       value={guardianSearch}
                       onChange={(e) => {
@@ -1430,13 +1435,13 @@ export default function MembersPage() {
                           setFormData((p) => ({...p, guardianId: ""}));
                       }}
                       placeholder="Buscar miembro activo o escribir nombre..."
-                      className="pl-10 bg-slate-700 border-slate-600 text-white"
+                      className="pl-10 bg-background border-border text-foreground"
                     />
                     {formData.guardianId && (
                       <button
                         type="button"
                         onClick={clearGuardian}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1444,25 +1449,25 @@ export default function MembersPage() {
                   </div>
                   {/* Dropdown */}
                   {guardianResults.length > 0 && (
-                    <div className="bg-slate-700 border border-slate-600 rounded-lg overflow-hidden max-h-40 overflow-y-auto shadow-xl">
+                    <div className="bg-popover border border-border rounded-lg overflow-hidden max-h-40 overflow-y-auto shadow-xl">
                       {guardianResults.map((m) => (
                         <button
                           key={m.id}
                           type="button"
                           onClick={() => selectGuardian(m)}
-                          className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-slate-600 transition-colors text-left"
+                          className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-accent transition-colors text-left"
                         >
                           <MemberAvatar member={m} size="sm" />
-                          <span className="text-sm text-white">
+                          <span className="text-sm text-foreground">
                             {m.first_name} {m.last_name}
                           </span>
-                          <Check className="w-3.5 h-3.5 text-emerald-400 ml-auto shrink-0" />
+                          <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 ml-auto shrink-0" />
                         </button>
                       ))}
                     </div>
                   )}
                   {formData.guardianId && (
-                    <p className="text-xs text-emerald-400 flex items-center gap-1">
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                       <Check className="w-3 h-3" /> Miembro registrado
                       seleccionado
                     </p>
@@ -1472,7 +1477,7 @@ export default function MembersPage() {
                 {/* Grade (only for NIÑO) */}
                 {formData.ageGroup === "NIÑO" && (
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                       <GraduationCap className="w-3.5 h-3.5" /> Grado escolar
                     </label>
                     <Input
@@ -1480,15 +1485,15 @@ export default function MembersPage() {
                       value={formData.grade}
                       onChange={handleInput}
                       placeholder="Ej: 3° Primaria, Kinder, Pre-escolar..."
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-background border-border text-foreground"
                     />
                   </div>
                 )}
 
                 {/* Allergies */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
-                    <HeartPulse className="w-3.5 h-3.5 text-red-400" /> Alergias
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <HeartPulse className="w-3.5 h-3.5 text-red-700 dark:text-red-400" /> Alergias
                     / Condiciones médicas
                   </label>
                   <textarea
@@ -1497,14 +1502,14 @@ export default function MembersPage() {
                     onChange={handleInput}
                     rows={2}
                     placeholder="Ej: Alergia a nueces, asma, ninguna..."
-                    className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
                   />
                 </div>
 
                 {/* Emergency contact */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
-                    <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />{" "}
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-orange-700 dark:text-orange-400" />{" "}
                     Contacto de emergencia
                   </label>
                   <Input
@@ -1512,7 +1517,7 @@ export default function MembersPage() {
                     value={formData.emergencyContact}
                     onChange={handleInput}
                     placeholder="Nombre y teléfono de emergencia..."
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
               </div>
@@ -1520,42 +1525,42 @@ export default function MembersPage() {
 
             {/* Email + phone */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">Email</label>
+              <label className="text-sm font-medium text-muted-foreground">Email</label>
               <Input
                 name="email"
                 type="email"
                 value={formData.email}
                 onChange={handleInput}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-background border-border text-foreground"
                 placeholder="juan@ejemplo.com"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Teléfono
               </label>
               <Input
                 name="phone"
                 value={formData.phone}
                 onChange={handleInput}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-background border-border text-foreground"
                 placeholder="+1 234 567 8900"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Dirección
               </label>
               <Input
                 name="address"
                 value={formData.address}
                 onChange={handleInput}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-background border-border text-foreground"
                 placeholder="Calle Principal 123"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Estado *
               </label>
               <select
@@ -1563,7 +1568,7 @@ export default function MembersPage() {
                 value={formData.status}
                 onChange={handleInput}
                 required
-                className="h-10 w-full rounded-md border border-slate-600 bg-slate-700 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
               >
                 <option value="ACTIVO">Activo</option>
                 <option value="INACTIVO">Inactivo</option>
@@ -1576,7 +1581,7 @@ export default function MembersPage() {
                 type="button"
                 variant="outline"
                 onClick={closeModal}
-                className="bg-slate-700 border-slate-600 text-gray-300 hover:bg-slate-600"
+                className="bg-secondary border-border text-muted-foreground hover:bg-accent"
               >
                 Cancelar
               </Button>
@@ -1601,18 +1606,18 @@ export default function MembersPage() {
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
       >
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-sm w-full">
+        <DialogContent className="bg-card border-border max-w-sm w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3">
+            <DialogTitle className="text-foreground flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
               </span>
               Confirmar eliminación
             </DialogTitle>
           </DialogHeader>
-          <p className="mt-3 text-gray-300 text-sm">
+          <p className="mt-3 text-muted-foreground text-sm">
             ¿Eliminar a{" "}
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               {deleteTarget?.first_name} {deleteTarget?.last_name}
             </span>
             ? Esta acción no puede deshacerse.
@@ -1621,7 +1626,7 @@ export default function MembersPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteTarget(null)}
-              className="border-slate-600 text-gray-300 hover:text-white"
+              className="border-border text-muted-foreground hover:text-foreground"
             >
               Cancelar
             </Button>

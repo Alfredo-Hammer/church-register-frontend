@@ -262,8 +262,8 @@ export default function FamiliesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Familias</h1>
-          <p className="text-gray-400 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Familias</h1>
+          <p className="text-muted-foreground mt-2">
             Gestiona las familias de tu iglesia
           </p>
         </div>
@@ -277,16 +277,16 @@ export default function FamiliesPage() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar familia..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-700 border-slate-600 text-white"
+              className="pl-10 bg-background border-border text-foreground"
             />
           </div>
         </CardContent>
@@ -296,43 +296,43 @@ export default function FamiliesPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="text-gray-400 mt-4">Cargando familias...</p>
+          <p className="text-muted-foreground mt-4">Cargando familias...</p>
         </div>
       ) : filteredFamilies.length === 0 ? (
         <div className="text-center py-12">
-          <UserPlus className="h-12 w-12 mx-auto mb-4 text-gray-500" />
-          <p className="text-gray-400">No se encontraron familias</p>
+          <UserPlus className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">No se encontraron familias</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredFamilies.map((family) => (
             <Card
               key={family.id}
-              className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20"
+              className="bg-gradient-to-br from-card to-background border-border hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20"
             >
               <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
+                <CardTitle className="text-foreground flex items-center justify-between">
                   <span className="flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-purple-400" />
+                    <Users className="h-5 w-5 mr-2 text-purple-700 dark:text-purple-400" />
                     {family.family_name}
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center text-gray-300">
-                    <UserPlus className="h-4 w-4 mr-2 text-purple-400" />
+                  <div className="flex items-center text-muted-foreground">
+                    <UserPlus className="h-4 w-4 mr-2 text-purple-700 dark:text-purple-400" />
                     <span className="text-sm">
                       {family.member_count || 0} miembro(s)
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
                     <Button
                       onClick={() => handleOpenMembersModal(family)}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-600/10 border-purple-600 text-purple-400 hover:bg-purple-600/20"
+                      className="bg-purple-600/10 border-purple-600 text-purple-700 dark:text-purple-400 hover:bg-purple-600/20"
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       Ver Miembros
@@ -341,7 +341,7 @@ export default function FamiliesPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleOpenEditModal(family)}
-                        className="p-2 text-blue-400 hover:bg-slate-700 rounded-lg transition-colors"
+                        className="p-2 text-blue-700 dark:text-blue-400 hover:bg-accent rounded-lg transition-colors"
                         title="Editar"
                       >
                         <Edit className="h-4 w-4" />
@@ -350,7 +350,7 @@ export default function FamiliesPage() {
                         onClick={() =>
                           handleDelete(family.id, family.family_name)
                         }
-                        className="p-2 text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
+                        className="p-2 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -367,7 +367,7 @@ export default function FamiliesPage() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Página {pagination.page} de {pagination.totalPages}
           </p>
           <div className="flex space-x-2">
@@ -376,7 +376,7 @@ export default function FamiliesPage() {
               disabled={pagination.page === 1}
               variant="outline"
               size="sm"
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+              className="bg-background border-border text-foreground hover:bg-accent"
             >
               Anterior
             </Button>
@@ -385,7 +385,7 @@ export default function FamiliesPage() {
               disabled={pagination.page === pagination.totalPages}
               variant="outline"
               size="sm"
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+              className="bg-background border-border text-foreground hover:bg-accent"
             >
               Siguiente
             </Button>
@@ -409,20 +409,20 @@ export default function FamiliesPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             {formError && (
-              <div className="bg-red-900/20 border border-red-800 text-red-300 rounded-lg p-3 flex items-start space-x-2">
+              <div className="bg-red-500/10 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg p-3 flex items-start space-x-2">
                 <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">{formError}</span>
               </div>
             )}
             {formSuccess && (
-              <div className="bg-green-900/20 border border-green-800 text-green-300 rounded-lg p-3 flex items-start space-x-2">
+              <div className="bg-green-500/10 dark:bg-green-900/20 border border-green-300 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg p-3 flex items-start space-x-2">
                 <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">{formSuccess}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-muted-foreground">
                 Nombre de la Familia *
               </label>
               <Input
@@ -430,7 +430,7 @@ export default function FamiliesPage() {
                 value={formData.familyName}
                 onChange={handleInputChange}
                 required
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-background border-border text-foreground"
                 placeholder="Ej: Familia González"
               />
             </div>
@@ -440,7 +440,7 @@ export default function FamiliesPage() {
                 type="button"
                 onClick={handleCloseModal}
                 variant="outline"
-                className="bg-slate-700 border-slate-600 text-gray-300 hover:bg-slate-600"
+                className="bg-background border-border text-muted-foreground hover:bg-accent"
               >
                 Cancelar
               </Button>
@@ -468,15 +468,15 @@ export default function FamiliesPage() {
 
           <div className="space-y-4 mt-4">
             {/* Add Member Section */}
-            <div className="bg-slate-700 p-4 rounded-lg space-y-3">
-              <h3 className="text-sm font-medium text-white">
+            <div className="bg-background p-4 rounded-lg space-y-3">
+              <h3 className="text-sm font-medium text-foreground">
                 Agregar Miembro
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <select
                   value={selectedMember}
                   onChange={(e) => setSelectedMember(e.target.value)}
-                  className="h-10 w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                  className="h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-600"
                 >
                   <option value="">Seleccionar miembro...</option>
                   {availableMembers
@@ -490,7 +490,7 @@ export default function FamiliesPage() {
                 <select
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value)}
-                  className="h-10 w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                  className="h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-600"
                 >
                   <option value="PADRE">Padre</option>
                   <option value="MADRE">Madre</option>
@@ -510,11 +510,11 @@ export default function FamiliesPage() {
 
             {/* Members List */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-white">
+              <h3 className="text-sm font-medium text-foreground">
                 Miembros ({familyMembers.length})
               </h3>
               {familyMembers.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">
+                <p className="text-sm text-muted-foreground text-center py-4">
                   No hay miembros en esta familia
                 </p>
               ) : (
@@ -522,19 +522,19 @@ export default function FamiliesPage() {
                   {familyMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between bg-slate-700 p-3 rounded-lg"
+                      className="flex items-center justify-between bg-background p-3 rounded-lg"
                     >
                       <div>
-                        <p className="text-white font-medium">
+                        <p className="text-foreground font-medium">
                           {member.first_name} {member.last_name}
                         </p>
-                        <p className="text-sm text-purple-400">
+                        <p className="text-sm text-purple-700 dark:text-purple-400">
                           {member.relationship}
                         </p>
                       </div>
                       <button
                         onClick={() => handleRemoveMember(member.id)}
-                        className="p-2 text-red-400 hover:bg-slate-600 rounded-lg transition-colors"
+                        className="p-2 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -560,13 +560,13 @@ export default function FamiliesPage() {
                 win.document.close();
               }}
               disabled={familyMembers.length === 0}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
             >
               <Printer className="h-4 w-4" /> PDF
             </Button>
             <Button
               onClick={handleCloseMembersModal}
-              className="bg-slate-700 hover:bg-slate-600 text-white"
+              className="bg-background hover:bg-accent text-foreground"
             >
               Cerrar
             </Button>
@@ -576,12 +576,12 @@ export default function FamiliesPage() {
 
       {/* Error Alert (fuera de modales, para errores generales) */}
       {errorAlert && (
-        <div className="fixed bottom-4 right-4 z-50 bg-red-900/90 border border-red-700 text-red-200 rounded-lg p-4 flex items-center gap-3 shadow-lg max-w-sm">
+        <div className="fixed bottom-4 right-4 z-50 bg-red-500/10 dark:bg-red-900/90 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-200 rounded-lg p-4 flex items-center gap-3 shadow-lg max-w-sm">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <span className="text-sm flex-1">{errorAlert}</span>
           <button
             onClick={() => setErrorAlert("")}
-            className="text-red-300 hover:text-white"
+            className="text-red-700 dark:text-red-300 hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -610,7 +610,7 @@ export default function FamiliesPage() {
                 setConfirmDialog((prev) => ({...prev, open: false}))
               }
               variant="outline"
-              className="bg-slate-700 border-slate-600 text-gray-300 hover:bg-slate-600"
+              className="bg-background border-border text-muted-foreground hover:bg-accent"
             >
               Cancelar
             </Button>

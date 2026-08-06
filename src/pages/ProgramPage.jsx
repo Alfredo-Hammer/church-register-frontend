@@ -15,22 +15,22 @@ import {
 // ── Catálogos ─────────────────────────────────────────────────────────────────
 
 const ITEM_TYPES = [
-  { value: 'BIENVENIDA',     label: 'Bienvenida',       icon: Hand,           color: 'text-teal-400',   bg: 'bg-teal-500/15' },
-  { value: 'ALABANZA',       label: 'Alabanza',          icon: Music,          color: 'text-purple-400', bg: 'bg-purple-500/15' },
-  { value: 'ORACION',        label: 'Oración',           icon: Users,          color: 'text-blue-400',   bg: 'bg-blue-500/15' },
-  { value: 'LECTURA_BIBLICA',label: 'Lectura Bíblica',   icon: BookOpen,       color: 'text-amber-400',  bg: 'bg-amber-500/15' },
-  { value: 'MENSAJE',        label: 'Mensaje / Sermón',  icon: MessageSquare,  color: 'text-indigo-400', bg: 'bg-indigo-500/15' },
-  { value: 'OFRENDAS',       label: 'Ofrendas / Diezmos',icon: Heart,          color: 'text-rose-400',   bg: 'bg-rose-500/15' },
-  { value: 'ANUNCIOS',       label: 'Anuncios',          icon: Megaphone,      color: 'text-orange-400', bg: 'bg-orange-500/15' },
-  { value: 'COMUNION',       label: 'Santa Cena',        icon: Wine,           color: 'text-red-400',    bg: 'bg-red-500/15' },
-  { value: 'ESPECIAL',       label: 'Especial',          icon: Star,           color: 'text-yellow-400', bg: 'bg-yellow-500/15' },
-  { value: 'OTRO',           label: 'Otro',              icon: HelpCircle,     color: 'text-slate-400',  bg: 'bg-slate-500/15' },
+  { value: 'BIENVENIDA',     label: 'Bienvenida',       icon: Hand,           color: 'text-teal-700 dark:text-teal-400',   bg: 'bg-teal-500/15' },
+  { value: 'ALABANZA',       label: 'Alabanza',          icon: Music,          color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-500/15' },
+  { value: 'ORACION',        label: 'Oración',           icon: Users,          color: 'text-blue-700 dark:text-blue-400',   bg: 'bg-blue-500/15' },
+  { value: 'LECTURA_BIBLICA',label: 'Lectura Bíblica',   icon: BookOpen,       color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-500/15' },
+  { value: 'MENSAJE',        label: 'Mensaje / Sermón',  icon: MessageSquare,  color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-500/15' },
+  { value: 'OFRENDAS',       label: 'Ofrendas / Diezmos',icon: Heart,          color: 'text-rose-700 dark:text-rose-400',   bg: 'bg-rose-500/15' },
+  { value: 'ANUNCIOS',       label: 'Anuncios',          icon: Megaphone,      color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-500/15' },
+  { value: 'COMUNION',       label: 'Santa Cena',        icon: Wine,           color: 'text-red-700 dark:text-red-400',    bg: 'bg-red-500/15' },
+  { value: 'ESPECIAL',       label: 'Especial',          icon: Star,           color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-500/15' },
+  { value: 'OTRO',           label: 'Otro',              icon: HelpCircle,     color: 'text-muted-foreground',  bg: 'bg-muted' },
 ];
 
 const STATUSES = [
-  { value: 'BORRADOR',   label: 'Borrador',   color: 'bg-slate-500/20 text-slate-300' },
-  { value: 'PUBLICADO',  label: 'Publicado',  color: 'bg-blue-500/20 text-blue-300' },
-  { value: 'COMPLETADO', label: 'Completado', color: 'bg-green-500/20 text-green-300' },
+  { value: 'BORRADOR',   label: 'Borrador',   color: 'bg-muted text-muted-foreground' },
+  { value: 'PUBLICADO',  label: 'Publicado',  color: 'bg-blue-500/20 text-blue-700 dark:text-blue-300' },
+  { value: 'COMPLETADO', label: 'Completado', color: 'bg-green-500/20 text-green-700 dark:text-green-300' },
 ];
 
 const getType   = (v) => ITEM_TYPES.find((t) => t.value === v) || ITEM_TYPES[ITEM_TYPES.length - 1];
@@ -447,13 +447,13 @@ export default function ProgramPage() {
             <ClipboardList className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Programa de Culto</h1>
-            <p className="text-sm text-slate-400">Gestiona el orden y tiempo de cada servicio</p>
+            <h1 className="text-2xl font-bold text-foreground">Programa de Culto</h1>
+            <p className="text-sm text-muted-foreground">Gestiona el orden y tiempo de cada servicio</p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setTemplateModal(true)} variant="outline"
-            className="flex items-center gap-2 border-slate-600 text-slate-300 hover:border-indigo-500/50 hover:text-white">
+            className="flex items-center gap-2 border-border text-muted-foreground hover:border-indigo-500/50 hover:text-foreground">
             <ClipboardList className="h-4 w-4" /> Plantillas
           </Button>
           <Button onClick={() => openCreateProgram()} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
@@ -464,7 +464,7 @@ export default function ProgramPage() {
 
       {/* Mensajes globales */}
       {successMsg && !programModal && !itemModal && (
-        <div className="flex items-center gap-2 p-3 bg-green-900/40 border border-green-700 rounded-lg text-green-300 text-sm">
+        <div className="flex items-center gap-2 p-3 bg-green-500/10 dark:bg-green-900/40 border border-green-300 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300 text-sm">
           <CheckCircle className="h-4 w-4" /> {successMsg}
         </div>
       )}
@@ -472,13 +472,13 @@ export default function ProgramPage() {
       {/* Lista de programas */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1,2,3].map((i) => <div key={i} className="h-32 bg-slate-800 rounded-xl animate-pulse border border-slate-700" />)}
+          {[1,2,3].map((i) => <div key={i} className="h-32 bg-card rounded-xl animate-pulse border border-border" />)}
         </div>
       ) : programs.length === 0 ? (
         <div className="space-y-4">
-          <div className="flex flex-col items-center justify-center py-10 bg-slate-800 border border-slate-700 rounded-xl text-slate-400">
+          <div className="flex flex-col items-center justify-center py-10 bg-card border border-border rounded-xl text-muted-foreground">
             <ClipboardList className="h-12 w-12 mb-3 opacity-30" />
-            <p className="font-medium text-white">No hay programas creados</p>
+            <p className="font-medium text-foreground">No hay programas creados</p>
             <p className="text-sm mb-4">Empieza desde una plantilla o crea uno desde cero</p>
             <Button onClick={() => setTemplateModal(true)}
               className="bg-indigo-600 hover:bg-indigo-700 gap-2">
@@ -492,7 +492,7 @@ export default function ProgramPage() {
           {/* Próximos */}
           {upcoming.length > 0 && (
             <div>
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-3">Próximos</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">Próximos</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {upcoming.map((p) => (
                   <ProgramCard
@@ -511,7 +511,7 @@ export default function ProgramPage() {
           {/* Pasados */}
           {past.length > 0 && (
             <div>
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-3">Anteriores</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">Anteriores</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60">
                 {past.slice(0, 6).map((p) => (
                   <ProgramCard
@@ -531,7 +531,7 @@ export default function ProgramPage() {
 
       {/* ── Detalle del programa ────────────────────────────────────────────── */}
       {(selectedProgram || loadingDetail) && (
-        <div ref={detailRef} className="bg-slate-800 border border-indigo-500/30 rounded-2xl overflow-hidden">
+        <div ref={detailRef} className="bg-card border border-indigo-500/30 rounded-2xl overflow-hidden">
 
           {loadingDetail ? (
             <div className="flex items-center justify-center py-20">
@@ -540,7 +540,7 @@ export default function ProgramPage() {
           ) : selectedProgram && (
             <>
               {/* Header del detalle */}
-              <div className="bg-gradient-to-r from-indigo-900/40 to-slate-800 px-6 py-5 border-b border-slate-700">
+              <div className="bg-gradient-to-r from-primary/10 to-card px-6 py-5 border-b border-border">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -548,8 +548,8 @@ export default function ProgramPage() {
                         {getStatus(selectedProgram.program.status).label}
                       </span>
                     </div>
-                    <h2 className="text-xl font-bold text-white">{selectedProgram.program.title}</h2>
-                    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-400">
+                    <h2 className="text-xl font-bold text-foreground">{selectedProgram.program.title}</h2>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <CalendarDays className="h-3.5 w-3.5" />
                         <span className="capitalize">{formatDate(selectedProgram.program.date)}</span>
@@ -561,14 +561,14 @@ export default function ProgramPage() {
                         </span>
                       )}
                       {totalMinutes > 0 && (
-                        <span className="flex items-center gap-1.5 text-indigo-400">
+                        <span className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400">
                           <PlayCircle className="h-3.5 w-3.5" />
                           Duración estimada: {minutesToDuration(totalMinutes)}
                         </span>
                       )}
                     </div>
                     {selectedProgram.program.notes && (
-                      <p className="mt-2 text-sm text-slate-400 italic">{selectedProgram.program.notes}</p>
+                      <p className="mt-2 text-sm text-muted-foreground italic">{selectedProgram.program.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
@@ -585,7 +585,7 @@ export default function ProgramPage() {
               {/* Timeline de items */}
               <div className="p-6">
                 {selectedProgram.items.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                     <ClipboardList className="h-10 w-10 mb-2 opacity-30" />
                     <p className="text-sm">Este programa no tiene items aún</p>
                     <p className="text-xs mt-1">Usa "Agregar Item" para construir el orden del servicio</p>
@@ -616,42 +616,42 @@ export default function ProgramPage() {
                           {/* Línea de tiempo */}
                           <div className="flex flex-col items-center flex-shrink-0 w-12">
                             {time && (
-                              <span className="text-xs text-slate-500 font-mono mb-1 whitespace-nowrap">{time}</span>
+                              <span className="text-xs text-muted-foreground font-mono mb-1 whitespace-nowrap">{time}</span>
                             )}
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${typeInfo.bg}`}>
                               <Icon className={`h-4 w-4 ${typeInfo.color}`} />
                             </div>
-                            {!isLast && <div className="w-0.5 flex-1 bg-slate-700 mt-1 min-h-[16px]" />}
+                            {!isLast && <div className="w-0.5 flex-1 bg-background mt-1 min-h-[16px]" />}
                           </div>
 
                           {/* Contenido */}
                           <div className="flex-1 pb-4">
-                            <div className={`bg-slate-700/40 hover:bg-slate-700/60 border rounded-xl p-4 transition-colors
-                              ${isHover ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 hover:border-slate-600'}`}>
+                            <div className={`bg-muted/50 hover:bg-muted/50 border rounded-xl p-4 transition-colors
+                              ${isHover ? 'border-indigo-500 bg-indigo-500/10' : 'border-border hover:border-muted-foreground/40'}`}>
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className={`text-xs font-medium ${typeInfo.color}`}>{typeInfo.label}</span>
                                     {item.duration_minutes && (
-                                      <span className="text-xs px-1.5 py-0.5 bg-slate-600 text-slate-300 rounded font-mono">
+                                      <span className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                                         {minutesToDuration(item.duration_minutes)}
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-white font-semibold mt-0.5">{item.title}</p>
+                                  <p className="text-foreground font-semibold mt-0.5">{item.title}</p>
                                   {leaderName && (
                                     <div className="flex items-center gap-1.5 mt-1.5">
-                                      <div className="w-5 h-5 rounded-full bg-indigo-600/40 flex items-center justify-center text-xs font-bold text-indigo-300">
+                                      <div className="w-5 h-5 rounded-full bg-indigo-600/40 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-300">
                                         {leaderName[0]}
                                       </div>
-                                      <span className="text-xs text-slate-400">{leaderName}</span>
+                                      <span className="text-xs text-muted-foreground">{leaderName}</span>
                                       {item.responsible_id && (
                                         <CheckSquare className="h-3 w-3 text-green-500" title="Miembro activo" />
                                       )}
                                     </div>
                                   )}
                                   {item.notes && (
-                                    <p className="text-xs text-slate-500 mt-1.5 italic">{item.notes}</p>
+                                    <p className="text-xs text-muted-foreground mt-1.5 italic">{item.notes}</p>
                                   )}
                                 </div>
 
@@ -659,18 +659,18 @@ export default function ProgramPage() {
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                   <div
                                     title="Arrastrar para reordenar"
-                                    className="p-1 text-slate-600 hover:text-slate-400 cursor-grab active:cursor-grabbing transition-colors"
+                                    className="p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
                                     onMouseDown={(e) => e.stopPropagation()}
                                   >
                                     <GripVertical className="h-4 w-4" />
                                   </div>
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => openEditItem(item)}
-                                      className="p-1 text-slate-500 hover:text-blue-400 hover:bg-slate-600 rounded transition-colors">
+                                      className="p-1 text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-accent rounded transition-colors">
                                       <Pencil className="h-4 w-4" />
                                     </button>
                                     <button onClick={() => { setError(''); setDeleteTarget({ type: 'item', id: item.id, label: item.title }); }}
-                                      className="p-1 text-slate-500 hover:text-red-400 hover:bg-slate-600 rounded transition-colors">
+                                      className="p-1 text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-accent rounded transition-colors">
                                       <Trash2 className="h-4 w-4" />
                                     </button>
                                   </div>
@@ -686,7 +686,7 @@ export default function ProgramPage() {
                     {selectedProgram.program.start_time && totalMinutes > 0 && (
                       <div className="flex gap-4 mt-2">
                         <div className="w-12 flex justify-center">
-                          <span className="text-xs text-indigo-400 font-mono font-bold">
+                          <span className="text-xs text-indigo-700 dark:text-indigo-400 font-mono font-bold">
                             {itemTimes[selectedProgram.items.length] ||
                               (() => {
                                 const [h, m] = selectedProgram.program.start_time.slice(0, 5).split(':').map(Number);
@@ -697,7 +697,7 @@ export default function ProgramPage() {
                           </span>
                         </div>
                         <div className="flex-1 pb-2">
-                          <div className="flex items-center gap-2 text-xs text-indigo-400 border border-indigo-500/20 bg-indigo-500/5 rounded-lg px-3 py-2">
+                          <div className="flex items-center gap-2 text-xs text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 bg-indigo-500/5 rounded-lg px-3 py-2">
                             <CheckCircle className="h-3.5 w-3.5" />
                             Fin estimado — Duración total: <strong>{minutesToDuration(totalMinutes)}</strong>
                           </div>
@@ -725,62 +725,62 @@ export default function ProgramPage() {
       {/* ── Modal: crear / editar programa ─────────────────────────────────── */}
       <Dialog open={programModal} onClose={() => setProgramModal(false)}>
         <DialogHeader onClose={() => setProgramModal(false)}>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-foreground">
             {editingProgram ? 'Editar Programa' : 'Nuevo Programa'}
           </h2>
         </DialogHeader>
         <form onSubmit={handleSaveProgram}>
           <DialogContent className="space-y-4">
             {errorMsg && (
-              <div className="flex items-center gap-2 p-3 bg-red-900/40 border border-red-700 rounded-lg text-red-300 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" /> {errorMsg}
               </div>
             )}
             {successMsg && (
-              <div className="flex items-center gap-2 p-3 bg-green-900/40 border border-green-700 rounded-lg text-green-300 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 dark:bg-green-900/40 border border-green-300 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300 text-sm">
                 <CheckCircle className="h-4 w-4 flex-shrink-0" /> {successMsg}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 {pendingTemplate && (
-                  <div className="mb-3 flex items-center gap-2 text-xs text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
+                  <div className="mb-3 flex items-center gap-2 text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
                     <ClipboardList className="h-3.5 w-3.5 shrink-0" />
                     Se agregarán <strong>{pendingTemplate.length} items</strong> automáticamente al crear.
                   </div>
                 )}
-                <label className="block text-sm font-medium text-slate-300 mb-1">Título *</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Título *</label>
                 <Input value={programForm.title}
                   onChange={(e) => setProgramForm({ ...programForm, title: e.target.value })}
                   placeholder="Ej: Culto Dominical, Servicio de Adoración" required
-                  className="bg-slate-700 border-slate-600 text-white" />
+                  className="bg-background border-border text-foreground" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Fecha *</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha *</label>
                 <Input type="date" value={programForm.date}
                   onChange={(e) => setProgramForm({ ...programForm, date: e.target.value })} required
-                  className="bg-slate-700 border-slate-600 text-white" />
+                  className="bg-background border-border text-foreground" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Hora de inicio</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Hora de inicio</label>
                 <Input type="time" value={programForm.startTime}
                   onChange={(e) => setProgramForm({ ...programForm, startTime: e.target.value })}
-                  className="bg-slate-700 border-slate-600 text-white" />
+                  className="bg-background border-border text-foreground" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Estado</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
                 <select value={programForm.status}
                   onChange={(e) => setProgramForm({ ...programForm, status: e.target.value })}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm">
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm">
                   {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-300 mb-1">Notas</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Notas</label>
                 <textarea value={programForm.notes}
                   onChange={(e) => setProgramForm({ ...programForm, notes: e.target.value })}
                   placeholder="Tema del mensaje, notas generales..." rows={2}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
           </DialogContent>
@@ -796,19 +796,19 @@ export default function ProgramPage() {
       {/* ── Modal: agregar / editar item ────────────────────────────────────── */}
       <Dialog open={itemModal} onClose={() => setItemModal(false)}>
         <DialogHeader onClose={() => setItemModal(false)}>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-foreground">
             {editingItem ? 'Editar Item' : 'Agregar Item al Programa'}
           </h2>
         </DialogHeader>
         <form onSubmit={handleSaveItem}>
           <DialogContent className="space-y-4">
             {errorMsg && (
-              <div className="flex items-center gap-2 p-3 bg-red-900/40 border border-red-700 rounded-lg text-red-300 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" /> {errorMsg}
               </div>
             )}
             {successMsg && (
-              <div className="flex items-center gap-2 p-3 bg-green-900/40 border border-green-700 rounded-lg text-green-300 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 dark:bg-green-900/40 border border-green-300 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300 text-sm">
                 <CheckCircle className="h-4 w-4 flex-shrink-0" /> {successMsg}
               </div>
             )}
@@ -816,39 +816,39 @@ export default function ProgramPage() {
 
               {/* Tipo */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Tipo</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Tipo</label>
                 <select value={itemForm.itemType}
                   onChange={(e) => setItemForm({ ...itemForm, itemType: e.target.value })}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm">
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm">
                   {ITEM_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
 
               {/* Duración */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Duración (minutos)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Duración (minutos)</label>
                 <Input type="number" min="1" max="180" value={itemForm.durationMinutes}
                   onChange={(e) => setItemForm({ ...itemForm, durationMinutes: e.target.value })}
-                  placeholder="Ej: 15" className="bg-slate-700 border-slate-600 text-white" />
+                  placeholder="Ej: 15" className="bg-background border-border text-foreground" />
               </div>
 
               {/* Título */}
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-300 mb-1">Descripción / Título *</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Descripción / Título *</label>
                 <Input value={itemForm.title}
                   onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
                   placeholder="Ej: Alabanza de apertura, Oración general, Sermón..." required
-                  className="bg-slate-700 border-slate-600 text-white" />
+                  className="bg-background border-border text-foreground" />
               </div>
 
               {/* Responsable — búsqueda de miembro activo */}
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Quien dirige
-                  <span className="text-xs text-slate-500 ml-1">(miembro activo o nombre libre)</span>
+                  <span className="text-xs text-muted-foreground ml-1">(miembro activo o nombre libre)</span>
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={memberSearch}
                     onChange={(e) => {
@@ -856,11 +856,11 @@ export default function ProgramPage() {
                       if (itemForm.responsibleId) setItemForm({ ...itemForm, responsibleId: '' });
                     }}
                     placeholder="Buscar miembro activo o escribir nombre..."
-                    className="pl-9 bg-slate-700 border-slate-600 text-white"
+                    className="pl-9 bg-background border-border text-foreground"
                   />
                   {itemForm.responsibleId && (
                     <button type="button" onClick={clearMember}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       <XCircle className="h-4 w-4" />
                     </button>
                   )}
@@ -868,16 +868,16 @@ export default function ProgramPage() {
 
                 {/* Dropdown de miembros */}
                 {memberSearch.length > 0 && !itemForm.responsibleId && filteredMembers.length > 0 && (
-                  <div className="mt-1 bg-slate-700 border border-slate-600 rounded-lg overflow-hidden max-h-40 overflow-y-auto shadow-xl">
+                  <div className="mt-1 bg-background border border-border rounded-lg overflow-hidden max-h-40 overflow-y-auto shadow-xl">
                     {filteredMembers.slice(0, 8).map((m) => (
                       <button key={m.id} type="button" onClick={() => selectMember(m)}
-                        className="flex items-center gap-3 w-full px-3 py-2 hover:bg-slate-600 transition-colors text-left">
-                        <div className="w-7 h-7 rounded-full bg-indigo-600/40 flex items-center justify-center text-xs font-bold text-indigo-300 flex-shrink-0">
+                        className="flex items-center gap-3 w-full px-3 py-2 hover:bg-accent transition-colors text-left">
+                        <div className="w-7 h-7 rounded-full bg-indigo-600/40 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-300 flex-shrink-0">
                           {m.first_name[0]}{m.last_name[0]}
                         </div>
                         <div>
-                          <p className="text-sm text-white">{m.first_name} {m.last_name}</p>
-                          {m.phone && <p className="text-xs text-slate-400">{m.phone}</p>}
+                          <p className="text-sm text-foreground">{m.first_name} {m.last_name}</p>
+                          {m.phone && <p className="text-xs text-muted-foreground">{m.phone}</p>}
                         </div>
                         <CheckSquare className="h-3.5 w-3.5 text-green-500 ml-auto flex-shrink-0" />
                       </button>
@@ -886,7 +886,7 @@ export default function ProgramPage() {
                 )}
 
                 {itemForm.responsibleId && (
-                  <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-green-700 dark:text-green-400 mt-1 flex items-center gap-1">
                     <CheckSquare className="h-3 w-3" /> Miembro activo seleccionado
                   </p>
                 )}
@@ -894,11 +894,11 @@ export default function ProgramPage() {
 
               {/* Notas */}
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-300 mb-1">Notas del item</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Notas del item</label>
                 <textarea value={itemForm.notes}
                   onChange={(e) => setItemForm({ ...itemForm, notes: e.target.value })}
                   placeholder="Pasaje bíblico, canción, instrucciones especiales..." rows={2}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
           </DialogContent>
@@ -914,13 +914,13 @@ export default function ProgramPage() {
       {/* ── Modal: plantillas ───────────────────────────────────────────────── */}
       <Dialog open={templateModal} onClose={() => setTemplateModal(false)}>
         <DialogHeader onClose={() => setTemplateModal(false)}>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-indigo-400" />
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-indigo-700 dark:text-indigo-400" />
             Plantillas de Programa
           </h2>
         </DialogHeader>
         <DialogContent>
-          <p className="text-sm text-slate-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Elige una plantilla para crear el programa con los items predefinidos. Podrás editarlos después.
           </p>
           <div className="space-y-3">
@@ -930,10 +930,10 @@ export default function ProgramPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-2xl leading-none mt-0.5">{t.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm group-hover:text-indigo-300 transition-colors">
+                    <p className="text-foreground font-semibold text-sm group-hover:text-indigo-700 dark:text-indigo-300 transition-colors">
                       {t.label}
                     </p>
-                    <p className="text-slate-400 text-xs mt-0.5">{t.description}</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">{t.description}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {t.items.map((item, i) => {
                         const info = getType(item.itemType);
@@ -945,11 +945,11 @@ export default function ProgramPage() {
                         );
                       })}
                     </div>
-                    <p className="text-slate-500 text-xs mt-2">
+                    <p className="text-muted-foreground text-xs mt-2">
                       {t.items.length} items · {minutesToDuration(t.items.reduce((s, i) => s + (i.durationMinutes || 0), 0))} estimado
                     </p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-indigo-400 transition-colors shrink-0 mt-1" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-indigo-700 dark:text-indigo-400 transition-colors shrink-0 mt-1" />
                 </div>
               </button>
             ))}
@@ -957,7 +957,7 @@ export default function ProgramPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="outline" onClick={() => setTemplateModal(false)}
-            className="w-full border-slate-600 text-slate-300 hover:text-white">
+            className="w-full border-border text-muted-foreground hover:text-foreground">
             Cancelar
           </Button>
         </DialogFooter>
@@ -966,18 +966,18 @@ export default function ProgramPage() {
       {/* ── Modal: confirmar eliminación ────────────────────────────────────── */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)}>
         <DialogHeader onClose={() => setDeleteTarget(null)}>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-foreground">
             {deleteTarget?.type === 'program' ? 'Eliminar Programa' : 'Eliminar Item'}
           </h2>
         </DialogHeader>
         <DialogContent>
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-red-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-              <XCircle className="h-5 w-5 text-red-400" />
+            <div className="w-10 h-10 bg-red-500/10 dark:bg-red-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+              <XCircle className="h-5 w-5 text-red-700 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-white font-medium">{deleteTarget?.label}</p>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-foreground font-medium">{deleteTarget?.label}</p>
+              <p className="text-muted-foreground text-sm mt-1">
                 {deleteTarget?.type === 'program'
                   ? 'Se eliminarán también todos los items del programa. Esta acción no se puede deshacer.'
                   : 'Esta acción no se puede deshacer.'}
@@ -985,7 +985,7 @@ export default function ProgramPage() {
             </div>
           </div>
           {errorMsg && (
-            <div className="mt-3 flex items-center gap-2 p-3 bg-red-900/40 border border-red-700 rounded-lg text-red-300 text-sm">
+            <div className="mt-3 flex items-center gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
               <AlertCircle className="h-4 w-4" /> {errorMsg}
             </div>
           )}
@@ -1164,26 +1164,26 @@ function ProgramCard({ program, isSelected, onClick, onEdit, onDelete }) {
   return (
     <div
       onClick={onClick}
-      className={`group bg-slate-800 border rounded-xl p-4 cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-900/20
-        ${isSelected ? 'border-indigo-500 shadow-lg shadow-indigo-900/30' : 'border-slate-700'}
+      className={`group bg-card border rounded-xl p-4 cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-900/20
+        ${isSelected ? 'border-indigo-500 shadow-lg shadow-indigo-900/30' : 'border-border'}
         ${isToday ? 'ring-1 ring-indigo-500/30' : ''}`}
     >
       {/* Fecha grande */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-3">
           <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0
-            ${isToday ? 'bg-indigo-600' : 'bg-slate-700'}`}>
-            <span className="text-lg font-bold text-white leading-none">
+            ${isToday ? 'bg-indigo-600' : 'bg-background'}`}>
+            <span className="text-lg font-bold text-foreground leading-none">
               {new Date(program.date.slice(0, 10) + 'T12:00:00').getDate()}
             </span>
-            <span className="text-xs text-white/70 uppercase">
+            <span className="text-xs text-foreground/70 uppercase">
               {new Date(program.date.slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { month: 'short' })}
             </span>
           </div>
           <div>
-            <p className="font-semibold text-white text-sm leading-tight">{program.title}</p>
+            <p className="font-semibold text-foreground text-sm leading-tight">{program.title}</p>
             {program.start_time && (
-              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {program.start_time.slice(0, 5)}
               </p>
             )}
@@ -1195,7 +1195,7 @@ function ProgramCard({ program, isSelected, onClick, onEdit, onDelete }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <ClipboardList className="h-3.5 w-3.5" />
             {program.item_count} items
@@ -1206,15 +1206,15 @@ function ProgramCard({ program, isSelected, onClick, onEdit, onDelete }) {
               {minutesToDuration(program.total_minutes)}
             </span>
           )}
-          {isToday && <span className="text-indigo-400 font-medium">Hoy</span>}
+          {isToday && <span className="text-indigo-700 dark:text-indigo-400 font-medium">Hoy</span>}
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
           <button onClick={onEdit}
-            className="p-1.5 text-slate-500 hover:text-blue-400 hover:bg-slate-700 rounded transition-colors">
+            className="p-1.5 text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-accent rounded transition-colors">
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button onClick={onDelete}
-            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700 rounded transition-colors">
+            className="p-1.5 text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-accent rounded transition-colors">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>

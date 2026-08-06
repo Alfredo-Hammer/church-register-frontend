@@ -23,26 +23,26 @@ import {useAuth} from "@/contexts/AuthContext";
 const ROLE_META = {
   ADMIN: {
     label: "Administrador",
-    color: "bg-red-500/20 text-red-300 border-red-500/30",
+    color: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30",
   },
   PASTOR: {
     label: "Pastor",
-    color: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    color: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30",
   },
   TESORERO: {
     label: "Tesorero",
-    color: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    color: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30",
   },
   LIDER: {
     label: "Líder",
-    color: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    color: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30",
   },
 };
 
 function RoleBadge({role}) {
   const m = ROLE_META[role] || {
     label: role,
-    color: "bg-slate-500/20 text-gray-300 border-slate-500/30",
+    color: "bg-muted text-muted-foreground border-border",
   };
   return (
     <span
@@ -64,7 +64,7 @@ function Toast({msg, type, onClose}) {
   return (
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border
-      ${isErr ? "bg-red-900/90 border-red-700 text-red-200" : "bg-green-900/90 border-green-700 text-green-200"}`}
+      ${isErr ? "bg-red-500/10 dark:bg-red-900/90 border-red-300 dark:border-red-700 text-red-700 dark:text-red-200" : "bg-green-500/10 dark:bg-green-900/90 border-green-300 dark:border-green-700 text-green-700 dark:text-green-200"}`}
     >
       {isErr ? (
         <AlertCircle className="w-5 h-5 shrink-0" />
@@ -87,12 +87,12 @@ function PasswordInput({value, onChange, placeholder, name}) {
         onChange={onChange}
         placeholder={placeholder}
         autoComplete="new-password"
-        className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-blue-500 pr-10"
+        className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 pr-10"
       />
       <button
         type="button"
         onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
       >
         {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
@@ -198,17 +198,17 @@ export default function ProfilePage() {
     <div className="space-y-6 max-w-2xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
             <User className="w-5 h-5 text-white" />
           </span>
           Mi Perfil
         </h1>
-        <p className="text-gray-400 mt-1">Información de tu cuenta</p>
+        <p className="text-muted-foreground mt-1">Información de tu cuenta</p>
       </div>
 
       {/* Tarjeta de identidad */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardContent className="p-6">
           <div className="flex items-start gap-5">
             {/* Avatar */}
@@ -227,7 +227,7 @@ export default function ProfilePage() {
                   <Input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white text-xl font-bold focus:border-blue-500 h-9 py-1"
+                    className="bg-background border-border text-foreground text-xl font-bold focus:border-blue-500 h-9 py-1"
                     autoFocus
                   />
                   <Button
@@ -247,19 +247,19 @@ export default function ProfilePage() {
                       setEditing(false);
                       setFullName(profile?.fullName || "");
                     }}
-                    className="border-slate-600 text-gray-400 hover:text-white shrink-0"
+                    className="border-border text-muted-foreground hover:text-foreground shrink-0"
                   >
                     Cancelar
                   </Button>
                 </form>
               ) : (
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-white truncate">
+                  <h2 className="text-xl font-bold text-foreground truncate">
                     {profile?.fullName || user?.fullName || "—"}
                   </h2>
                   <button
                     onClick={() => setEditing(true)}
-                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                     title="Editar nombre"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -275,19 +275,19 @@ export default function ProfilePage() {
               {/* Datos */}
               <div className="space-y-1.5 text-sm">
                 {email && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Mail className="w-4 h-4 shrink-0" />
                     <span>{email}</span>
                   </div>
                 )}
                 {churchName && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="w-4 h-4 shrink-0" />
                     <span>{churchName}</span>
                   </div>
                 )}
                 {profile?.createdAt && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="w-4 h-4 shrink-0" />
                     <span>
                       Miembro desde{" "}
@@ -306,17 +306,17 @@ export default function ProfilePage() {
       </Card>
 
       {/* Cambiar contraseña */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="text-white text-base flex items-center gap-2">
-            <Lock className="w-4 h-4 text-gray-400" />
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Lock className="w-4 h-4 text-muted-foreground" />
             Cambiar Contraseña
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm text-gray-400">Contraseña actual</label>
+              <label className="text-sm text-muted-foreground">Contraseña actual</label>
               <PasswordInput
                 name="currentPassword"
                 value={pwForm.currentPassword}
@@ -328,7 +328,7 @@ export default function ProfilePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm text-gray-400">
+                <label className="text-sm text-muted-foreground">
                   Nueva contraseña
                 </label>
                 <PasswordInput
@@ -341,7 +341,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-gray-400">
+                <label className="text-sm text-muted-foreground">
                   Confirmar contraseña
                 </label>
                 <PasswordInput

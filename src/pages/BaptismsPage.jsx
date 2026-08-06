@@ -225,13 +225,13 @@ export default function BaptismsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <Droplet className="w-5 h-5 text-white" />
             </span>
             Bautismos
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Registro de bautismos de miembros
           </p>
         </div>
@@ -249,15 +249,15 @@ export default function BaptismsPage() {
         <Card className="bg-gradient-to-br from-cyan-500/20 to-blue-600/10 border-cyan-500/30">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-cyan-300 text-sm font-medium">
+              <p className="text-cyan-700 dark:text-cyan-300 text-sm font-medium">
                 Total Bautismos
               </p>
-              <p className="text-3xl font-bold text-white mt-1">
+              <p className="text-3xl font-bold text-foreground mt-1">
                 {stats?.total || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-              <Droplet className="w-6 h-6 text-cyan-400" />
+              <Droplet className="w-6 h-6 text-cyan-700 dark:text-cyan-400" />
             </div>
           </CardContent>
         </Card>
@@ -265,16 +265,16 @@ export default function BaptismsPage() {
         <Card className="bg-gradient-to-br from-blue-500/20 to-indigo-600/10 border-blue-500/30">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-blue-300 text-sm font-medium">
+              <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
                 Este año ({stats?.year || new Date().getFullYear()})
               </p>
-              <p className="text-3xl font-bold text-white mt-1">
+              <p className="text-3xl font-bold text-foreground mt-1">
                 {stats?.byMonth?.reduce((s, m) => s + parseInt(m.count), 0) ||
                   0}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <CalendarDays className="w-6 h-6 text-blue-400" />
+              <CalendarDays className="w-6 h-6 text-blue-700 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -282,34 +282,34 @@ export default function BaptismsPage() {
         <Card className="bg-gradient-to-br from-indigo-500/20 to-purple-600/10 border-indigo-500/30">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-indigo-300 text-sm font-medium">
+              <p className="text-indigo-700 dark:text-indigo-300 text-sm font-medium">
                 Miembros bautizados
               </p>
-              <p className="text-3xl font-bold text-white mt-1">
+              <p className="text-3xl font-bold text-foreground mt-1">
                 {baptizedMemberIds.size}
               </p>
-              <p className="text-indigo-400 text-xs mt-1">
+              <p className="text-indigo-700 dark:text-indigo-400 text-xs mt-1">
                 de {members.length} miembros
               </p>
             </div>
             <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-indigo-400" />
+              <Users className="w-6 h-6 text-indigo-700 dark:text-indigo-400" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabla */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader className="border-b border-slate-700 pb-4">
+      <Card className="bg-card border-border">
+        <CardHeader className="border-b border-border pb-4">
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre, ministro o lugar..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-cyan-500"
+                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-cyan-500"
               />
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -317,14 +317,14 @@ export default function BaptismsPage() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white w-36 focus:border-cyan-500 text-sm"
+                className="bg-background border-border text-foreground w-36 focus:border-cyan-500 text-sm"
                 title="Desde"
               />
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white w-36 focus:border-cyan-500 text-sm"
+                className="bg-background border-border text-foreground w-36 focus:border-cyan-500 text-sm"
                 title="Hasta"
               />
               {(startDate || endDate) && (
@@ -335,7 +335,7 @@ export default function BaptismsPage() {
                     setStartDate("");
                     setEndDate("");
                   }}
-                  className="border-slate-600 text-gray-400 hover:text-white hover:border-slate-500"
+                  className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -346,17 +346,17 @@ export default function BaptismsPage() {
 
         <CardContent className="p-0">
           {loading ? (
-            <div className="text-center py-16 text-gray-400">
+            <div className="text-center py-16 text-muted-foreground">
               <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               Cargando bautismos...
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center gap-2 text-red-400 py-12">
+            <div className="flex flex-col items-center gap-2 text-red-700 dark:text-red-400 py-12">
               <AlertCircle className="w-8 h-8" />
               {error}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
+            <div className="text-center py-16 text-muted-foreground">
               <Droplet className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p className="text-lg font-medium">
                 No hay bautismos registrados
@@ -369,83 +369,83 @@ export default function BaptismsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700 text-left">
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-border text-left">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Miembro
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Ministro
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Lugar
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider text-center">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-center">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-border">
                   {filtered.map((b) => (
                     <tr
                       key={b.id}
-                      className="hover:bg-slate-700/30 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0">
-                            <User className="w-4 h-4 text-cyan-400" />
+                            <User className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                           </div>
                           <div>
-                            <p className="text-white text-sm font-medium">
+                            <p className="text-foreground text-sm font-medium">
                               {b.first_name} {b.last_name}
                             </p>
                             {b.phone && (
-                              <p className="text-gray-500 text-xs">{b.phone}</p>
+                              <p className="text-muted-foreground text-xs">{b.phone}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="flex items-center gap-1.5 text-cyan-300 text-sm">
+                        <span className="flex items-center gap-1.5 text-cyan-700 dark:text-cyan-300 text-sm">
                           <CalendarDays className="w-3.5 h-3.5" />
                           {fmtDate(b.baptism_date)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-300 text-sm">
-                        {b.minister || <span className="text-gray-600">—</span>}
+                      <td className="px-4 py-3 text-muted-foreground text-sm">
+                        {b.minister || <span className="text-muted-foreground">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-gray-300 text-sm">
+                      <td className="px-4 py-3 text-muted-foreground text-sm">
                         {b.place ? (
                           <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                             {b.place}
                           </span>
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handlePrintCertificate(b)}
-                            className="w-7 h-7 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 flex items-center justify-center transition-colors"
+                            className="w-7 h-7 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 hover:text-cyan-700 dark:text-cyan-300 flex items-center justify-center transition-colors"
                             title="Imprimir Certificado"
                           >
                             <FileText className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => openEdit(b)}
-                            className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 flex items-center justify-center transition-colors"
+                            className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center transition-colors"
                             title="Editar"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => confirmDelete(b)}
-                            className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center transition-colors"
+                            className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center transition-colors"
                             title="Eliminar"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -463,9 +463,9 @@ export default function BaptismsPage() {
 
       {/* ── Modal CREAR / EDITAR ────────────────────────────────────────────── */}
       <Dialog open={modalOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-xl w-full">
+        <DialogContent className="bg-card border-border max-w-xl w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3 text-xl">
+            <DialogTitle className="text-foreground flex items-center gap-3 text-xl">
               <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Droplet className="w-4 h-4 text-white" />
               </span>
@@ -477,7 +477,7 @@ export default function BaptismsPage() {
             {/* Miembro — solo al crear */}
             {!editItem && (
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Miembro
                 </label>
                 <div className="relative">
@@ -487,7 +487,7 @@ export default function BaptismsPage() {
                       setForm((f) => ({...f, memberId: e.target.value}))
                     }
                     required
-                    className="w-full px-3 py-2 pr-8 bg-slate-700 border border-slate-600 text-white rounded-md text-sm focus:outline-none focus:border-cyan-500 appearance-none"
+                    className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-cyan-500 appearance-none"
                   >
                     <option value="">— Seleccione un miembro —</option>
                     {availableMembers.map((m) => (
@@ -496,10 +496,10 @@ export default function BaptismsPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 </div>
                 {availableMembers.length === 0 && (
-                  <p className="text-amber-400 text-xs mt-1">
+                  <p className="text-amber-700 dark:text-amber-400 text-xs mt-1">
                     Todos los miembros ya tienen bautismo registrado.
                   </p>
                 )}
@@ -508,9 +508,9 @@ export default function BaptismsPage() {
 
             {/* Al editar: mostrar nombre del miembro (solo lectura) */}
             {editItem && (
-              <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-700/50 rounded-lg border border-slate-600">
-                <User className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span className="text-white text-sm font-medium">
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-muted/50 rounded-lg border border-border">
+                <User className="w-4 h-4 text-cyan-700 dark:text-cyan-400 shrink-0" />
+                <span className="text-foreground text-sm font-medium">
                   {editItem.first_name} {editItem.last_name}
                 </span>
               </div>
@@ -518,7 +518,7 @@ export default function BaptismsPage() {
 
             {/* Fecha */}
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Fecha de Bautismo
               </label>
               <Input
@@ -528,16 +528,16 @@ export default function BaptismsPage() {
                   setForm((f) => ({...f, baptismDate: e.target.value}))
                 }
                 required
-                className="bg-slate-700 border-slate-600 text-white focus:border-cyan-500"
+                className="bg-background border-border text-foreground focus:border-cyan-500"
               />
             </div>
 
             {/* Ministro y Lugar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Ministro{" "}
-                  <span className="text-gray-500 font-normal">(opcional)</span>
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <Input
                   placeholder="Nombre del ministro"
@@ -545,13 +545,13 @@ export default function BaptismsPage() {
                   onChange={(e) =>
                     setForm((f) => ({...f, minister: e.target.value}))
                   }
-                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-cyan-500"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-cyan-500"
                 />
               </div>
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Lugar{" "}
-                  <span className="text-gray-500 font-normal">(opcional)</span>
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <Input
                   placeholder="Lugar del bautismo"
@@ -559,24 +559,24 @@ export default function BaptismsPage() {
                   onChange={(e) =>
                     setForm((f) => ({...f, place: e.target.value}))
                   }
-                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-cyan-500"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-cyan-500"
                 />
               </div>
             </div>
 
             {formError && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {formError}
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+            <div className="flex justify-end gap-3 pt-2 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+                className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
               >
                 Cancelar
               </Button>
@@ -606,18 +606,18 @@ export default function BaptismsPage() {
         open={deleteModal}
         onOpenChange={(open) => !open && setDeleteModal(false)}
       >
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-md w-full">
+        <DialogContent className="bg-card border-border max-w-md w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3">
+            <DialogTitle className="text-foreground flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
               </span>
               Confirmar eliminación
             </DialogTitle>
           </DialogHeader>
-          <p className="mt-3 text-gray-300 text-sm">
+          <p className="mt-3 text-muted-foreground text-sm">
             ¿Eliminar el registro de bautismo de{" "}
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               {deleteTarget?.first_name} {deleteTarget?.last_name}
             </span>
             ? Esta acción no se puede deshacer.
@@ -626,7 +626,7 @@ export default function BaptismsPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteModal(false)}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
             >
               Cancelar
             </Button>

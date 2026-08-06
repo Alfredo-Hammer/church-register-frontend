@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS = {
-  ACTIVO:     { label: "Activa",     color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-  FINALIZADO: { label: "Finalizada", color: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
-  CANCELADO:  { label: "Cancelada",  color: "bg-red-500/15 text-red-400 border-red-500/30" },
+  ACTIVO:     { label: "Activa",     color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
+  FINALIZADO: { label: "Finalizada", color: "bg-muted text-muted-foreground border-border" },
+  CANCELADO:  { label: "Cancelada",  color: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30" },
 };
 
 const STATUS_ICONS = { ACTIVO: CheckCircle2, FINALIZADO: Clock, CANCELADO: XCircle };
@@ -125,10 +125,10 @@ export default function ConferencePage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <BookOpen size={22} className="text-amber-400" />
-            <h1 className="text-2xl font-bold text-white">Conferencias</h1>
+            <BookOpen size={22} className="text-amber-700 dark:text-amber-400" />
+            <h1 className="text-2xl font-bold text-foreground">Conferencias</h1>
           </div>
-          <p className="text-slate-400 text-sm">Crea y gestiona tus conferencias con calendario dinámico</p>
+          <p className="text-muted-foreground text-sm">Crea y gestiona tus conferencias con calendario dinámico</p>
         </div>
         <Button onClick={openCreate} className="flex items-center gap-2">
           <Plus size={16} /> Nueva Conferencia
@@ -137,14 +137,14 @@ export default function ConferencePage() {
 
       {/* Lista */}
       {loading ? (
-        <div className="flex justify-center py-20 text-slate-500">
+        <div className="flex justify-center py-20 text-muted-foreground">
           <Loader2 size={32} className="animate-spin" />
         </div>
       ) : conferences.length === 0 ? (
-        <div className="bg-slate-800 rounded-xl border border-slate-700/50 p-16 text-center">
-          <BookOpen size={48} className="mx-auto mb-4 text-slate-600" />
-          <p className="text-white font-semibold text-lg mb-1">Sin conferencias aún</p>
-          <p className="text-slate-400 text-sm mb-6">Crea tu primera conferencia para comenzar a gestionar el programa y los asistentes</p>
+        <div className="bg-card rounded-xl border border-border p-16 text-center">
+          <BookOpen size={48} className="mx-auto mb-4 text-muted-foreground" />
+          <p className="text-foreground font-semibold text-lg mb-1">Sin conferencias aún</p>
+          <p className="text-muted-foreground text-sm mb-6">Crea tu primera conferencia para comenzar a gestionar el programa y los asistentes</p>
           <Button onClick={openCreate} className="inline-flex items-center gap-2">
             <Plus size={16} /> Crear Conferencia
           </Button>
@@ -158,16 +158,16 @@ export default function ConferencePage() {
               <div
                 key={conf.id}
                 onClick={() => navigate(`/dashboard/conference/${conf.id}`)}
-                className="bg-slate-800 rounded-xl border border-slate-700/50 p-5 cursor-pointer hover:border-slate-500 hover:bg-slate-750 transition-all group flex flex-col gap-4"
+                className="bg-card rounded-xl border border-border p-5 cursor-pointer hover:border-muted-foreground/40 hover:bg-accent transition-all group flex flex-col gap-4"
               >
                 {/* Header card */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h2 className="font-bold text-white text-base leading-tight truncate group-hover:text-amber-300 transition-colors">
+                    <h2 className="font-bold text-foreground text-base leading-tight truncate group-hover:text-amber-700 dark:text-amber-300 transition-colors">
                       {conf.name}
                     </h2>
                     {conf.theme && (
-                      <p className="text-slate-400 text-xs mt-0.5 italic truncate">{conf.theme}</p>
+                      <p className="text-muted-foreground text-xs mt-0.5 italic truncate">{conf.theme}</p>
                     )}
                   </div>
                   <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border flex-shrink-0", st.color)}>
@@ -176,22 +176,22 @@ export default function ConferencePage() {
                 </div>
 
                 {/* Info */}
-                <div className="space-y-1.5 text-xs text-slate-400">
+                <div className="space-y-1.5 text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <CalendarDays size={13} className="text-slate-500 flex-shrink-0" />
+                    <CalendarDays size={13} className="text-muted-foreground flex-shrink-0" />
                     <span>{formatDateRange(conf.start_date, conf.end_date)}</span>
                   </div>
                   {conf.location && (
                     <div className="flex items-center gap-2">
-                      <MapPin size={13} className="text-slate-500 flex-shrink-0" />
+                      <MapPin size={13} className="text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{conf.location}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Stats + acciones */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
-                  <div className="flex gap-3 text-xs text-slate-400">
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="flex gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <CalendarDays size={12} />
                       {conf.days_count} días
@@ -208,17 +208,17 @@ export default function ConferencePage() {
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => openEdit(e, conf)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-600 transition-colors"
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(conf); }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 size={13} />
                     </button>
-                    <ChevronRight size={16} className="text-slate-500 ml-1" />
+                    <ChevronRight size={16} className="text-muted-foreground ml-1" />
                   </div>
                 </div>
               </div>
@@ -231,12 +231,12 @@ export default function ConferencePage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <BookOpen size={18} className="text-amber-400" />
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <BookOpen size={18} className="text-amber-700 dark:text-amber-400" />
               {editing ? "Editar Conferencia" : "Nueva Conferencia"}
             </h2>
             {!editing && (
-              <p className="text-slate-400 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Los días se generarán automáticamente según las fechas elegidas.
               </p>
             )}
@@ -244,8 +244,8 @@ export default function ConferencePage() {
 
           <div className="space-y-4 mt-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-                Nombre <span className="text-red-400">*</span>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                Nombre <span className="text-red-700 dark:text-red-400">*</span>
               </label>
               <Input placeholder="Ej. Conferencia Bíblica 2026"
                 value={form.name}
@@ -253,7 +253,7 @@ export default function ConferencePage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Lema / Tema
               </label>
               <Input placeholder="Ej. La Voluntad de Dios en la Biblia"
@@ -262,7 +262,7 @@ export default function ConferencePage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Versículo del lema
               </label>
               <Input placeholder='Ej. 1 Juan 2:17 — "Y el mundo pasa…"'
@@ -271,7 +271,7 @@ export default function ConferencePage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 <MapPin size={11} className="inline mr-1" />Lugar
               </label>
               <Input placeholder="Sarasota, Florida"
@@ -281,16 +281,16 @@ export default function ConferencePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-                  Fecha inicio <span className="text-red-400">*</span>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Fecha inicio <span className="text-red-700 dark:text-red-400">*</span>
                 </label>
                 <Input type="date" value={form.startDate}
                   disabled={Boolean(editing)}
                   onChange={(e) => setForm(p => ({ ...p, startDate: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-                  Fecha fin <span className="text-red-400">*</span>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Fecha fin <span className="text-red-700 dark:text-red-400">*</span>
                 </label>
                 <Input type="date" value={form.endDate}
                   disabled={Boolean(editing)}
@@ -298,13 +298,13 @@ export default function ConferencePage() {
               </div>
             </div>
             {editing && (
-              <p className="text-xs text-slate-500 italic">
+              <p className="text-xs text-muted-foreground italic">
                 Las fechas no se pueden cambiar. Para agregar días usa el botón "+ Agregar Día" en el detalle.
               </p>
             )}
 
             {formError && (
-              <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <p className="text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 {formError}
               </p>
             )}
@@ -324,10 +324,10 @@ export default function ConferencePage() {
       <Dialog open={Boolean(deleteTarget)} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <h2 className="text-lg font-semibold text-white">Eliminar Conferencia</h2>
+            <h2 className="text-lg font-semibold text-foreground">Eliminar Conferencia</h2>
           </DialogHeader>
-          <p className="text-slate-300 mt-2">
-            ¿Eliminar <strong className="text-white">{deleteTarget?.name}</strong>? Se eliminarán todos los días, sesiones y registros asociados. Esta acción no se puede deshacer.
+          <p className="text-muted-foreground mt-2">
+            ¿Eliminar <strong className="text-foreground">{deleteTarget?.name}</strong>? Se eliminarán todos los días, sesiones y registros asociados. Esta acción no se puede deshacer.
           </p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancelar</Button>

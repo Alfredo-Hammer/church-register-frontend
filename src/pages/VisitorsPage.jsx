@@ -42,26 +42,26 @@ const STAGES = [
   {
     value: "PRIMERA_VISITA",
     label: "Primera Visita",
-    color: "bg-blue-500/15 text-blue-300 border border-blue-500/30",
+    color: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30",
     dot: "bg-blue-400",
   },
   {
     value: "EN_SEGUIMIENTO",
     label: "En Seguimiento",
-    color: "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30",
+    color: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border border-yellow-500/30",
     dot: "bg-yellow-400",
   },
   {
     value: "INTEGRADO",
     label: "Integrado",
-    color: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30",
     dot: "bg-emerald-400",
   },
   {
     value: "INACTIVO",
     label: "Inactivo",
-    color: "bg-slate-500/15 text-slate-400 border border-slate-500/30",
-    dot: "bg-slate-500",
+    color: "bg-muted text-muted-foreground border border-border",
+    dot: "bg-muted",
   },
 ];
 
@@ -82,10 +82,10 @@ const FOLLOW_UP_TYPES = [
 ];
 
 const RESULTS = [
-  {value: "POSITIVO", label: "Positivo", color: "text-emerald-400"},
-  {value: "NEUTRAL", label: "Neutral", color: "text-slate-400"},
-  {value: "SIN_RESPUESTA", label: "Sin respuesta", color: "text-yellow-400"},
-  {value: "NEGATIVO", label: "Negativo", color: "text-red-400"},
+  {value: "POSITIVO", label: "Positivo", color: "text-emerald-700 dark:text-emerald-400"},
+  {value: "NEUTRAL", label: "Neutral", color: "text-muted-foreground"},
+  {value: "SIN_RESPUESTA", label: "Sin respuesta", color: "text-yellow-700 dark:text-yellow-400"},
+  {value: "NEGATIVO", label: "Negativo", color: "text-red-700 dark:text-red-400"},
 ];
 
 const getStage = (v) => STAGES.find((s) => s.value === v) || STAGES[0];
@@ -245,17 +245,17 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-md bg-slate-800 border-l border-slate-700 h-full flex flex-col overflow-hidden shadow-2xl"
+        className="relative w-full max-w-md bg-card border-l border-border h-full flex flex-col overflow-hidden shadow-2xl"
         style={{animation: "slideInRight .25s ease-out"}}
       >
         {/* Top bar */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 shrink-0">
-          <span className="text-sm text-gray-400 font-medium">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <span className="text-sm text-muted-foreground font-medium">
             Perfil del Visitante
           </span>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition-colors"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -264,9 +264,9 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
           {/* Avatar + name + stage */}
-          <div className="flex flex-col items-center px-5 pt-7 pb-5 border-b border-slate-700">
+          <div className="flex flex-col items-center px-5 pt-7 pb-5 border-b border-border">
             <VisitorAvatar visitor={v} size="lg" />
-            <h2 className="mt-3 text-xl font-bold text-white text-center">
+            <h2 className="mt-3 text-xl font-bold text-foreground text-center">
               {v.first_name} {v.last_name}
             </h2>
             <span
@@ -277,17 +277,17 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
           </div>
 
           {/* Contact buttons */}
-          <div className="px-5 py-4 border-b border-slate-700">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          <div className="px-5 py-4 border-b border-border">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Contacto rápido
             </h3>
             <div className="flex flex-wrap gap-2">
               {v.phone && (
                 <a
                   href={`tel:${v.phone}`}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-200 text-sm transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background hover:bg-accent text-foreground text-sm transition-colors"
                 >
-                  <Phone className="w-4 h-4 text-blue-400" />
+                  <Phone className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                   {v.phone}
                 </a>
               )}
@@ -296,7 +296,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                   href={wa}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600/20 hover:bg-green-600/35 border border-green-600/30 text-green-300 text-sm transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600/20 hover:bg-green-600/35 border border-green-600/30 text-green-700 dark:text-green-300 text-sm transition-colors"
                 >
                   <svg
                     className="w-4 h-4"
@@ -311,21 +311,21 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
               {v.email && (
                 <a
                   href={`mailto:${v.email}`}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-200 text-sm transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background hover:bg-accent text-foreground text-sm transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-violet-400" />
+                  <Mail className="w-4 h-4 text-violet-700 dark:text-violet-400" />
                   {v.email}
                 </a>
               )}
               {!v.phone && !v.email && (
-                <p className="text-sm text-gray-500">Sin datos de contacto</p>
+                <p className="text-sm text-muted-foreground">Sin datos de contacto</p>
               )}
             </div>
           </div>
 
           {/* Visit info */}
-          <div className="px-5 py-4 border-b border-slate-700 space-y-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <div className="px-5 py-4 border-b border-border space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Información de visita
             </h3>
             <InfoRow
@@ -360,7 +360,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
               />
             )}
             {v.notes && (
-              <div className="mt-2 p-3 bg-slate-700/50 rounded-lg text-sm text-gray-300 italic border-l-2 border-teal-500">
+              <div className="mt-2 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground italic border-l-2 border-teal-500">
                 {v.notes}
               </div>
             )}
@@ -369,17 +369,17 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
           {/* Follow-ups */}
           <div className="px-5 py-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Seguimientos
                 {followUps.length > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 bg-teal-500/20 text-teal-400 rounded-full text-xs">
+                  <span className="ml-2 px-1.5 py-0.5 bg-teal-500/20 text-teal-700 dark:text-teal-400 rounded-full text-xs">
                     {followUps.length}
                   </span>
                 )}
               </h3>
               <button
                 onClick={() => setShowForm((s) => !s)}
-                className="flex items-center gap-1 text-xs text-teal-400 hover:text-teal-300 font-medium"
+                className="flex items-center gap-1 text-xs text-teal-700 dark:text-teal-400 hover:text-teal-700 dark:text-teal-300 font-medium"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Agregar
@@ -390,12 +390,12 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
             {showForm && (
               <form
                 onSubmit={handleAddFU}
-                className="space-y-3 p-3 bg-slate-700/50 rounded-lg border border-slate-600"
+                className="space-y-3 p-3 bg-muted/50 rounded-lg border border-border"
               >
-                {fuError && <p className="text-red-400 text-xs">{fuError}</p>}
+                {fuError && <p className="text-red-700 dark:text-red-400 text-xs">{fuError}</p>}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">
+                    <label className="text-xs text-muted-foreground mb-1 block">
                       Tipo
                     </label>
                     <select
@@ -403,7 +403,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                       onChange={(e) =>
                         setFuForm({...fuForm, type: e.target.value})
                       }
-                      className="w-full px-2 py-1.5 rounded bg-slate-700 border border-slate-600 text-white text-xs"
+                      className="w-full px-2 py-1.5 rounded bg-background border border-border text-foreground text-xs"
                     >
                       {FOLLOW_UP_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>
@@ -413,7 +413,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">
+                    <label className="text-xs text-muted-foreground mb-1 block">
                       Fecha
                     </label>
                     <Input
@@ -423,12 +423,12 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                         setFuForm({...fuForm, date: e.target.value})
                       }
                       required
-                      className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+                      className="bg-background border-border text-foreground text-xs h-8"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">
+                  <label className="text-xs text-muted-foreground mb-1 block">
                     Resultado
                   </label>
                   <select
@@ -436,7 +436,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                     onChange={(e) =>
                       setFuForm({...fuForm, result: e.target.value})
                     }
-                    className="w-full px-2 py-1.5 rounded bg-slate-700 border border-slate-600 text-white text-xs"
+                    className="w-full px-2 py-1.5 rounded bg-background border border-border text-foreground text-xs"
                   >
                     {RESULTS.map((r) => (
                       <option key={r.value} value={r.value}>
@@ -446,7 +446,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">
+                  <label className="text-xs text-muted-foreground mb-1 block">
                     Notas *
                   </label>
                   <textarea
@@ -457,14 +457,14 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                     required
                     rows={2}
                     placeholder="¿Cómo fue el contacto?"
-                    className="w-full px-2 py-1.5 rounded bg-slate-700 border border-slate-600 text-white text-xs resize-none focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full px-2 py-1.5 rounded bg-background border border-border text-foreground text-xs resize-none focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="text-xs text-gray-400 hover:text-white px-2 py-1"
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1"
                   >
                     Cancelar
                   </button>
@@ -486,7 +486,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                 <div className="w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : followUps.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-3">
+              <p className="text-sm text-muted-foreground text-center py-3">
                 Sin seguimientos registrados
               </p>
             ) : (
@@ -498,14 +498,14 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                   return (
                     <div
                       key={fu.id}
-                      className="flex gap-3 p-3 bg-slate-700/40 rounded-lg group"
+                      className="flex gap-3 p-3 bg-muted/50 rounded-lg group"
                     >
-                      <div className="w-7 h-7 rounded-full bg-slate-600 flex items-center justify-center shrink-0 mt-0.5">
-                        <Icon className="w-3.5 h-3.5 text-slate-300" />
+                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-slate-300">
+                          <span className="text-xs font-medium text-muted-foreground">
                             {ti?.label} · {formatDate(fu.date)}
                           </span>
                           {ri && (
@@ -515,14 +515,14 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                           )}
                         </div>
                         {fu.notes && (
-                          <p className="text-sm text-gray-200 mt-1">
+                          <p className="text-sm text-foreground mt-1">
                             {fu.notes}
                           </p>
                         )}
                       </div>
                       <button
                         onClick={() => handleDeleteFU(fu.id)}
-                        className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="text-muted-foreground hover:text-red-700 dark:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
@@ -535,7 +535,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
         </div>
 
         {/* Actions footer */}
-        <div className="px-5 py-4 border-t border-slate-700 flex flex-col gap-2 shrink-0">
+        <div className="px-5 py-4 border-t border-border flex flex-col gap-2 shrink-0">
           {/* Botón de convertir a miembro */}
           <Button
             onClick={() => setShowConvertDialog(true)}
@@ -558,7 +558,7 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
             <Button
               onClick={() => onDelete(v)}
               variant="outline"
-              className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500"
+              className="border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10 hover:border-red-500"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -577,9 +577,9 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => !converting && setShowConvertDialog(false)}
           />
-          <div className="relative bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b border-slate-700">
-              <h3 className="text-lg font-bold text-white">
+          <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div className="px-6 py-4 border-b border-border">
+              <h3 className="text-lg font-bold text-foreground">
                 {v.stage === "INTEGRADO"
                   ? "Sincronizar con Miembros"
                   : "Convertir a Miembro"}
@@ -587,20 +587,20 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
             </div>
             <div className="px-6 py-4">
               {convertError && (
-                <div className="mb-4 flex items-start gap-2 p-3 bg-red-900/40 border border-red-700 rounded-lg text-red-300 text-sm">
+                <div className="mb-4 flex items-start gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>{convertError}</span>
                 </div>
               )}
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-emerald-900/40 rounded-full flex items-center justify-center shrink-0">
-                  <UserCheck className="h-5 w-5 text-emerald-400" />
+                <div className="w-10 h-10 bg-emerald-500/10 dark:bg-emerald-900/40 rounded-full flex items-center justify-center shrink-0">
+                  <UserCheck className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">
+                  <p className="text-foreground font-medium">
                     {v.first_name} {v.last_name}
                   </p>
-                  <p className="text-slate-400 text-sm mt-1">
+                  <p className="text-muted-foreground text-sm mt-1">
                     {v.stage === "INTEGRADO"
                       ? "Este visitante ya está marcado como integrado. Se creará su registro en la lista de miembros si no existe."
                       : "Se creará un nuevo miembro activo con los datos del visitante y se actualizará su estado a 'Integrado'."}
@@ -608,12 +608,12 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-slate-700 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={() => setShowConvertDialog(false)}
                 disabled={converting}
-                className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                className="bg-background border-border text-foreground hover:bg-accent"
               >
                 Cancelar
               </Button>
@@ -635,10 +635,10 @@ function DetailPanel({visitor: v, onClose, onEdit, onDelete, onConverted}) {
 function InfoRow({icon, label, value}) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-gray-500 mt-0.5 shrink-0">{icon}</span>
+      <span className="text-muted-foreground mt-0.5 shrink-0">{icon}</span>
       <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm text-gray-200 mt-0.5">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm text-foreground mt-0.5">{value}</p>
       </div>
     </div>
   );
@@ -814,8 +814,8 @@ export default function VisitorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Visitantes</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Visitantes</h1>
+          <p className="text-muted-foreground mt-1">
             Seguimiento de personas que visitan la iglesia
           </p>
         </div>
@@ -826,15 +826,15 @@ export default function VisitorsPage() {
 
       {/* Messages */}
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-green-900/40 border border-green-700 rounded-lg text-green-300 text-sm">
+        <div className="flex items-center gap-2 p-3 bg-green-500/10 dark:bg-green-900/40 border border-green-300 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300 text-sm">
           <CheckCircle className="h-4 w-4" /> {successMsg}
         </div>
       )}
 
       {/* Pipeline / Stats */}
       {stats && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-          <p className="text-xs text-slate-400 mb-3 font-semibold uppercase tracking-wider">
+        <div className="bg-card rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">
             Embudo de integración
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -860,30 +860,30 @@ export default function VisitorsPage() {
                       className={`flex-1 rounded-lg p-3 text-center transition-colors border cursor-pointer
                       ${
                         filterStage === stage.value
-                          ? "border-teal-500 bg-teal-900/30"
-                          : "border-slate-600 hover:border-slate-500 bg-slate-700/40"
+                          ? "border-teal-500 bg-teal-500/10 dark:bg-teal-900/30"
+                          : "border-border hover:border-muted-foreground/40 bg-muted/50"
                       }`}
                     >
                       <div
                         className={`w-2 h-2 rounded-full ${stage.dot} mx-auto mb-1`}
                       />
-                      <p className="text-xl font-bold text-white">{count}</p>
-                      <p className="text-xs text-slate-400">{stage.label}</p>
+                      <p className="text-xl font-bold text-foreground">{count}</p>
+                      <p className="text-xs text-muted-foreground">{stage.label}</p>
                     </button>
                     {i < arr.length - 1 && (
-                      <ArrowRight className="h-4 w-4 text-slate-600 flex-shrink-0 hidden sm:block" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0 hidden sm:block" />
                     )}
                   </div>
                 );
               },
             )}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="hidden sm:block w-px h-10 bg-slate-600" />
-              <div className="rounded-lg p-3 text-center bg-slate-700/40 border border-slate-600 min-w-[80px]">
-                <p className="text-xl font-bold text-slate-400">
+              <div className="hidden sm:block w-px h-10 bg-muted" />
+              <div className="rounded-lg p-3 text-center bg-muted/50 border border-border min-w-[80px]">
+                <p className="text-xl font-bold text-muted-foreground">
                   {stats.inactivos || 0}
                 </p>
-                <p className="text-xs text-slate-500">Inactivos</p>
+                <p className="text-xs text-muted-foreground">Inactivos</p>
               </div>
             </div>
           </div>
@@ -891,14 +891,14 @@ export default function VisitorsPage() {
             {filterStage !== "ALL" && (
               <button
                 onClick={() => setFilterStage("ALL")}
-                className="text-xs text-teal-400 hover:underline"
+                className="text-xs text-teal-700 dark:text-teal-400 hover:underline"
               >
                 Ver todos
               </button>
             )}
             {stats.nuevos_este_mes > 0 && (
-              <p className="text-xs text-slate-500 ml-auto">
-                <span className="text-teal-400 font-medium">
+              <p className="text-xs text-muted-foreground ml-auto">
+                <span className="text-teal-700 dark:text-teal-400 font-medium">
                   {stats.nuevos_este_mes}
                 </span>{" "}
                 nuevos este mes
@@ -910,21 +910,21 @@ export default function VisitorsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por nombre o teléfono..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-slate-800 border-slate-600 text-white placeholder-slate-400"
+          className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-          <span className="text-sm font-semibold text-white">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-semibold text-foreground">
             Lista de Visitantes
-            <span className="ml-2 text-gray-400 font-normal">
+            <span className="ml-2 text-muted-foreground font-normal">
               ({totalItems})
             </span>
           </span>
@@ -935,7 +935,7 @@ export default function VisitorsPage() {
             <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : visitors.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <UserSearch className="h-10 w-10 mb-3 opacity-30" />
             <p className="font-medium">No hay visitantes registrados</p>
             <p className="text-sm mt-1">
@@ -947,35 +947,35 @@ export default function VisitorsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700 bg-slate-800/60">
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                       Visitante
                     </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden md:table-cell">
                       Contacto
                     </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
                       Primera Visita
                     </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                       Etapa
                     </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
                       Seguimientos
                     </th>
-                    <th className="text-right py-3 px-4 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                    <th className="text-right py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-border">
                   {visitors.map((visitor) => {
                     const stage = getStage(visitor.stage);
                     const wa = waLink(visitor.phone);
                     return (
                       <tr
                         key={visitor.id}
-                        className="hover:bg-slate-700/40 transition-colors cursor-pointer"
+                        className="hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => setDetailVisitor(visitor)}
                       >
                         {/* Name */}
@@ -983,11 +983,11 @@ export default function VisitorsPage() {
                           <div className="flex items-center gap-3">
                             <VisitorAvatar visitor={visitor} size="md" />
                             <div>
-                              <p className="text-white font-medium text-sm">
+                              <p className="text-foreground font-medium text-sm">
                                 {visitor.first_name} {visitor.last_name}
                               </p>
                               {visitor.responsible && (
-                                <p className="text-xs text-gray-500 mt-0.5">
+                                <p className="text-xs text-muted-foreground mt-0.5">
                                   Resp: {visitor.responsible}
                                 </p>
                               )}
@@ -1003,7 +1003,7 @@ export default function VisitorsPage() {
                           <div className="flex flex-col gap-1.5">
                             {visitor.phone && (
                               <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-muted-foreground">
                                   {visitor.phone}
                                 </span>
                                 {wa && (
@@ -1011,7 +1011,7 @@ export default function VisitorsPage() {
                                     href={wa}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-1 rounded bg-green-600/20 hover:bg-green-600/40 text-green-400 transition-colors"
+                                    className="p-1 rounded bg-green-600/20 hover:bg-green-600/40 text-green-700 dark:text-green-400 transition-colors"
                                     title="WhatsApp"
                                     onClick={(e) => e.stopPropagation()}
                                   >
@@ -1027,19 +1027,19 @@ export default function VisitorsPage() {
                               </div>
                             )}
                             {visitor.email && (
-                              <p className="text-xs text-gray-400 truncate max-w-[160px]">
+                              <p className="text-xs text-muted-foreground truncate max-w-[160px]">
                                 {visitor.email}
                               </p>
                             )}
                             {!visitor.phone && !visitor.email && (
-                              <span className="text-gray-600 text-xs">—</span>
+                              <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </div>
                         </td>
 
                         {/* First visit */}
                         <td className="py-3 px-4 hidden sm:table-cell">
-                          <span className="text-sm text-gray-300">
+                          <span className="text-sm text-muted-foreground">
                             {formatDate(visitor.first_visit_date)}
                           </span>
                         </td>
@@ -1056,14 +1056,14 @@ export default function VisitorsPage() {
                         {/* Follow-ups count */}
                         <td className="py-3 px-4 hidden lg:table-cell">
                           <div className="flex items-center gap-1.5">
-                            <MessageCircle className="w-3.5 h-3.5 text-gray-500" />
-                            <span className="text-sm text-gray-400">
+                            <MessageCircle className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
                               {visitor.follow_up_count > 0
                                 ? visitor.follow_up_count
                                 : "—"}
                             </span>
                             {visitor.last_follow_up && (
-                              <span className="text-xs text-gray-600 flex items-center gap-0.5">
+                              <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                                 <Clock className="w-3 h-3" />
                                 {formatDate(visitor.last_follow_up)}
                               </span>
@@ -1079,14 +1079,14 @@ export default function VisitorsPage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => openEdit(visitor)}
-                              className="p-2 text-blue-400 hover:bg-slate-600 rounded-lg transition-colors"
+                              className="p-2 text-blue-700 dark:text-blue-400 hover:bg-accent rounded-lg transition-colors"
                               title="Editar"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setDeleteTarget(visitor)}
-                              className="p-2 text-red-400 hover:bg-slate-600 rounded-lg transition-colors"
+                              className="p-2 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
                               title="Eliminar"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1102,8 +1102,8 @@ export default function VisitorsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700">
-                <p className="text-sm text-gray-400">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
                   {totalItems} visitantes · Página {page} de {totalPages}
                 </p>
                 <div className="flex gap-2">
@@ -1112,7 +1112,7 @@ export default function VisitorsPage() {
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                    className="bg-background border-border text-foreground hover:bg-accent"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -1121,7 +1121,7 @@ export default function VisitorsPage() {
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                    className="bg-background border-border text-foreground hover:bg-accent"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -1156,25 +1156,25 @@ export default function VisitorsPage() {
       {/* ── Modal: crear / editar ───────────────────────────────────────────── */}
       <Dialog open={visitorModal} onClose={() => setVisitorModal(false)}>
         <DialogHeader onClose={() => setVisitorModal(false)}>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-foreground">
             {editingVisitor ? "Editar Visitante" : "Registrar Visitante"}
           </h2>
         </DialogHeader>
         <form onSubmit={handleSaveVisitor}>
           <DialogContent className="space-y-4">
             {errorMsg && (
-              <div className="flex items-center gap-2 p-3 bg-red-900/40 border border-red-700 rounded-lg text-red-300 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
                 <AlertCircle className="h-4 w-4 shrink-0" /> {errorMsg}
               </div>
             )}
             {successMsg && (
-              <div className="flex items-center gap-2 p-3 bg-green-900/40 border border-green-700 rounded-lg text-green-300 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 dark:bg-green-900/40 border border-green-300 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300 text-sm">
                 <CheckCircle className="h-4 w-4 shrink-0" /> {successMsg}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Nombre *
                 </label>
                 <Input
@@ -1184,11 +1184,11 @@ export default function VisitorsPage() {
                   }
                   placeholder="Nombre"
                   required
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Apellido *
                 </label>
                 <Input
@@ -1198,11 +1198,11 @@ export default function VisitorsPage() {
                   }
                   placeholder="Apellido"
                   required
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Teléfono
                 </label>
                 <Input
@@ -1211,11 +1211,11 @@ export default function VisitorsPage() {
                     setVisitorForm({...visitorForm, phone: e.target.value})
                   }
                   placeholder="55 1234 5678"
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Email
                 </label>
                 <Input
@@ -1225,11 +1225,11 @@ export default function VisitorsPage() {
                     setVisitorForm({...visitorForm, email: e.target.value})
                   }
                   placeholder="correo@ejemplo.com"
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Fecha de primera visita *
                 </label>
                 <Input
@@ -1242,11 +1242,11 @@ export default function VisitorsPage() {
                     })
                   }
                   required
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Género
                 </label>
                 <select
@@ -1254,7 +1254,7 @@ export default function VisitorsPage() {
                   onChange={(e) =>
                     setVisitorForm({...visitorForm, gender: e.target.value})
                   }
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm"
                 >
                   <option value="">Sin especificar</option>
                   <option value="MASCULINO">Masculino</option>
@@ -1262,7 +1262,7 @@ export default function VisitorsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   ¿Cómo llegó?
                 </label>
                 <select
@@ -1273,7 +1273,7 @@ export default function VisitorsPage() {
                       howTheyCame: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm"
                 >
                   {HOW.map((h) => (
                     <option key={h.value} value={h.value}>
@@ -1283,7 +1283,7 @@ export default function VisitorsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   {visitorForm.howTheyCame === "INVITADO"
                     ? "Invitado por"
                     : "Referencia"}
@@ -1298,11 +1298,11 @@ export default function VisitorsPage() {
                       ? "Nombre de quien invitó"
                       : "Referencia adicional"
                   }
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Etapa
                 </label>
                 <select
@@ -1310,7 +1310,7 @@ export default function VisitorsPage() {
                   onChange={(e) =>
                     setVisitorForm({...visitorForm, stage: e.target.value})
                   }
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm"
                 >
                   {STAGES.map((s) => (
                     <option key={s.value} value={s.value}>
@@ -1320,7 +1320,7 @@ export default function VisitorsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Responsable
                 </label>
                 <Input
@@ -1332,11 +1332,11 @@ export default function VisitorsPage() {
                     })
                   }
                   placeholder="Quién hace el seguimiento"
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Notas generales
                 </label>
                 <textarea
@@ -1346,7 +1346,7 @@ export default function VisitorsPage() {
                   }
                   placeholder="Información relevante sobre el visitante..."
                   rows={3}
-                  className="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-white text-sm placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
             </div>
@@ -1378,18 +1378,18 @@ export default function VisitorsPage() {
       {/* ── Modal: confirmar eliminación ───────────────────────────────────── */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)}>
         <DialogHeader onClose={() => setDeleteTarget(null)}>
-          <h2 className="text-lg font-bold text-white">Eliminar Visitante</h2>
+          <h2 className="text-lg font-bold text-foreground">Eliminar Visitante</h2>
         </DialogHeader>
         <DialogContent>
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-red-900/40 rounded-full flex items-center justify-center shrink-0">
-              <XCircle className="h-5 w-5 text-red-400" />
+            <div className="w-10 h-10 bg-red-500/10 dark:bg-red-900/40 rounded-full flex items-center justify-center shrink-0">
+              <XCircle className="h-5 w-5 text-red-700 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-white font-medium">
+              <p className="text-foreground font-medium">
                 {deleteTarget?.first_name} {deleteTarget?.last_name}
               </p>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-muted-foreground text-sm mt-1">
                 Se eliminarán también todos sus seguimientos. Esta acción no se
                 puede deshacer.
               </p>

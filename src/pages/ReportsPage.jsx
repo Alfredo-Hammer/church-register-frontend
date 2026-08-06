@@ -75,37 +75,37 @@ const METRIC_COLORS = {
   blue: {
     card: "from-blue-500/20 to-blue-600/10 border-blue-500/30",
     icon: "bg-blue-500/20",
-    text: "text-blue-400",
+    text: "text-blue-700 dark:text-blue-400",
   },
   green: {
     card: "from-green-500/20 to-green-600/10 border-green-500/30",
     icon: "bg-green-500/20",
-    text: "text-green-400",
+    text: "text-green-700 dark:text-green-400",
   },
   red: {
     card: "from-red-500/20 to-red-600/10 border-red-500/30",
     icon: "bg-red-500/20",
-    text: "text-red-400",
+    text: "text-red-700 dark:text-red-400",
   },
   purple: {
     card: "from-purple-500/20 to-purple-600/10 border-purple-500/30",
     icon: "bg-purple-500/20",
-    text: "text-purple-400",
+    text: "text-purple-700 dark:text-purple-400",
   },
   cyan: {
     card: "from-cyan-500/20 to-cyan-600/10 border-cyan-500/30",
     icon: "bg-cyan-500/20",
-    text: "text-cyan-400",
+    text: "text-cyan-700 dark:text-cyan-400",
   },
   amber: {
     card: "from-amber-500/20 to-amber-600/10 border-amber-500/30",
     icon: "bg-amber-500/20",
-    text: "text-amber-400",
+    text: "text-amber-700 dark:text-amber-400",
   },
   orange: {
     card: "from-orange-500/20 to-red-600/10 border-orange-500/30",
     icon: "bg-orange-500/20",
-    text: "text-orange-400",
+    text: "text-orange-700 dark:text-orange-400",
   },
 };
 
@@ -115,9 +115,9 @@ function MetricCard({label, value, sub, icon: Icon, color = "blue"}) {
     <Card className={`bg-gradient-to-br ${c.card}`}>
       <CardContent className="p-5 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-gray-400 text-sm">{label}</p>
-          <p className="text-2xl font-bold text-white mt-1 truncate">{value}</p>
-          {sub && <p className="text-gray-500 text-xs mt-0.5">{sub}</p>}
+          <p className="text-muted-foreground text-sm">{label}</p>
+          <p className="text-2xl font-bold text-foreground mt-1 truncate">{value}</p>
+          {sub && <p className="text-muted-foreground text-xs mt-0.5">{sub}</p>}
         </div>
         <div
           className={`w-12 h-12 rounded-xl ${c.icon} flex items-center justify-center shrink-0`}
@@ -134,10 +134,10 @@ function ProgressBar({label, value, total, colorClass = "bg-cyan-500"}) {
   return (
     <div className="space-y-1">
       <div className="flex justify-between items-center">
-        <span className="text-gray-300 text-sm">{label}</span>
+        <span className="text-muted-foreground text-sm">{label}</span>
         <span className="text-white text-sm font-semibold">{value}</span>
       </div>
-      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-background rounded-full overflow-hidden">
         <div
           className={`h-full ${colorClass} rounded-full transition-all duration-500`}
           style={{width: `${pct}%`}}
@@ -154,8 +154,8 @@ const DarkTooltip = ({active, payload, label, money = false}) => {
     ? "$" + Number(v || 0).toLocaleString("en-US", {minimumFractionDigits: 0, maximumFractionDigits: 0})
     : Number(v || 0).toLocaleString("es-MX");
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs">
-      {label && <p className="text-slate-400 mb-1 font-medium">{label}</p>}
+    <div className="bg-background border border-border rounded-xl px-3 py-2 shadow-xl text-xs">
+      {label && <p className="text-muted-foreground mb-1 font-medium">{label}</p>}
       {payload.map((p) => (
         <p key={p.dataKey} style={{color: p.color}} className="font-semibold">
           {p.name}: {fmt(p.value)}
@@ -261,11 +261,11 @@ function DistPieChart({data = [], nameKey = "name", valueKey = "value"}) {
           <div key={i} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{background: PIE_COLORS[i % PIE_COLORS.length]}} />
-              <span className="text-gray-300 text-sm truncate">{d[nameKey]}</span>
+              <span className="text-muted-foreground text-sm truncate">{d[nameKey]}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-white text-sm font-semibold">{parseInt(d[valueKey] || 0)}</span>
-              <span className="text-gray-500 text-xs w-10 text-right">
+              <span className="text-foreground text-sm font-semibold">{parseInt(d[valueKey] || 0)}</span>
+              <span className="text-muted-foreground text-xs w-10 text-right">
                 {total > 0 ? ((parseInt(d[valueKey] || 0) / total) * 100).toFixed(0) + "%" : ""}
               </span>
             </div>
@@ -279,26 +279,26 @@ function DistPieChart({data = [], nameKey = "name", valueKey = "value"}) {
 function DateRangeFilter({startDate, endDate, onStart, onEnd, onReset}) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <span className="text-gray-400 text-sm font-medium">Período:</span>
+      <span className="text-muted-foreground text-sm font-medium">Período:</span>
       <Input
         type="date"
         value={startDate}
         onChange={(e) => onStart(e.target.value)}
-        className="bg-slate-700 border-slate-600 text-white w-36 focus:border-amber-500 text-sm"
+        className="bg-background border-border text-foreground w-36 focus:border-amber-500 text-sm"
       />
-      <span className="text-gray-500">—</span>
+      <span className="text-muted-foreground">—</span>
       <Input
         type="date"
         value={endDate}
         onChange={(e) => onEnd(e.target.value)}
-        className="bg-slate-700 border-slate-600 text-white w-36 focus:border-amber-500 text-sm"
+        className="bg-background border-border text-foreground w-36 focus:border-amber-500 text-sm"
       />
       {(startDate || endDate) && (
         <Button
           variant="outline"
           size="sm"
           onClick={onReset}
-          className="border-slate-600 text-gray-400 hover:text-white hover:border-slate-500 text-xs"
+          className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 text-xs"
         >
           Limpiar filtro
         </Button>
@@ -311,7 +311,7 @@ function Spinner() {
   return (
     <div className="text-center py-16">
       <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-gray-400">Cargando datos...</p>
+      <p className="text-muted-foreground">Cargando datos...</p>
     </div>
   );
 }
@@ -646,7 +646,7 @@ export default function ReportsPage() {
     const GENDER_LABELS = {M: "Masculino", F: "Femenino", OTRO: "Otro"};
     const STATUS_COLORS = {
       ACTIVO: "bg-green-500",
-      INACTIVO: "bg-gray-500",
+      INACTIVO: "bg-muted-foreground",
       VISITANTE: "bg-yellow-500",
       TRANSFERIDO: "bg-blue-500",
     };
@@ -707,13 +707,13 @@ export default function ReportsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">Por Género</CardTitle>
+              <CardTitle className="text-foreground text-base">Por Género</CardTitle>
             </CardHeader>
             <CardContent>
               {byGender.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 <DistPieChart
                   data={byGender.map((g) => ({name: GENDER_LABELS[g.gender] || g.gender, value: parseInt(g.count)}))}
@@ -723,13 +723,13 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">Por Estado</CardTitle>
+              <CardTitle className="text-foreground text-base">Por Estado</CardTitle>
             </CardHeader>
             <CardContent>
               {byStatus.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 <DistPieChart
                   data={byStatus.map((s) => ({name: s.status, value: parseInt(s.count)}))}
@@ -739,13 +739,13 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">Por Grupo de Edad</CardTitle>
+              <CardTitle className="text-foreground text-base">Por Grupo de Edad</CardTitle>
             </CardHeader>
             <CardContent>
               {byAgeGroup.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 <DistPieChart
                   data={byAgeGroup.map((a) => ({name: a.age_group, value: parseInt(a.count)}))}
@@ -821,9 +821,9 @@ export default function ReportsPage() {
         </div>
 
         {monthlyChartData.length > 0 && (
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Tendencia Mensual — Últimos 6 meses
               </CardTitle>
             </CardHeader>
@@ -838,27 +838,27 @@ export default function ReportsPage() {
             ["Ingresos por Categoría", ingresos, "bg-green-500"],
             ["Egresos por Categoría", egresos, "bg-red-500"],
           ].map(([title, cats, colorClass]) => (
-            <Card key={title} className="bg-slate-800 border-slate-700">
+            <Card key={title} className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white text-base">{title}</CardTitle>
+                <CardTitle className="text-foreground text-base">{title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cats.length === 0 ? (
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     Sin datos en el período
                   </p>
                 ) : (
                   cats.map((c) => (
                     <div key={c.category_id} className="space-y-1">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-300 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           {c.category_name}
                         </span>
-                        <span className="text-white text-sm font-semibold">
+                        <span className="text-foreground text-sm font-semibold">
                           {fmtMoney(c.total)}
                         </span>
                       </div>
-                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-background rounded-full overflow-hidden">
                         <div
                           className={`h-full ${colorClass} rounded-full transition-all duration-500`}
                           style={{
@@ -866,7 +866,7 @@ export default function ReportsPage() {
                           }}
                         />
                       </div>
-                      <p className="text-gray-600 text-xs">
+                      <p className="text-muted-foreground text-xs">
                         {c.transaction_count} transacciones
                       </p>
                     </div>
@@ -922,28 +922,28 @@ export default function ReportsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Por Tipo de Contribución
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {byType.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos en el período</p>
+                <p className="text-muted-foreground text-sm">Sin datos en el período</p>
               ) : (
                 byType.map((t) => (
                   <div key={t.type} className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-300 text-sm">{t.type}</span>
-                      <span className="text-white text-sm font-semibold">
+                      <span className="text-muted-foreground text-sm">{t.type}</span>
+                      <span className="text-foreground text-sm font-semibold">
                         {fmtMoney(t.total)}{" "}
-                        <span className="text-gray-500 font-normal">
+                        <span className="text-muted-foreground font-normal">
                           ({t.count})
                         </span>
                       </span>
                     </div>
-                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-background rounded-full overflow-hidden">
                       <div
                         className="h-full bg-purple-500 rounded-full transition-all duration-500"
                         style={{width: `${(t.total / maxType) * 100}%`}}
@@ -955,32 +955,32 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                 Top Contribuyentes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {topDonors.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos en el período</p>
+                <p className="text-muted-foreground text-sm">Sin datos en el período</p>
               ) : (
                 topDonors.map((d, i) => (
                   <div
                     key={d.id}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-700/40"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50"
                   >
                     <span
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                      ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-gray-400 text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-slate-600 text-gray-300"}`}
+                      ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-muted-foreground text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-muted text-muted-foreground"}`}
                     >
                       {i + 1}
                     </span>
-                    <span className="flex-1 text-gray-200 text-sm">
+                    <span className="flex-1 text-foreground text-sm">
                       {d.name}
                     </span>
-                    <span className="text-white text-sm font-semibold">
+                    <span className="text-foreground text-sm font-semibold">
                       {fmtMoney(d.total)}
                     </span>
                   </div>
@@ -1016,11 +1016,11 @@ export default function ReportsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <label className="text-gray-400 text-sm font-medium">Año:</label>
+          <label className="text-muted-foreground text-sm font-medium">Año:</label>
           <select
             value={baptismYear}
             onChange={(e) => setBaptismYear(parseInt(e.target.value))}
-            className="px-3 py-1.5 bg-slate-700 border border-slate-600 text-white rounded-md text-sm focus:outline-none focus:border-cyan-500"
+            className="px-3 py-1.5 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-cyan-500"
           >
             {yearOptions.map((y) => (
               <option key={y} value={y}>
@@ -1056,15 +1056,15 @@ export default function ReportsPage() {
           />
         </div>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white text-base">
+            <CardTitle className="text-foreground text-base">
               Bautismos por Mes — {year}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {yearTotal === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-6">
+              <p className="text-muted-foreground text-sm text-center py-6">
                 Sin bautismos registrados en {year}
               </p>
             ) : (
@@ -1074,9 +1074,9 @@ export default function ReportsPage() {
         </Card>
 
         {recent.length > 0 && (
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Bautismos Recientes
               </CardTitle>
             </CardHeader>
@@ -1084,22 +1084,22 @@ export default function ReportsPage() {
               {recent.map((b) => (
                 <div
                   key={b.id}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-700/40"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50"
                 >
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0">
-                    <Droplet className="w-4 h-4 text-cyan-400" />
+                    <Droplet className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-gray-200 text-sm font-medium">
+                    <p className="text-foreground text-sm font-medium">
                       {b.first_name} {b.last_name}
                     </p>
                     {b.minister && (
-                      <p className="text-gray-500 text-xs">
+                      <p className="text-muted-foreground text-xs">
                         Ministro: {b.minister}
                       </p>
                     )}
                   </div>
-                  <span className="text-cyan-300 text-sm shrink-0">
+                  <span className="text-cyan-700 dark:text-cyan-300 text-sm shrink-0">
                     {fmtDate(b.baptism_date)}
                   </span>
                 </div>
@@ -1170,9 +1170,9 @@ export default function ReportsPage() {
         </div>
 
         {monthly.length > 0 && (
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Asistencia Mensual — Últimos 6 meses
               </CardTitle>
             </CardHeader>
@@ -1183,32 +1183,32 @@ export default function ReportsPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Asistencia por Tipo de Evento
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {byType.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 byType.map((t) => (
                   <div key={t.event_type} className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-300 text-sm">
+                      <span className="text-muted-foreground text-sm">
                         {TYPE_LABELS[t.event_type] || t.event_type}
                       </span>
-                      <span className="text-white text-sm font-semibold">
+                      <span className="text-foreground text-sm font-semibold">
                         {parseInt(t.total_attendance).toLocaleString()}
-                        <span className="text-gray-500 font-normal ml-1 text-xs">
+                        <span className="text-muted-foreground font-normal ml-1 text-xs">
                           ({t.event_count} eventos)
                         </span>
                       </span>
                     </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-background rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${TYPE_COLORS[t.event_type] || "bg-slate-500"} rounded-full transition-all duration-500`}
+                        className={`h-full ${TYPE_COLORS[t.event_type] || "bg-muted"} rounded-full transition-all duration-500`}
                         style={{
                           width: `${(parseInt(t.total_attendance || 0) / maxType) * 100}%`,
                         }}
@@ -1220,38 +1220,38 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                 Eventos con Mayor Asistencia
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {topEvents.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 topEvents.map((e, i) => (
                   <div
                     key={e.id}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-700/40"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50"
                   >
                     <span
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                        ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-gray-400 text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-slate-600 text-gray-300"}`}
+                        ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-muted-foreground text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-muted text-muted-foreground"}`}
                     >
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-gray-200 text-sm font-medium truncate">
+                      <p className="text-foreground text-sm font-medium truncate">
                         {e.title}
                       </p>
-                      <p className="text-gray-500 text-xs">
+                      <p className="text-muted-foreground text-xs">
                         {fmtDate(e.date)} ·{" "}
                         {TYPE_LABELS[e.event_type] || e.event_type}
                       </p>
                     </div>
-                    <span className="text-white text-sm font-semibold shrink-0">
+                    <span className="text-foreground text-sm font-semibold shrink-0">
                       {parseInt(e.total_attendance).toLocaleString()}
                     </span>
                   </div>
@@ -1301,29 +1301,29 @@ export default function ReportsPage() {
     return (
       <div className="space-y-6">
         {/* Filters */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex-1 min-w-[200px]">
-                <label className="text-sm text-gray-300 mb-2 block">
+                <label className="text-sm text-muted-foreground mb-2 block">
                   Fecha Inicio
                 </label>
                 <Input
                   type="date"
                   value={prayerStart}
                   onChange={(e) => setPrayerStart(e.target.value)}
-                  className="bg-slate-900 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <div className="flex-1 min-w-[200px]">
-                <label className="text-sm text-gray-300 mb-2 block">
+                <label className="text-sm text-muted-foreground mb-2 block">
                   Fecha Fin
                 </label>
                 <Input
                   type="date"
                   value={prayerEnd}
                   onChange={(e) => setPrayerEnd(e.target.value)}
-                  className="bg-slate-900 border-slate-600 text-white"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               <Button
@@ -1360,9 +1360,9 @@ export default function ReportsPage() {
 
         {/* Monthly Chart */}
         {byMonth.length > 0 && (
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Asistencia Mensual
               </CardTitle>
             </CardHeader>
@@ -1374,30 +1374,30 @@ export default function ReportsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* By Weekday */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base">
+              <CardTitle className="text-foreground text-base">
                 Asistencia por Día de la Semana
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {byWeekday.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 byWeekday.map((d) => (
                   <div key={d.day_of_week} className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-300 text-sm">
+                      <span className="text-muted-foreground text-sm">
                         {DAY_LABELS[d.day_of_week] || `Día ${d.day_of_week}`}
                       </span>
-                      <span className="text-white text-sm font-semibold">
+                      <span className="text-foreground text-sm font-semibold">
                         {parseInt(d.total_attendance || 0).toLocaleString()}
-                        <span className="text-gray-500 font-normal ml-1 text-xs">
+                        <span className="text-muted-foreground font-normal ml-1 text-xs">
                           ({d.sessions} sesiones)
                         </span>
                       </span>
                     </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-background rounded-full overflow-hidden">
                       <div
                         className="h-full bg-amber-500 rounded-full transition-all duration-500"
                         style={{
@@ -1412,38 +1412,38 @@ export default function ReportsPage() {
           </Card>
 
           {/* Top Sessions */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                 Sesiones con Mayor Asistencia
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {topSessions.length === 0 ? (
-                <p className="text-gray-500 text-sm">Sin datos</p>
+                <p className="text-muted-foreground text-sm">Sin datos</p>
               ) : (
                 topSessions.map((s, i) => (
                   <div
                     key={s.occurrence_date}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-700/40"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50"
                   >
                     <span
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                        ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-gray-400 text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-slate-600 text-gray-300"}`}
+                        ${i === 0 ? "bg-amber-500 text-black" : i === 1 ? "bg-muted-foreground text-black" : i === 2 ? "bg-amber-700 text-white" : "bg-muted text-muted-foreground"}`}
                     >
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-gray-200 text-sm font-medium truncate">
+                      <p className="text-foreground text-sm font-medium truncate">
                         {s.prayer_day_name || "Día de Oración"}
                       </p>
-                      <p className="text-gray-500 text-xs">
+                      <p className="text-muted-foreground text-xs">
                         {fmtDate(s.occurrence_date)}
                         {s.guest_count > 0 && ` · ${s.guest_count} invitados`}
                       </p>
                     </div>
-                    <span className="text-white text-sm font-semibold shrink-0">
+                    <span className="text-foreground text-sm font-semibold shrink-0">
                       {parseInt(s.attendance_count || 0).toLocaleString()}
                     </span>
                   </div>
@@ -1461,13 +1461,13 @@ export default function ReportsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
             <BarChart3 className="w-5 h-5 text-white" />
           </span>
           Reportes
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Estadísticas y análisis de la iglesia
         </p>
       </div>
@@ -1484,7 +1484,7 @@ export default function ReportsPage() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === t.id
                     ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"
-                    : "bg-slate-700 text-gray-400 hover:text-white hover:bg-slate-600"
+                    : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -1500,7 +1500,7 @@ export default function ReportsPage() {
             variant="outline"
             onClick={() => handlePreview(false)}
             disabled={!hasData[activeTab]}
-            className="border-slate-600 text-gray-300 hover:text-white hover:border-amber-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            className="border-border text-muted-foreground hover:text-foreground hover:border-amber-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Eye className="w-4 h-4" />
             Vista Previa

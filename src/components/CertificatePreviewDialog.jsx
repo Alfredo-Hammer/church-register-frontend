@@ -179,15 +179,15 @@ export function CertificatePreviewDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent
         onClose={onClose}
-        className="max-w-3xl p-0 bg-slate-900 border-slate-700 overflow-hidden"
+        className="max-w-3xl p-0 bg-card border-border overflow-hidden"
       >
         <DialogHeader className="px-6 pt-5 pb-0">
-          <h2 className="text-base font-semibold text-white">Vista previa del certificado</h2>
-          <p className="text-xs text-slate-400 mt-0.5">{registration.full_name}</p>
+          <h2 className="text-base font-semibold text-foreground">Vista previa del certificado</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{registration.full_name}</p>
         </DialogHeader>
 
         {/* Preview escalado */}
-        <div className="bg-slate-950 mx-6 my-4 flex justify-center items-center rounded-lg overflow-hidden"
+        <div className="bg-muted mx-6 my-4 flex justify-center items-center rounded-lg overflow-hidden"
           style={{ height: PH + 16 }}>
           <div style={{ width: PW, height: PH, overflow: 'hidden', borderRadius: 3, boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
             <div style={{ transformOrigin: 'top left', transform: `scale(${SCALE})`, width: 1056, height: 816 }}>
@@ -201,7 +201,7 @@ export function CertificatePreviewDialog({
         </div>
 
         <DialogFooter className="px-6 pb-5">
-          <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">
+          <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground">
             Cancelar
           </Button>
           <Button

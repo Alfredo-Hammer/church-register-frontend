@@ -16,9 +16,9 @@ const TYPE_LABEL = {
   ANIVERSARIO: "Aniversario",
 };
 const TYPE_COLOR = {
-  REGULAR:     "bg-red-600/20 text-red-400 border-red-600/40",
-  ESPECIAL:    "bg-amber-600/20 text-amber-400 border-amber-600/40",
-  ANIVERSARIO: "bg-purple-600/20 text-purple-400 border-purple-600/40",
+  REGULAR:     "bg-red-600/20 text-red-700 dark:text-red-400 border-red-600/40",
+  ESPECIAL:    "bg-amber-600/20 text-amber-700 dark:text-amber-400 border-amber-600/40",
+  ANIVERSARIO: "bg-purple-600/20 text-purple-700 dark:text-purple-400 border-purple-600/40",
 };
 
 const fmtDateLong = (d) =>
@@ -44,12 +44,12 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-lg w-full">
+      <DialogContent className="bg-card border-border max-w-lg w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-start gap-3">
+          <DialogTitle className="text-foreground flex items-start gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5
-              ${past ? "bg-slate-700" : "bg-red-600/20"}`}>
-              <Wine className={`w-5 h-5 ${past ? "text-gray-400" : "text-red-400"}`} />
+              ${past ? "bg-background" : "bg-red-600/20"}`}>
+              <Wine className={`w-5 h-5 ${past ? "text-muted-foreground" : "text-red-700 dark:text-red-400"}`} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -58,7 +58,7 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
                   {TYPE_LABEL[communion.type]}
                 </span>
               </div>
-              <p className="text-gray-400 text-sm font-normal mt-1 capitalize">
+              <p className="text-muted-foreground text-sm font-normal mt-1 capitalize">
                 {fmtDateLong(communion.date)}
                 {communion.time && ` · ${fmtTime(communion.time)}`}
               </p>
@@ -68,8 +68,8 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
 
         <div className="space-y-4 mt-1">
           {communion.notes && (
-            <div className="flex items-start gap-2.5 text-sm text-gray-400 bg-slate-700/40 rounded-xl px-4 py-3">
-              <FileText className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />
+            <div className="flex items-start gap-2.5 text-sm text-muted-foreground bg-muted/50 rounded-xl px-4 py-3">
+              <FileText className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
               <p>{communion.notes}</p>
             </div>
           )}
@@ -77,27 +77,27 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: UserCheck,  label: "Miembros",   value: members, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-              { icon: UserPlus,   label: "Visitantes", value: guests,  color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20" },
-              { icon: UsersRound, label: "Total",      value: total,   color: "text-white",       bg: "bg-slate-700/60 border-slate-600/50" },
+              { icon: UserCheck,  label: "Miembros",   value: members, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+              { icon: UserPlus,   label: "Visitantes", value: guests,  color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20" },
+              { icon: UsersRound, label: "Total",      value: total,   color: "text-foreground",       bg: "bg-muted/50 border-border" },
             ].map(({ icon: Icon, label, value, color, bg }) => (
               <div key={label} className={`rounded-xl border p-3 text-center ${bg}`}>
                 <Icon className={`w-4 h-4 mx-auto mb-1 ${color}`} />
                 <p className={`text-xl font-bold ${color}`}>{value}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex gap-2 mt-5 pt-4 border-t border-slate-700">
+        <div className="flex gap-2 mt-5 pt-4 border-t border-border">
           <button onClick={() => { onClose(); onDelete(communion); }}
-            className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors"
+            className="p-2 rounded-lg text-red-700 dark:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors"
             title="Eliminar">
             <Trash2 className="w-4 h-4" />
           </button>
           <Button variant="outline" onClick={() => { onClose(); onEdit(communion); }}
-            className="flex-1 border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2">
+            className="flex-1 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2">
             <Edit className="w-4 h-4" /> Editar
           </Button>
           {past ? (
@@ -106,7 +106,7 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
               <UserCheck className="w-4 h-4" /> Registrar participantes
             </Button>
           ) : (
-            <Button disabled className="flex-[2] bg-slate-700 text-gray-500 cursor-not-allowed gap-2">
+            <Button disabled className="flex-[2] bg-background text-muted-foreground cursor-not-allowed gap-2">
               <Clock className="w-4 h-4" /> Aún no realizado
             </Button>
           )}
@@ -120,12 +120,12 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
 function FormModal({ open, isEditing, form, error, success, onChange, onSubmit, onClose }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-md w-full">
+      <DialogContent className="bg-card border-border max-w-md w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-3">
+          <DialogTitle className="text-foreground flex items-center gap-3">
             <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0
               ${isEditing ? "bg-blue-600/20" : "bg-red-600/20"}`}>
-              <Wine className={`w-5 h-5 ${isEditing ? "text-blue-400" : "text-red-400"}`} />
+              <Wine className={`w-5 h-5 ${isEditing ? "text-blue-700 dark:text-blue-400" : "text-red-700 dark:text-red-400"}`} />
             </span>
             {isEditing ? "Editar Santa Cena" : "Nueva Santa Cena"}
           </DialogTitle>
@@ -133,33 +133,33 @@ function FormModal({ open, isEditing, form, error, success, onChange, onSubmit, 
 
         <form onSubmit={onSubmit} className="space-y-4 mt-2">
           {error && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" />{error}
             </div>
           )}
           {success && (
-            <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
               <CheckCircle className="w-4 h-4 shrink-0" />{success}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">Fecha *</label>
+              <label className="text-sm font-medium text-muted-foreground">Fecha *</label>
               <Input type="date" name="date" value={form.date} onChange={onChange} required
-                className="bg-slate-700 border-slate-600 text-white" />
+                className="bg-background border-border text-foreground" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">Hora</label>
+              <label className="text-sm font-medium text-muted-foreground">Hora</label>
               <Input type="time" name="time" value={form.time} onChange={onChange}
-                className="bg-slate-700 border-slate-600 text-white" />
+                className="bg-background border-border text-foreground" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-300">Tipo</label>
+            <label className="text-sm font-medium text-muted-foreground">Tipo</label>
             <select name="type" value={form.type} onChange={onChange}
-              className="w-full h-10 rounded-md border border-slate-600 bg-slate-700 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-600">
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-red-600">
               <option value="REGULAR">Regular</option>
               <option value="ESPECIAL">Especial</option>
               <option value="ANIVERSARIO">Aniversario</option>
@@ -167,15 +167,15 @@ function FormModal({ open, isEditing, form, error, success, onChange, onSubmit, 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-300">Notas</label>
+            <label className="text-sm font-medium text-muted-foreground">Notas</label>
             <textarea name="notes" value={form.notes} onChange={onChange} rows={2}
               placeholder="Tema, pasaje bíblico, observaciones..."
-              className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-600 resize-none" />
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-red-600 resize-none" />
           </div>
 
           <div className="flex gap-3 pt-1">
             <Button type="button" variant="outline" onClick={onClose} disabled={!!success}
-              className="flex-1 border-slate-600 text-gray-300 hover:text-white hover:border-slate-500">
+              className="flex-1 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40">
               Cancelar
             </Button>
             <Button type="submit" disabled={!!success}
@@ -255,15 +255,15 @@ function ParticipantsModal({ communion, open, onClose, onSaved }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-xl w-full">
+      <DialogContent className="bg-card border-border max-w-xl w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-3">
+          <DialogTitle className="text-foreground flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg bg-red-600/20 flex items-center justify-center shrink-0">
-              <Wine className="w-5 h-5 text-red-400" />
+              <Wine className="w-5 h-5 text-red-700 dark:text-red-400" />
             </span>
             <div>
               <p className="leading-tight">Participantes — Santa Cena</p>
-              <p className="text-gray-400 text-sm font-normal mt-0.5 capitalize">
+              <p className="text-muted-foreground text-sm font-normal mt-0.5 capitalize">
                 {communion && fmtDateLong(communion.date)}
               </p>
             </div>
@@ -277,12 +277,12 @@ function ParticipantsModal({ communion, open, onClose, onSaved }) {
         ) : (
           <div className="mt-2 space-y-4">
             {error && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />{error}
               </div>
             )}
             {success && (
-              <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
                 <CheckCircle className="w-4 h-4 shrink-0" />{success}
               </div>
             )}
@@ -292,23 +292,23 @@ function ParticipantsModal({ communion, open, onClose, onSaved }) {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                    <UserPlus className="w-5 h-5 text-amber-400" />
+                    <UserPlus className="w-5 h-5 text-amber-700 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-white text-sm font-semibold">Visitantes / Público general</p>
-                    <p className="text-gray-400 text-xs">No registrados en el sistema</p>
+                    <p className="text-foreground text-sm font-semibold">Visitantes / Público general</p>
+                    <p className="text-muted-foreground text-xs">No registrados en el sistema</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button type="button" onClick={() => setGuestCount((v) => Math.max(0, v - 1))}
-                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-white transition-colors">
+                    className="w-8 h-8 rounded-lg bg-background hover:bg-accent border border-border flex items-center justify-center text-foreground transition-colors">
                     <Minus className="w-4 h-4" />
                   </button>
                   <input type="number" min="0" value={guestCount}
                     onChange={(e) => setGuestCount(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="w-16 text-center bg-slate-700 border border-slate-600 text-white text-lg font-bold rounded-lg py-1.5 focus:outline-none focus:border-amber-500" />
+                    className="w-16 text-center bg-background border border-border text-foreground text-lg font-bold rounded-lg py-1.5 focus:outline-none focus:border-amber-500" />
                   <button type="button" onClick={() => setGuestCount((v) => v + 1)}
-                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-white transition-colors">
+                    className="w-8 h-8 rounded-lg bg-background hover:bg-accent border border-border flex items-center justify-center text-foreground transition-colors">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
@@ -318,57 +318,57 @@ function ParticipantsModal({ communion, open, onClose, onSaved }) {
             {/* Members */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-emerald-400" /> Miembros
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> Miembros
                 </p>
                 <div className="flex gap-2">
                   <button onClick={() => setSelected(new Set(allMembers.map((m) => m.id)))}
-                    className="text-xs text-gray-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded px-2 py-1 transition-colors">
+                    className="text-xs text-muted-foreground hover:text-foreground border border-border hover:border-muted-foreground/40 rounded px-2 py-1 transition-colors">
                     Todos
                   </button>
                   <button onClick={() => setSelected(new Set())}
-                    className="text-xs text-gray-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded px-2 py-1 transition-colors">
+                    className="text-xs text-muted-foreground hover:text-foreground border border-border hover:border-muted-foreground/40 rounded px-2 py-1 transition-colors">
                     Ninguno
                   </button>
                 </div>
               </div>
               <div className="relative mb-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Buscar miembro..." value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white" />
+                  className="pl-10 bg-background border-border text-foreground" />
               </div>
-              <div className="max-h-52 overflow-y-auto space-y-1 rounded-xl bg-slate-700/40 p-2">
+              <div className="max-h-52 overflow-y-auto space-y-1 rounded-xl bg-muted/50 p-2">
                 {filtered.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-5">Sin resultados</p>
+                  <p className="text-sm text-muted-foreground text-center py-5">Sin resultados</p>
                 ) : filtered.map((m) => (
                   <label key={m.id}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors
                       ${selected.has(m.id)
                         ? "bg-red-600/15 border border-red-500/30"
-                        : "hover:bg-slate-700 border border-transparent"}`}>
+                        : "hover:bg-accent border border-transparent"}`}>
                     <input type="checkbox" checked={selected.has(m.id)}
                       onChange={() => toggle(m.id)}
-                      className="h-4 w-4 rounded border-slate-500 accent-red-600" />
-                    <span className="flex-1 text-sm text-white">{m.first_name} {m.last_name}</span>
-                    {selected.has(m.id) && <Check className="w-4 h-4 text-red-400 shrink-0" />}
+                      className="h-4 w-4 rounded border-border accent-red-600" />
+                    <span className="flex-1 text-sm text-foreground">{m.first_name} {m.last_name}</span>
+                    {selected.has(m.id) && <Check className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" />}
                   </label>
                 ))}
               </div>
             </div>
 
             {/* Summary */}
-            <div className="bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-              <span className="text-gray-400">Miembros: <strong className="text-white">{selected.size}</strong></span>
-              <span className="text-gray-400">Visitantes: <strong className="text-amber-400">{guestCount}</strong></span>
-              <span className="text-gray-400">Total: <strong className="text-red-400 text-base">{selected.size + guestCount}</strong></span>
+            <div className="bg-muted/50 border border-border rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-muted-foreground">Miembros: <strong className="text-foreground">{selected.size}</strong></span>
+              <span className="text-muted-foreground">Visitantes: <strong className="text-amber-700 dark:text-amber-400">{guestCount}</strong></span>
+              <span className="text-muted-foreground">Total: <strong className="text-red-700 dark:text-red-400 text-base">{selected.size + guestCount}</strong></span>
             </div>
           </div>
         )}
 
         <div className="flex gap-3 mt-4">
           <Button variant="outline" onClick={onClose} disabled={saving}
-            className="flex-1 border-slate-600 text-gray-300 hover:text-white hover:border-slate-500">
+            className="flex-1 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40">
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={saving || !!success || loading}
@@ -393,24 +393,24 @@ function CommunionRow({ communion: c, onDetail, onEdit, onDelete, onRecord }) {
 
   return (
     <div onClick={() => onDetail(c)}
-      className="flex items-center gap-4 px-4 py-3 border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30 transition-colors cursor-pointer group">
+      className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer group">
       {/* Icon */}
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0
-        ${past ? "bg-slate-700" : "bg-red-600/20"}`}>
-        <Wine className={`w-4 h-4 ${past ? "text-gray-500" : "text-red-400"}`} />
+        ${past ? "bg-background" : "bg-red-600/20"}`}>
+        <Wine className={`w-4 h-4 ${past ? "text-muted-foreground" : "text-red-700 dark:text-red-400"}`} />
       </div>
 
       {/* Date + type */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm font-semibold ${past ? "text-gray-400" : "text-white"}`}>
+          <span className={`text-sm font-semibold ${past ? "text-muted-foreground" : "text-foreground"}`}>
             Santa Cena
           </span>
           <span className={`px-1.5 py-0.5 rounded text-[11px] border ${tc}`}>
             {TYPE_LABEL[c.type]}
           </span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5 capitalize">
+        <p className="text-xs text-muted-foreground mt-0.5 capitalize">
           {fmtDateShort(c.date)}{c.time ? ` · ${fmtTime(c.time)}` : ""}
         </p>
       </div>
@@ -418,23 +418,23 @@ function CommunionRow({ communion: c, onDetail, onEdit, onDelete, onRecord }) {
       {/* Stats */}
       <div className="hidden sm:flex items-center gap-4 shrink-0 text-sm">
         <div className="text-center">
-          <p className="text-gray-500 text-xs">Miembros</p>
-          <p className="text-white font-semibold">{members}</p>
+          <p className="text-muted-foreground text-xs">Miembros</p>
+          <p className="text-foreground font-semibold">{members}</p>
         </div>
         <div className="text-center">
-          <p className="text-gray-500 text-xs">Visitantes</p>
-          <p className="text-amber-400 font-semibold">{guests}</p>
+          <p className="text-muted-foreground text-xs">Visitantes</p>
+          <p className="text-amber-700 dark:text-amber-400 font-semibold">{guests}</p>
         </div>
         <div className="text-center min-w-[44px]">
-          <p className="text-gray-500 text-xs">Total</p>
-          <p className={`font-bold text-base ${past ? "text-gray-300" : "text-red-400"}`}>{total}</p>
+          <p className="text-muted-foreground text-xs">Total</p>
+          <p className={`font-bold text-base ${past ? "text-muted-foreground" : "text-red-700 dark:text-red-400"}`}>{total}</p>
         </div>
       </div>
 
       {/* Mobile total */}
       <div className="sm:hidden shrink-0 text-right">
-        <p className="text-xs text-gray-500">Total</p>
-        <p className={`font-bold ${past ? "text-gray-300" : "text-red-400"}`}>{total}</p>
+        <p className="text-xs text-muted-foreground">Total</p>
+        <p className={`font-bold ${past ? "text-muted-foreground" : "text-red-700 dark:text-red-400"}`}>{total}</p>
       </div>
 
       {/* Actions */}
@@ -448,15 +448,15 @@ function CommunionRow({ communion: c, onDetail, onEdit, onDelete, onRecord }) {
             </button>
           )}
           <button onClick={() => onEdit(c)}
-            className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors">
+            className="p-1.5 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
             <Edit className="w-3.5 h-3.5" />
           </button>
           <button onClick={() => onDelete(c)}
-            className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">
+            className="p-1.5 rounded-lg text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
-        <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
+        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
       </div>
     </div>
   );
@@ -582,11 +582,11 @@ export default function CommunionPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-rose-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-900/30">
-            <Wine className="w-5 h-5 text-white" />
+            <Wine className="w-5 h-5 text-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Santa Cena</h1>
-            <p className="text-sm text-gray-400">Registro de participantes en la comunión</p>
+            <h1 className="text-2xl font-bold text-foreground">Santa Cena</h1>
+            <p className="text-sm text-muted-foreground">Registro de participantes en la comunión</p>
           </div>
         </div>
         <Button onClick={openCreate}
@@ -598,15 +598,15 @@ export default function CommunionPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total servicios",   value: stats.total_services        || 0, color: "text-white",      icon: Wine,        bg: "bg-slate-800 border-slate-700" },
-          { label: "Próximos",          value: upcoming.length,             color: "text-red-400",        icon: Clock,       bg: "bg-red-600/5 border-red-600/20" },
-          { label: "Total participantes", value: stats.total_participants  || 0, color: "text-emerald-400", icon: Users,       bg: "bg-emerald-600/5 border-emerald-600/20" },
-          { label: "Promedio por servicio", value: parseFloat(stats.avg_participants || 0).toFixed(0), color: "text-amber-400", icon: UsersRound, bg: "bg-amber-600/5 border-amber-600/20" },
+          { label: "Total servicios",   value: stats.total_services        || 0, color: "text-foreground",      icon: Wine,        bg: "bg-card border-border" },
+          { label: "Próximos",          value: upcoming.length,             color: "text-red-700 dark:text-red-400",        icon: Clock,       bg: "bg-red-600/5 border-red-600/20" },
+          { label: "Total participantes", value: stats.total_participants  || 0, color: "text-emerald-700 dark:text-emerald-400", icon: Users,       bg: "bg-emerald-600/5 border-emerald-600/20" },
+          { label: "Promedio por servicio", value: parseFloat(stats.avg_participants || 0).toFixed(0), color: "text-amber-700 dark:text-amber-400", icon: UsersRound, bg: "bg-amber-600/5 border-amber-600/20" },
         ].map(({ label, value, color, icon: Icon, bg }) => (
           <div key={label} className={`rounded-xl border p-4 ${bg}`}>
             <div className="flex items-center gap-2 mb-1">
               <Icon className={`w-4 h-4 ${color}`} />
-              <p className="text-xs text-gray-500">{label}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
             </div>
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
           </div>
@@ -616,10 +616,10 @@ export default function CommunionPage() {
       {/* Toolbar */}
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por tipo, fecha o notas..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-slate-800 border-slate-700 text-white" />
+            className="pl-10 bg-card border-border text-foreground" />
         </div>
       </div>
 
@@ -627,15 +627,15 @@ export default function CommunionPage() {
       {loading ? (
         <div className="text-center py-16">
           <div className="w-10 h-10 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-400">Cargando registros...</p>
+          <p className="text-muted-foreground">Cargando registros...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 bg-slate-800 border border-slate-700 rounded-xl">
+        <div className="text-center py-20 bg-card border border-border rounded-xl">
           <div className="w-16 h-16 rounded-2xl bg-red-600/10 border border-red-600/20 flex items-center justify-center mx-auto mb-4">
             <Wine className="w-8 h-8 text-red-500/40" />
           </div>
-          <p className="text-white font-medium">No hay registros de Santa Cena</p>
-          <p className="text-gray-500 text-sm mt-1 mb-5">Registra la primera celebración de la comunión</p>
+          <p className="text-foreground font-medium">No hay registros de Santa Cena</p>
+          <p className="text-muted-foreground text-sm mt-1 mb-5">Registra la primera celebración de la comunión</p>
           <Button onClick={openCreate}
             className="bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-800 hover:to-rose-800 text-white gap-2">
             <Plus className="w-4 h-4" /> Nuevo Registro
@@ -645,11 +645,11 @@ export default function CommunionPage() {
         <div className="space-y-8">
           {upcoming.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-red-400" />
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-red-700 dark:text-red-400" />
                 Próximos — {upcoming.length} registro{upcoming.length !== 1 ? "s" : ""}
               </h2>
-              <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
                 {upcoming.map((r) => (
                   <CommunionRow key={r.id} communion={r}
                     onDetail={openDetail} onEdit={openEdit} onDelete={handleDelete} onRecord={openRecord} />
@@ -659,11 +659,11 @@ export default function CommunionPage() {
           )}
           {past.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-gray-500" />
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 Realizados — {past.length} registro{past.length !== 1 ? "s" : ""}
               </h2>
-              <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
                 {past.map((r) => (
                   <CommunionRow key={r.id} communion={r}
                     onDetail={openDetail} onEdit={openEdit} onDelete={handleDelete} onRecord={openRecord} />

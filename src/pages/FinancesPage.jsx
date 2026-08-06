@@ -78,22 +78,22 @@ const DON_TYPES = [
   {
     value: "DIEZMO",
     label: "Diezmo",
-    color: "bg-violet-500/20 text-violet-300 border-violet-500/40",
+    color: "bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/40",
   },
   {
     value: "OFRENDA",
     label: "Ofrenda",
-    color: "bg-pink-500/20 text-pink-300 border-pink-500/40",
+    color: "bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/40",
   },
   {
     value: "ESPECIAL",
     label: "Especial",
-    color: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+    color: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40",
   },
   {
     value: "MISION",
     label: "Misión",
-    color: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+    color: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40",
   },
 ];
 const DON_MAP = Object.fromEntries(DON_TYPES.map((t) => [t.value, t]));
@@ -103,7 +103,7 @@ function MonthlyChart({data}) {
   const [tip, setTip] = useState(null);
   if (!data || data.length === 0)
     return (
-      <div className="flex items-center justify-center h-48 text-gray-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
         Sin datos suficientes para mostrar la gráfica
       </div>
     );
@@ -268,7 +268,7 @@ function MonthlyChart({data}) {
         )}
       </svg>
       {/* Legend */}
-      <div className="flex gap-4 mt-2 text-xs text-gray-400">
+      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded bg-emerald-400 inline-block" />
           Ingresos
@@ -322,18 +322,18 @@ function CategoryModal({open, onClose, category, onSaved}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-md w-full">
+      <DialogContent className="bg-card border-border max-w-md w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-3">
+          <DialogTitle className="text-foreground flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg bg-emerald-600/30 flex items-center justify-center">
-              <Tag className="w-4 h-4 text-emerald-400" />
+              <Tag className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             </span>
             {category ? "Editar Categoría" : "Nueva Categoría"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="text-gray-300 text-sm font-medium block mb-1.5">
+            <label className="text-muted-foreground text-sm font-medium block mb-1.5">
               Nombre *
             </label>
             <Input
@@ -341,11 +341,11 @@ function CategoryModal({open, onClose, category, onSaved}) {
               onChange={(e) => setForm((f) => ({...f, name: e.target.value}))}
               placeholder="Ej: Diezmos, Ofrendas, Servicios..."
               required
-              className="bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-emerald-500"
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-emerald-500"
             />
           </div>
           <div>
-            <label className="text-gray-300 text-sm font-medium block mb-2">
+            <label className="text-muted-foreground text-sm font-medium block mb-2">
               Tipo *
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -354,13 +354,13 @@ function CategoryModal({open, onClose, category, onSaved}) {
                   v: "INGRESO",
                   l: "Ingreso",
                   icon: TrendingUp,
-                  cls: "text-emerald-300 border-emerald-500 bg-emerald-600/20",
+                  cls: "text-emerald-700 dark:text-emerald-300 border-emerald-500 bg-emerald-600/20",
                 },
                 {
                   v: "EGRESO",
                   l: "Egreso",
                   icon: TrendingDown,
-                  cls: "text-red-300 border-red-500 bg-red-600/20",
+                  cls: "text-red-700 dark:text-red-300 border-red-500 bg-red-600/20",
                 },
               ].map(({v, l, icon: Icon, cls}) => (
                 <button
@@ -368,7 +368,7 @@ function CategoryModal({open, onClose, category, onSaved}) {
                   type="button"
                   onClick={() => setForm((f) => ({...f, type: v}))}
                   className={`py-3 px-4 rounded-lg border-2 transition font-medium flex flex-col items-center gap-1 text-sm
-                    ${form.type === v ? cls : "bg-slate-700/30 border-slate-600 text-gray-400 hover:border-slate-500"}`}
+                    ${form.type === v ? cls : "bg-muted/50 border-border text-muted-foreground hover:border-muted-foreground/40"}`}
                 >
                   <Icon className="w-5 h-5" />
                   {l}
@@ -377,17 +377,17 @@ function CategoryModal({open, onClose, category, onSaved}) {
             </div>
           </div>
           {err && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {err}
             </div>
           )}
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+          <div className="flex justify-end gap-3 pt-2 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
             >
               Cancelar
             </Button>
@@ -496,9 +496,9 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl w-full">
+      <DialogContent className="bg-card border-border max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-3 text-xl">
+          <DialogTitle className="text-foreground flex items-center gap-3 text-xl">
             <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-600 to-green-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4 text-white" />
             </span>
@@ -509,7 +509,7 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Categoría */}
             <div className="sm:col-span-2">
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Categoría *
               </label>
               <div className="relative">
@@ -519,7 +519,7 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                     setForm((f) => ({...f, categoryId: e.target.value}))
                   }
                   required
-                  className="w-full px-3 py-2 pr-8 bg-slate-700 border border-slate-600 text-white rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
+                  className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
                 >
                   <option value="">— Seleccione una categoría —</option>
                   {ingresosCats.length > 0 && (
@@ -541,11 +541,11 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                     </optgroup>
                   )}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               </div>
               {selCat && (
                 <p
-                  className={`mt-1 text-xs font-medium ${selCat.type === "INGRESO" ? "text-emerald-400" : "text-red-400"}`}
+                  className={`mt-1 text-xs font-medium ${selCat.type === "INGRESO" ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}
                 >
                   {selCat.type === "INGRESO" ? "↑ Ingreso" : "↓ Egreso"}
                 </p>
@@ -553,11 +553,11 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
             </div>
             {/* Monto */}
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Monto *
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">
                   $
                 </span>
                 <Input
@@ -570,13 +570,13 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                     setForm((f) => ({...f, amount: e.target.value}))
                   }
                   required
-                  className="pl-7 bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-emerald-500"
+                  className="pl-7 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-emerald-500"
                 />
               </div>
             </div>
             {/* Fecha */}
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Fecha *
               </label>
               <Input
@@ -584,23 +584,23 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                 value={form.date}
                 onChange={(e) => setForm((f) => ({...f, date: e.target.value}))}
                 required
-                className="bg-slate-700 border-slate-600 text-white focus:border-emerald-500"
+                className="bg-background border-border text-foreground focus:border-emerald-500"
               />
             </div>
             {/* Miembro */}
             <div className="sm:col-span-2">
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Miembro{" "}
-                <span className="text-gray-500 font-normal">(opcional)</span>
+                <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Buscar miembro..."
                     value={memberSearch}
                     onChange={(e) => setMemberSearch(e.target.value)}
-                    className="pl-8 bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-emerald-500"
+                    className="pl-8 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-emerald-500"
                   />
                 </div>
                 {form.memberId && (
@@ -610,16 +610,16 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                       setForm((f) => ({...f, memberId: ""}));
                       setMemberSearch("");
                     }}
-                    className="px-2 text-gray-400 hover:text-white"
+                    className="px-2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
               {memberSearch && (
-                <div className="mt-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden max-h-36 overflow-y-auto">
+                <div className="mt-1 bg-background border border-border rounded-lg overflow-hidden max-h-36 overflow-y-auto">
                   {members.length === 0 ? (
-                    <p className="px-3 py-2 text-gray-500 text-sm">
+                    <p className="px-3 py-2 text-muted-foreground text-sm">
                       Sin resultados
                     </p>
                   ) : (
@@ -631,7 +631,7 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                           setForm((f) => ({...f, memberId: m.id}));
                           setMemberSearch(`${m.first_name} ${m.last_name}`);
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors ${form.memberId === m.id ? "bg-slate-700 text-emerald-400" : "text-white"}`}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${form.memberId === m.id ? "bg-background text-emerald-700 dark:text-emerald-400" : "text-foreground"}`}
                       >
                         {m.first_name} {m.last_name}
                       </button>
@@ -642,9 +642,9 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
             </div>
             {/* Descripción */}
             <div className="sm:col-span-2">
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Descripción{" "}
-                <span className="text-gray-500 font-normal">(opcional)</span>
+                <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <textarea
                 rows={2}
@@ -653,22 +653,22 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                 onChange={(e) =>
                   setForm((f) => ({...f, description: e.target.value}))
                 }
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white placeholder-gray-500 rounded-md text-sm focus:outline-none focus:border-emerald-500 resize-none"
+                className="w-full px-3 py-2 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-md text-sm focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
           </div>
           {err && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {err}
             </div>
           )}
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+          <div className="flex justify-end gap-3 pt-2 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
             >
               Cancelar
             </Button>
@@ -778,9 +778,9 @@ function DonationModal({open, onClose, donation, onSaved}) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl w-full">
+      <DialogContent className="bg-card border-border max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-3 text-xl">
+          <DialogTitle className="text-foreground flex items-center gap-3 text-xl">
             <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
               <Heart className="w-4 h-4 text-white" />
             </span>
@@ -790,7 +790,7 @@ function DonationModal({open, onClose, donation, onSaved}) {
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {/* Tipo */}
           <div>
-            <label className="text-gray-300 text-sm font-medium block mb-2">
+            <label className="text-muted-foreground text-sm font-medium block mb-2">
               Tipo de donación
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -802,8 +802,8 @@ function DonationModal({open, onClose, donation, onSaved}) {
                   className={`py-2.5 px-3 rounded-xl border text-sm font-medium transition-all
                     ${
                       form.type === t.value
-                        ? `${t.color} ring-2 ring-offset-1 ring-offset-slate-800 ring-pink-500`
-                        : "bg-slate-700 border-slate-600 text-gray-400 hover:border-slate-500"
+                        ? `${t.color} ring-2 ring-offset-1 ring-offset-card ring-pink-500`
+                        : "bg-background border-border text-muted-foreground hover:border-muted-foreground/40"
                     }`}
                 >
                   {t.label}
@@ -814,7 +814,7 @@ function DonationModal({open, onClose, donation, onSaved}) {
           {/* Donante */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-gray-300 text-sm font-medium">
+              <label className="text-muted-foreground text-sm font-medium">
                 Donante
               </label>
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -830,19 +830,19 @@ function DonationModal({open, onClose, donation, onSaved}) {
                   }
                   className="accent-pink-500"
                 />
-                <span className="text-gray-400 text-sm">Donación anónima</span>
+                <span className="text-muted-foreground text-sm">Donación anónima</span>
               </label>
             </div>
             {!form.isAnonymous && (
               <>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
                       placeholder="Buscar miembro..."
                       value={memberSearch}
                       onChange={(e) => setMemberSearch(e.target.value)}
-                      className="pl-8 bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-pink-500"
+                      className="pl-8 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-pink-500"
                     />
                   </div>
                   {form.memberId && (
@@ -852,16 +852,16 @@ function DonationModal({open, onClose, donation, onSaved}) {
                         setForm((f) => ({...f, memberId: ""}));
                         setMemberSearch("");
                       }}
-                      className="px-2 text-gray-400 hover:text-white"
+                      className="px-2 text-muted-foreground hover:text-foreground"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   )}
                 </div>
                 {memberSearch && (
-                  <div className="mt-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden max-h-36 overflow-y-auto">
+                  <div className="mt-1 bg-background border border-border rounded-lg overflow-hidden max-h-36 overflow-y-auto">
                     {members.length === 0 ? (
-                      <p className="px-3 py-2 text-gray-500 text-sm">
+                      <p className="px-3 py-2 text-muted-foreground text-sm">
                         Sin resultados
                       </p>
                     ) : (
@@ -873,7 +873,7 @@ function DonationModal({open, onClose, donation, onSaved}) {
                             setForm((f) => ({...f, memberId: m.id}));
                             setMemberSearch(`${m.first_name} ${m.last_name}`);
                           }}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors ${form.memberId === m.id ? "bg-slate-700 text-pink-400" : "text-white"}`}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${form.memberId === m.id ? "bg-background text-pink-700 dark:text-pink-400" : "text-foreground"}`}
                         >
                           {m.first_name} {m.last_name}
                         </button>
@@ -884,7 +884,7 @@ function DonationModal({open, onClose, donation, onSaved}) {
               </>
             )}
             {form.isAnonymous && (
-              <p className="text-gray-500 text-sm italic">
+              <p className="text-muted-foreground text-sm italic">
                 Se registrará como donación anónima.
               </p>
             )}
@@ -892,11 +892,11 @@ function DonationModal({open, onClose, donation, onSaved}) {
           {/* Monto + Fecha */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Monto *
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">
                   $
                 </span>
                 <Input
@@ -909,12 +909,12 @@ function DonationModal({open, onClose, donation, onSaved}) {
                     setForm((f) => ({...f, amount: e.target.value}))
                   }
                   required
-                  className="pl-7 bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-pink-500"
+                  className="pl-7 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-pink-500"
                 />
               </div>
             </div>
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Fecha *
               </label>
               <Input
@@ -922,15 +922,15 @@ function DonationModal({open, onClose, donation, onSaved}) {
                 value={form.date}
                 onChange={(e) => setForm((f) => ({...f, date: e.target.value}))}
                 required
-                className="bg-slate-700 border-slate-600 text-white focus:border-pink-500"
+                className="bg-background border-border text-foreground focus:border-pink-500"
               />
             </div>
           </div>
           {/* Descripción */}
           <div>
-            <label className="text-gray-300 text-sm font-medium block mb-1.5">
+            <label className="text-muted-foreground text-sm font-medium block mb-1.5">
               Descripción{" "}
-              <span className="text-gray-500 font-normal">(opcional)</span>
+              <span className="text-muted-foreground font-normal">(opcional)</span>
             </label>
             <textarea
               rows={2}
@@ -939,21 +939,21 @@ function DonationModal({open, onClose, donation, onSaved}) {
               onChange={(e) =>
                 setForm((f) => ({...f, description: e.target.value}))
               }
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white placeholder-gray-500 rounded-md text-sm focus:outline-none focus:border-pink-500 resize-none"
+              className="w-full px-3 py-2 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-md text-sm focus:outline-none focus:border-pink-500 resize-none"
             />
           </div>
           {err && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {err}
             </div>
           )}
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+          <div className="flex justify-end gap-3 pt-2 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
             >
               Cancelar
             </Button>
@@ -979,22 +979,22 @@ function DonationModal({open, onClose, donation, onSaved}) {
 function ConfirmDialog({open, onClose, onConfirm, message}) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-md w-full">
+      <DialogContent className="bg-card border-border max-w-md w-full">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-3">
+          <DialogTitle className="text-foreground flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-              <Trash2 className="w-4 h-4 text-red-400" />
+              <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
             </span>
             Confirmar eliminación
           </DialogTitle>
         </DialogHeader>
-        <p className="mt-3 text-gray-300 text-sm">{message}</p>
+        <p className="mt-3 text-muted-foreground text-sm">{message}</p>
         <div className="flex justify-end gap-3 mt-6">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+            className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
           >
             Cancelar
           </Button>
@@ -1268,13 +1268,13 @@ export default function FinancesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-white" />
             </span>
             Finanzas
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Control financiero, donaciones y categorías
           </p>
         </div>
@@ -1282,7 +1282,7 @@ export default function FinancesPage() {
           <Button
             variant="outline"
             onClick={handlePrint}
-            className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+            className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
           >
             <Printer className="w-4 h-4" /> PDF
           </Button>
@@ -1327,45 +1327,45 @@ export default function FinancesPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-emerald-900/50 to-emerald-950/50 border-emerald-700/50">
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 dark:from-emerald-900/50 dark:to-emerald-950/50 border-emerald-300 dark:border-emerald-700/50">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-emerald-300 text-sm font-medium">
+              <p className="text-emerald-700 dark:text-emerald-300 text-sm font-medium">
                 Total Ingresos
               </p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {$m(summary.totalIngresos)}
               </p>
             </div>
             <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-emerald-400" />
+              <TrendingUp className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-700/50">
+        <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 dark:from-red-900/50 dark:to-red-950/50 border-red-300 dark:border-red-700/50">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-red-300 text-sm font-medium">Total Egresos</p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-red-700 dark:text-red-300 text-sm font-medium">Total Egresos</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {$m(summary.totalEgresos)}
               </p>
             </div>
             <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
-              <TrendingDown className="w-6 h-6 text-red-400" />
+              <TrendingDown className="w-6 h-6 text-red-700 dark:text-red-400" />
             </div>
           </CardContent>
         </Card>
         <Card
-          className={`bg-gradient-to-br ${summary.balance >= 0 ? "from-green-900/50 to-green-950/50 border-green-700/50" : "from-orange-900/50 to-orange-950/50 border-orange-700/50"}`}
+          className={`bg-gradient-to-br ${summary.balance >= 0 ? "from-green-500/10 to-green-500/5 dark:from-green-900/50 dark:to-green-950/50 border-green-300 dark:border-green-700/50" : "from-orange-500/10 to-orange-500/5 dark:from-orange-900/50 dark:to-orange-950/50 border-orange-300 dark:border-orange-700/50"}`}
         >
           <CardContent className="p-5 flex items-center justify-between">
             <div>
               <p
-                className={`text-sm font-medium ${summary.balance >= 0 ? "text-green-300" : "text-orange-300"}`}
+                className={`text-sm font-medium ${summary.balance >= 0 ? "text-green-700 dark:text-green-300" : "text-orange-700 dark:text-orange-300"}`}
               >
                 Balance
               </p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {$m(summary.balance)}
               </p>
             </div>
@@ -1373,7 +1373,7 @@ export default function FinancesPage() {
               className={`w-12 h-12 rounded-xl flex items-center justify-center ${summary.balance >= 0 ? "bg-green-500/20" : "bg-orange-500/20"}`}
             >
               <Wallet
-                className={`w-6 h-6 ${summary.balance >= 0 ? "text-green-400" : "text-orange-400"}`}
+                className={`w-6 h-6 ${summary.balance >= 0 ? "text-green-700 dark:text-green-400" : "text-orange-700 dark:text-orange-400"}`}
               />
             </div>
           </CardContent>
@@ -1381,29 +1381,29 @@ export default function FinancesPage() {
         <Card className="bg-gradient-to-br from-pink-500/20 to-rose-600/10 border-pink-500/30">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-pink-300 text-sm font-medium">Donaciones</p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-pink-700 dark:text-pink-300 text-sm font-medium">Donaciones</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {$m(donTotal)}
               </p>
-              <p className="text-pink-400 text-xs mt-1">
+              <p className="text-pink-700 dark:text-pink-400 text-xs mt-1">
                 {donSummary?.summary?.count || 0} registros
               </p>
             </div>
             <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
-              <Heart className="w-6 h-6 text-pink-400" />
+              <Heart className="w-6 h-6 text-pink-700 dark:text-pink-400" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-700 overflow-x-auto">
+      <div className="flex gap-1 border-b border-border overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px
-              ${tab === t.id ? "text-emerald-400 border-emerald-400" : "text-gray-400 border-transparent hover:text-white"}`}
+              ${tab === t.id ? "text-emerald-700 dark:text-emerald-400 border-emerald-400" : "text-muted-foreground border-transparent hover:text-foreground"}`}
           >
             {t.label}
           </button>
@@ -1414,10 +1414,10 @@ export default function FinancesPage() {
       {tab === "resumen" && (
         <div className="space-y-6">
           {/* Monthly chart */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-white flex items-center gap-2 text-base">
-                <BarChart3 className="w-4 h-4 text-emerald-400" />
+              <CardTitle className="text-foreground flex items-center gap-2 text-base">
+                <BarChart3 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                 Actividad financiera — últimos 6 meses
               </CardTitle>
             </CardHeader>
@@ -1428,10 +1428,10 @@ export default function FinancesPage() {
 
           {/* Donation type breakdown */}
           {donSummary?.byType && donSummary.byType.length > 0 && (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-card border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="text-white flex items-center gap-2 text-base">
-                  <Heart className="w-4 h-4 text-pink-400" />
+                <CardTitle className="text-foreground flex items-center gap-2 text-base">
+                  <Heart className="w-4 h-4 text-pink-700 dark:text-pink-400" />
                   Desglose de donaciones
                 </CardTitle>
               </CardHeader>
@@ -1447,12 +1447,12 @@ export default function FinancesPage() {
                         >
                           {dt.label}
                         </span>
-                        <span className="text-gray-300">
+                        <span className="text-muted-foreground">
                           {$m(ts.total)}{" "}
-                          <span className="text-gray-500">({ts.count})</span>
+                          <span className="text-muted-foreground">({ts.count})</span>
                         </span>
                       </div>
-                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-background rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-pink-500 to-violet-500 transition-all"
                           style={{width: `${pct}%`}}
@@ -1467,10 +1467,10 @@ export default function FinancesPage() {
 
           {/* Top donors */}
           {donSummary?.topDonors && donSummary.topDonors.length > 0 && (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-card border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="text-white flex items-center gap-2 text-base">
-                  <Users className="w-4 h-4 text-blue-400" />
+                <CardTitle className="text-foreground flex items-center gap-2 text-base">
+                  <Users className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                   Top donantes
                 </CardTitle>
               </CardHeader>
@@ -1478,17 +1478,17 @@ export default function FinancesPage() {
                 {donSummary.topDonors.slice(0, 5).map((d, i) => (
                   <div
                     key={d.member_id || i}
-                    className="flex items-center justify-between py-2 border-b border-slate-700/50 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-slate-700 text-xs font-bold text-gray-400 flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-full bg-background text-xs font-bold text-muted-foreground flex items-center justify-center">
                         {i + 1}
                       </span>
-                      <span className="text-white text-sm">
+                      <span className="text-foreground text-sm">
                         {d.first_name} {d.last_name}
                       </span>
                     </div>
-                    <span className="text-emerald-400 font-semibold text-sm">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold text-sm">
                       {$m(d.total)}
                     </span>
                   </div>
@@ -1505,14 +1505,14 @@ export default function FinancesPage() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por descripción, categoría o miembro..."
                 value={txFilters.search}
                 onChange={(e) =>
                   setTxFilters((f) => ({...f, search: e.target.value}))
                 }
-                className="pl-10 bg-slate-800 border-slate-700 text-white placeholder-gray-400 focus:border-emerald-500"
+                className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-emerald-500"
               />
             </div>
             <div className="relative">
@@ -1521,13 +1521,13 @@ export default function FinancesPage() {
                 onChange={(e) =>
                   setTxFilters((f) => ({...f, type: e.target.value}))
                 }
-                className="px-3 py-2 pr-8 bg-slate-800 border border-slate-700 text-white rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
+                className="px-3 py-2 pr-8 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
               >
                 <option value="">Todos los tipos</option>
                 <option value="INGRESO">Ingresos</option>
                 <option value="EGRESO">Egresos</option>
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
             <div className="relative">
               <select
@@ -1535,7 +1535,7 @@ export default function FinancesPage() {
                 onChange={(e) =>
                   setTxFilters((f) => ({...f, categoryId: e.target.value}))
                 }
-                className="px-3 py-2 pr-8 bg-slate-800 border border-slate-700 text-white rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
+                className="px-3 py-2 pr-8 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
               >
                 <option value="">Todas las categorías</option>
                 {categories.map((c) => (
@@ -1544,29 +1544,29 @@ export default function FinancesPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
+              <Calendar className="w-4 h-4 text-muted-foreground" />
               <Input
                 type="date"
                 value={txFilters.startDate}
                 onChange={(e) =>
                   setTxFilters((f) => ({...f, startDate: e.target.value}))
                 }
-                className="bg-slate-800 border-slate-700 text-white w-36 text-sm"
+                className="bg-card border-border text-foreground w-36 text-sm"
                 title="Desde"
               />
-              <span className="text-gray-500 text-sm">—</span>
+              <span className="text-muted-foreground text-sm">—</span>
               <Input
                 type="date"
                 value={txFilters.endDate}
                 onChange={(e) =>
                   setTxFilters((f) => ({...f, endDate: e.target.value}))
                 }
-                className="bg-slate-800 border-slate-700 text-white w-36 text-sm"
+                className="bg-card border-border text-foreground w-36 text-sm"
                 title="Hasta"
               />
             </div>
@@ -1587,14 +1587,14 @@ export default function FinancesPage() {
                     search: "",
                   })
                 }
-                className="border-slate-600 text-gray-400 hover:text-white hover:border-slate-500"
+                className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
               >
                 <X className="w-4 h-4" />
               </Button>
             )}
             <div className="ml-auto flex items-center gap-3">
               {/* Totals */}
-              <span className="text-sm text-emerald-400 font-medium">
+              <span className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
                 +
                 {$m(
                   filteredTx
@@ -1602,7 +1602,7 @@ export default function FinancesPage() {
                     .reduce((s, t) => s + Number(t.amount), 0),
                 )}
               </span>
-              <span className="text-sm text-red-400 font-medium">
+              <span className="text-sm text-red-700 dark:text-red-400 font-medium">
                 -
                 {$m(
                   filteredTx
@@ -1614,7 +1614,7 @@ export default function FinancesPage() {
                 variant="outline"
                 size="sm"
                 onClick={exportTxCSV}
-                className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+                className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
               >
                 <Download className="w-4 h-4" />
                 CSV
@@ -1622,10 +1622,10 @@ export default function FinancesPage() {
             </div>
           </div>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-0">
               {filteredTx.length === 0 ? (
-                <div className="text-center py-16 text-gray-500">
+                <div className="text-center py-16 text-muted-foreground">
                   <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-20" />
                   <p className="text-lg font-medium">No hay transacciones</p>
                 </div>
@@ -1633,7 +1633,7 @@ export default function FinancesPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-slate-700 text-left">
+                      <tr className="border-b border-border text-left">
                         {[
                           "Fecha",
                           "Categoría",
@@ -1645,49 +1645,49 @@ export default function FinancesPage() {
                         ].map((h, i) => (
                           <th
                             key={i}
-                            className={`px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider ${i === 6 ? "text-center" : ""}`}
+                            className={`px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider ${i === 6 ? "text-center" : ""}`}
                           >
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-700/50">
+                    <tbody className="divide-y divide-border">
                       {filteredTx.map((t) => (
                         <tr
                           key={t.id}
-                          className="hover:bg-slate-700/30 transition-colors"
+                          className="hover:bg-muted/50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
                             {fmtDate(t.date)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-white">
+                          <td className="px-4 py-3 text-sm text-foreground">
                             {t.category_name}
                           </td>
                           <td className="px-4 py-3">
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-medium border
-                              ${t.category_type === "INGRESO" ? "bg-emerald-900/50 text-emerald-300 border-emerald-700/50" : "bg-red-900/50 text-red-300 border-red-700/50"}`}
+                              ${t.category_type === "INGRESO" ? "bg-emerald-500/10 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-700/50" : "bg-red-500/10 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-700/50"}`}
                             >
                               {t.category_type}
                             </span>
                           </td>
                           <td
-                            className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${t.category_type === "INGRESO" ? "text-emerald-400" : "text-red-400"}`}
+                            className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${t.category_type === "INGRESO" ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}
                           >
                             {t.category_type === "INGRESO" ? "+" : "-"}
                             {$m(t.amount)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-300">
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
                             {t.first_name ? (
                               `${t.first_name} ${t.last_name}`
                             ) : (
-                              <span className="text-gray-600">—</span>
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-400 max-w-xs truncate">
+                          <td className="px-4 py-3 text-sm text-muted-foreground max-w-xs truncate">
                             {t.description || (
-                              <span className="text-gray-600">—</span>
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -1697,13 +1697,13 @@ export default function FinancesPage() {
                                   setEditTx(t);
                                   setTxModal(true);
                                 }}
-                                className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 flex items-center justify-center"
+                                className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setDelTx(t)}
-                                className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center"
+                                className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1730,7 +1730,7 @@ export default function FinancesPage() {
               return (
                 <Card
                   key={dt.value}
-                  className={`border ${dt.color.split(" ")[2]} bg-slate-800/50`}
+                  className={`border ${dt.color.split(" ")[2]} bg-muted/50`}
                 >
                   <CardContent className="p-4">
                     <p
@@ -1738,10 +1738,10 @@ export default function FinancesPage() {
                     >
                       {dt.label}
                     </p>
-                    <p className="text-xl font-bold text-white mt-1">
+                    <p className="text-xl font-bold text-foreground mt-1">
                       {$m(ts.total)}
                     </p>
-                    <p className="text-gray-500 text-xs">
+                    <p className="text-muted-foreground text-xs">
                       {ts.count} registros
                     </p>
                   </CardContent>
@@ -1753,25 +1753,25 @@ export default function FinancesPage() {
           {/* Filters */}
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o descripción..."
                 value={donFilters.search}
                 onChange={(e) =>
                   setDonFilters((f) => ({...f, search: e.target.value}))
                 }
-                className="pl-10 bg-slate-800 border-slate-700 text-white placeholder-gray-400 focus:border-pink-500"
+                className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-pink-500"
               />
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 <select
                   value={donFilters.type}
                   onChange={(e) =>
                     setDonFilters((f) => ({...f, type: e.target.value}))
                   }
-                  className="pl-8 pr-8 py-2 bg-slate-800 border border-slate-700 text-white rounded-md text-sm focus:outline-none focus:border-pink-500 appearance-none"
+                  className="pl-8 pr-8 py-2 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-pink-500 appearance-none"
                 >
                   <option value="">Todos los tipos</option>
                   {DON_TYPES.map((t) => (
@@ -1780,7 +1780,7 @@ export default function FinancesPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
               <Input
                 type="date"
@@ -1788,7 +1788,7 @@ export default function FinancesPage() {
                 onChange={(e) =>
                   setDonFilters((f) => ({...f, startDate: e.target.value}))
                 }
-                className="bg-slate-800 border-slate-700 text-white w-36 text-sm"
+                className="bg-card border-border text-foreground w-36 text-sm"
                 title="Desde"
               />
               <Input
@@ -1797,7 +1797,7 @@ export default function FinancesPage() {
                 onChange={(e) =>
                   setDonFilters((f) => ({...f, endDate: e.target.value}))
                 }
-                className="bg-slate-800 border-slate-700 text-white w-36 text-sm"
+                className="bg-card border-border text-foreground w-36 text-sm"
                 title="Hasta"
               />
               {(donFilters.type ||
@@ -1815,7 +1815,7 @@ export default function FinancesPage() {
                       search: "",
                     })
                   }
-                  className="border-slate-600 text-gray-400 hover:text-white hover:border-slate-500"
+                  className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -1824,7 +1824,7 @@ export default function FinancesPage() {
                 variant="outline"
                 size="sm"
                 onClick={exportDonCSV}
-                className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+                className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
               >
                 <Download className="w-4 h-4" />
                 CSV
@@ -1832,10 +1832,10 @@ export default function FinancesPage() {
             </div>
           </div>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-0">
               {filteredDon.length === 0 ? (
-                <div className="text-center py-16 text-gray-500">
+                <div className="text-center py-16 text-muted-foreground">
                   <Heart className="w-12 h-12 mx-auto mb-3 opacity-20" />
                   <p className="text-lg font-medium">
                     No hay donaciones registradas
@@ -1845,7 +1845,7 @@ export default function FinancesPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-slate-700 text-left">
+                      <tr className="border-b border-border text-left">
                         {[
                           "Donante",
                           "Tipo",
@@ -1856,37 +1856,37 @@ export default function FinancesPage() {
                         ].map((h, i) => (
                           <th
                             key={i}
-                            className={`px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider ${i === 5 ? "text-center" : ""}`}
+                            className={`px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider ${i === 5 ? "text-center" : ""}`}
                           >
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-700/50">
+                    <tbody className="divide-y divide-border">
                       {filteredDon.map((d) => {
                         const typeInfo = DON_MAP[d.type] || {
                           label: d.type,
                           color:
-                            "bg-slate-500/20 text-slate-300 border-slate-500/40",
+                            "bg-muted text-muted-foreground border-border",
                         };
                         return (
                           <tr
                             key={d.id}
-                            className="hover:bg-slate-700/30 transition-colors"
+                            className="hover:bg-muted/50 transition-colors"
                           >
                             <td className="px-4 py-3">
                               {d.is_anonymous ? (
-                                <span className="text-gray-400 italic text-sm">
+                                <span className="text-muted-foreground italic text-sm">
                                   Anónimo
                                 </span>
                               ) : (
                                 <div>
-                                  <p className="text-white text-sm font-medium">
+                                  <p className="text-foreground text-sm font-medium">
                                     {d.first_name} {d.last_name}
                                   </p>
                                   {d.phone && (
-                                    <p className="text-gray-500 text-xs">
+                                    <p className="text-muted-foreground text-xs">
                                       {d.phone}
                                     </p>
                                   )}
@@ -1901,16 +1901,16 @@ export default function FinancesPage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <span className="text-emerald-400 font-semibold">
+                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
                                 {$m(d.amount)}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-gray-300 text-sm whitespace-nowrap">
+                            <td className="px-4 py-3 text-muted-foreground text-sm whitespace-nowrap">
                               {fmtDate(d.date)}
                             </td>
-                            <td className="px-4 py-3 text-gray-400 text-sm max-w-xs truncate">
+                            <td className="px-4 py-3 text-muted-foreground text-sm max-w-xs truncate">
                               {d.description || (
-                                <span className="text-gray-600">—</span>
+                                <span className="text-muted-foreground">—</span>
                               )}
                             </td>
                             <td className="px-4 py-3">
@@ -1920,13 +1920,13 @@ export default function FinancesPage() {
                                     setEditDon(d);
                                     setDonModal(true);
                                   }}
-                                  className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 flex items-center justify-center"
+                                  className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => setDelDon(d)}
-                                  className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center"
+                                  className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1949,25 +1949,25 @@ export default function FinancesPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar categoría..."
                 value={catSearch}
                 onChange={(e) => setCatSearch(e.target.value)}
-                className="pl-10 bg-slate-800 border-slate-700 text-white placeholder-gray-400 focus:border-emerald-500"
+                className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-emerald-500"
               />
             </div>
             <div className="relative">
               <select
                 value={catTypeFilter}
                 onChange={(e) => setCatTypeFilter(e.target.value)}
-                className="px-3 py-2 pr-8 bg-slate-800 border border-slate-700 text-white rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
+                className="px-3 py-2 pr-8 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
               >
                 <option value="">Todos los tipos</option>
                 <option value="INGRESO">Ingresos</option>
                 <option value="EGRESO">Egresos</option>
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
 
@@ -1977,43 +1977,43 @@ export default function FinancesPage() {
                 type: "INGRESO",
                 label: "Ingresos",
                 icon: TrendingUp,
-                color: "text-emerald-400",
+                color: "text-emerald-700 dark:text-emerald-400",
               },
               {
                 type: "EGRESO",
                 label: "Egresos",
                 icon: TrendingDown,
-                color: "text-red-400",
+                color: "text-red-700 dark:text-red-400",
               },
             ].map(({type, label, icon: Icon, color}) => {
               const cats = filteredCats.filter((c) => c.type === type);
               return (
-                <Card key={type} className="bg-slate-800 border-slate-700">
+                <Card key={type} className="bg-card border-border">
                   <CardHeader className="pb-3">
                     <CardTitle
                       className={`${color} flex items-center gap-2 text-base`}
                     >
                       <Icon className="w-5 h-5" />
                       Categorías de {label}
-                      <span className="ml-auto text-gray-500 text-sm font-normal">
+                      <span className="ml-auto text-muted-foreground text-sm font-normal">
                         {cats.length}
                       </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1.5">
                     {cats.length === 0 ? (
-                      <p className="text-gray-500 text-sm text-center py-4">
+                      <p className="text-muted-foreground text-sm text-center py-4">
                         Sin categorías
                       </p>
                     ) : (
                       cats.map((c) => (
                         <div
                           key={c.id}
-                          className="flex items-center justify-between p-2.5 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors"
+                          className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg hover:bg-accent transition-colors"
                         >
                           <div className="flex items-center gap-2">
                             <Tag className={`w-3.5 h-3.5 ${color}`} />
-                            <span className="text-white text-sm">{c.name}</span>
+                            <span className="text-foreground text-sm">{c.name}</span>
                           </div>
                           <div className="flex gap-1">
                             <button
@@ -2021,13 +2021,13 @@ export default function FinancesPage() {
                                 setEditCat(c);
                                 setCatModal(true);
                               }}
-                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 flex items-center justify-center"
+                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setDelCat(c)}
-                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center"
+                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

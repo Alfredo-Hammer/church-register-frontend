@@ -35,22 +35,22 @@ const DONATION_TYPES = [
   {
     value: "DIEZMO",
     label: "Diezmo",
-    color: "bg-violet-500/20 text-violet-300 border-violet-500/40",
+    color: "bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/40",
   },
   {
     value: "OFRENDA",
     label: "Ofrenda",
-    color: "bg-pink-500/20 text-pink-300 border-pink-500/40",
+    color: "bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/40",
   },
   {
     value: "ESPECIAL",
     label: "Especial",
-    color: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+    color: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40",
   },
   {
     value: "MISION",
     label: "Misión",
-    color: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+    color: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40",
   },
 ];
 
@@ -261,13 +261,13 @@ export default function DonationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
               <Heart className="w-5 h-5 text-white" />
             </span>
             Diezmos y Ofrendas
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Registro de contribuciones personales de miembros
           </p>
         </div>
@@ -276,7 +276,7 @@ export default function DonationsPage() {
             variant="outline"
             onClick={handlePrint}
             disabled={!summary}
-            className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500 gap-2"
+            className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
           >
             <Printer className="w-4 h-4" /> PDF
           </Button>
@@ -297,18 +297,18 @@ export default function DonationsPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-pink-300 text-sm font-medium">
+                <p className="text-pink-700 dark:text-pink-300 text-sm font-medium">
                   Total Donado
                 </p>
-                <p className="text-2xl font-bold text-white mt-1">
+                <p className="text-2xl font-bold text-foreground mt-1">
                   {fmtMoney(summary?.summary?.total)}
                 </p>
-                <p className="text-pink-400 text-xs mt-1">
+                <p className="text-pink-700 dark:text-pink-400 text-xs mt-1">
                   {summary?.summary?.count || 0} donaciones
                 </p>
               </div>
               <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-pink-400" />
+                <Heart className="w-6 h-6 text-pink-700 dark:text-pink-400" />
               </div>
             </div>
           </CardContent>
@@ -319,16 +319,16 @@ export default function DonationsPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-violet-300 text-sm font-medium">Diezmos</p>
-                <p className="text-2xl font-bold text-white mt-1">
+                <p className="text-violet-700 dark:text-violet-300 text-sm font-medium">Diezmos</p>
+                <p className="text-2xl font-bold text-foreground mt-1">
                   {fmtMoney(getTypeSummary("DIEZMO").total)}
                 </p>
-                <p className="text-violet-400 text-xs mt-1">
+                <p className="text-violet-700 dark:text-violet-400 text-xs mt-1">
                   {getTypeSummary("DIEZMO").count} registros
                 </p>
               </div>
               <div className="w-12 h-12 bg-violet-500/20 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-violet-400" />
+                <TrendingUp className="w-6 h-6 text-violet-700 dark:text-violet-400" />
               </div>
             </div>
           </CardContent>
@@ -339,16 +339,16 @@ export default function DonationsPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-amber-300 text-sm font-medium">Ofrendas</p>
-                <p className="text-2xl font-bold text-white mt-1">
+                <p className="text-amber-700 dark:text-amber-300 text-sm font-medium">Ofrendas</p>
+                <p className="text-2xl font-bold text-foreground mt-1">
                   {fmtMoney(getTypeSummary("OFRENDA").total)}
                 </p>
-                <p className="text-amber-400 text-xs mt-1">
+                <p className="text-amber-700 dark:text-amber-400 text-xs mt-1">
                   {getTypeSummary("OFRENDA").count} registros
                 </p>
               </div>
               <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-amber-400" />
+                <DollarSign className="w-6 h-6 text-amber-700 dark:text-amber-400" />
               </div>
             </div>
           </CardContent>
@@ -359,16 +359,16 @@ export default function DonationsPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-300 text-sm font-medium">
+                <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
                   Donantes Únicos
                 </p>
-                <p className="text-2xl font-bold text-white mt-1">
+                <p className="text-2xl font-bold text-foreground mt-1">
                   {summary?.summary?.uniqueDonors || 0}
                 </p>
-                <p className="text-blue-400 text-xs mt-1">miembros activos</p>
+                <p className="text-blue-700 dark:text-blue-400 text-xs mt-1">miembros activos</p>
               </div>
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-400" />
+                <Users className="w-6 h-6 text-blue-700 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -376,28 +376,28 @@ export default function DonationsPage() {
       </div>
 
       {/* Tabla principal */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader className="border-b border-slate-700 pb-4">
+      <Card className="bg-card border-border">
+        <CardHeader className="border-b border-border pb-4">
           <div className="flex flex-col lg:flex-row gap-3">
             {/* Búsqueda */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o descripción..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-pink-500"
+                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-pink-500"
               />
             </div>
 
             {/* Filtros */}
             <div className="flex flex-wrap gap-2">
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="pl-8 pr-8 py-2 bg-slate-700 border border-slate-600 text-white rounded-md text-sm focus:outline-none focus:border-pink-500 appearance-none cursor-pointer"
+                  className="pl-8 pr-8 py-2 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-pink-500 appearance-none cursor-pointer"
                 >
                   <option value="">Todos los tipos</option>
                   {DONATION_TYPES.map((t) => (
@@ -406,21 +406,21 @@ export default function DonationsPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
 
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white w-36 focus:border-pink-500 text-sm"
+                className="bg-background border-border text-foreground w-36 focus:border-pink-500 text-sm"
                 title="Desde"
               />
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white w-36 focus:border-pink-500 text-sm"
+                className="bg-background border-border text-foreground w-36 focus:border-pink-500 text-sm"
                 title="Hasta"
               />
 
@@ -433,7 +433,7 @@ export default function DonationsPage() {
                     setStartDate("");
                     setEndDate("");
                   }}
-                  className="border-slate-600 text-gray-400 hover:text-white hover:border-slate-500"
+                  className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -444,17 +444,17 @@ export default function DonationsPage() {
 
         <CardContent className="p-0">
           {loading ? (
-            <div className="text-center py-16 text-gray-400">
+            <div className="text-center py-16 text-muted-foreground">
               <div className="w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               Cargando donaciones...
             </div>
           ) : error ? (
-            <div className="text-center py-12 text-red-400 flex flex-col items-center gap-2">
+            <div className="text-center py-12 text-red-700 dark:text-red-400 flex flex-col items-center gap-2">
               <AlertCircle className="w-8 h-8" />
               {error}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
+            <div className="text-center py-16 text-muted-foreground">
               <Heart className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p className="text-lg font-medium">
                 No hay donaciones registradas
@@ -467,51 +467,51 @@ export default function DonationsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700 text-left">
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-border text-left">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Donante
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Tipo
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider text-right">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-right">
                       Monto
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                       Descripción
                     </th>
-                    <th className="px-4 py-3 text-gray-400 text-xs font-semibold uppercase tracking-wider text-center">
+                    <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-center">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-border">
                   {filtered.map((d) => {
                     const typeInfo = TYPE_MAP[d.type] || {
                       label: d.type,
                       color:
-                        "bg-slate-500/20 text-slate-300 border-slate-500/40",
+                        "bg-muted text-muted-foreground border-border",
                     };
                     return (
                       <tr
                         key={d.id}
-                        className="hover:bg-slate-700/30 transition-colors"
+                        className="hover:bg-muted/50 transition-colors"
                       >
                         <td className="px-4 py-3">
                           {d.is_anonymous ? (
-                            <span className="text-gray-400 italic text-sm">
+                            <span className="text-muted-foreground italic text-sm">
                               Anónimo
                             </span>
                           ) : (
                             <div>
-                              <p className="text-white text-sm font-medium">
+                              <p className="text-foreground text-sm font-medium">
                                 {d.first_name} {d.last_name}
                               </p>
                               {d.phone && (
-                                <p className="text-gray-500 text-xs">
+                                <p className="text-muted-foreground text-xs">
                                   {d.phone}
                                 </p>
                               )}
@@ -526,30 +526,30 @@ export default function DonationsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="text-green-400 font-semibold">
+                          <span className="text-green-700 dark:text-green-400 font-semibold">
                             {fmtMoney(d.amount)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-300 text-sm whitespace-nowrap">
+                        <td className="px-4 py-3 text-muted-foreground text-sm whitespace-nowrap">
                           {fmtDate(d.date)}
                         </td>
-                        <td className="px-4 py-3 text-gray-400 text-sm max-w-xs truncate">
+                        <td className="px-4 py-3 text-muted-foreground text-sm max-w-xs truncate">
                           {d.description || (
-                            <span className="text-gray-600">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => openEdit(d)}
-                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 flex items-center justify-center transition-colors"
+                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center transition-colors"
                               title="Editar"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => confirmDelete(d)}
-                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center transition-colors"
+                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center transition-colors"
                               title="Eliminar"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -568,9 +568,9 @@ export default function DonationsPage() {
 
       {/* ── Modal CREAR / EDITAR ─────────────────────────────────────────────── */}
       <Dialog open={modalOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl w-full">
+        <DialogContent className="bg-card border-border max-w-2xl w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3 text-xl">
+            <DialogTitle className="text-foreground flex items-center gap-3 text-xl">
               <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
                 <Heart className="w-4 h-4 text-white" />
               </span>
@@ -581,7 +581,7 @@ export default function DonationsPage() {
           <form onSubmit={handleSave} className="mt-4 space-y-5">
             {/* Tipo de donación */}
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-2">
+              <label className="text-muted-foreground text-sm font-medium block mb-2">
                 Tipo de donación
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -592,8 +592,8 @@ export default function DonationsPage() {
                     onClick={() => setForm((f) => ({...f, type: t.value}))}
                     className={`py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
                       form.type === t.value
-                        ? `${t.color} ring-2 ring-offset-1 ring-offset-slate-800 ring-pink-500`
-                        : "bg-slate-700 border-slate-600 text-gray-400 hover:border-slate-500"
+                        ? `${t.color} ring-2 ring-offset-1 ring-offset-card ring-pink-500`
+                        : "bg-background border-border text-muted-foreground hover:border-muted-foreground/40"
                     }`}
                   >
                     {t.label}
@@ -605,7 +605,7 @@ export default function DonationsPage() {
             {/* Donante */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-gray-300 text-sm font-medium">
+                <label className="text-muted-foreground text-sm font-medium">
                   Donante
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -621,7 +621,7 @@ export default function DonationsPage() {
                     }
                     className="accent-pink-500"
                   />
-                  <span className="text-gray-400 text-sm">
+                  <span className="text-muted-foreground text-sm">
                     Donación anónima
                   </span>
                 </label>
@@ -634,7 +634,7 @@ export default function DonationsPage() {
                       setForm((f) => ({...f, memberId: e.target.value}))
                     }
                     required={!form.isAnonymous}
-                    className="w-full px-3 py-2 pr-8 bg-slate-700 border border-slate-600 text-white rounded-md text-sm focus:outline-none focus:border-pink-500 appearance-none"
+                    className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-pink-500 appearance-none"
                   >
                     <option value="">— Seleccione un miembro —</option>
                     {members.map((m) => (
@@ -643,11 +643,11 @@ export default function DonationsPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 </div>
               )}
               {form.isAnonymous && (
-                <p className="text-gray-500 text-sm italic px-1">
+                <p className="text-muted-foreground text-sm italic px-1">
                   Se registrará como donación anónima.
                 </p>
               )}
@@ -656,11 +656,11 @@ export default function DonationsPage() {
             {/* Monto y Fecha */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Monto (RD$)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">
                     $
                   </span>
                   <Input
@@ -673,12 +673,12 @@ export default function DonationsPage() {
                       setForm((f) => ({...f, amount: e.target.value}))
                     }
                     required
-                    className="pl-7 bg-slate-700 border-slate-600 text-white placeholder-gray-500 focus:border-pink-500"
+                    className="pl-7 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-pink-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-gray-300 text-sm font-medium block mb-1.5">
+                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Fecha
                 </label>
                 <Input
@@ -688,16 +688,16 @@ export default function DonationsPage() {
                     setForm((f) => ({...f, date: e.target.value}))
                   }
                   required
-                  className="bg-slate-700 border-slate-600 text-white focus:border-pink-500"
+                  className="bg-background border-border text-foreground focus:border-pink-500"
                 />
               </div>
             </div>
 
             {/* Descripción */}
             <div>
-              <label className="text-gray-300 text-sm font-medium block mb-1.5">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                 Descripción{" "}
-                <span className="text-gray-500 font-normal">(opcional)</span>
+                <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <textarea
                 placeholder="Ingrese una nota o descripción..."
@@ -706,24 +706,24 @@ export default function DonationsPage() {
                   setForm((f) => ({...f, description: e.target.value}))
                 }
                 rows={2}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white placeholder-gray-500 rounded-md text-sm focus:outline-none focus:border-pink-500 resize-none"
+                className="w-full px-3 py-2 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-md text-sm focus:outline-none focus:border-pink-500 resize-none"
               />
             </div>
 
             {formError && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {formError}
               </div>
             )}
 
             {/* Acciones */}
-            <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+            <div className="flex justify-end gap-3 pt-2 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+                className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
               >
                 Cancelar
               </Button>
@@ -753,18 +753,18 @@ export default function DonationsPage() {
         open={deleteModal}
         onOpenChange={(open) => !open && setDeleteModal(false)}
       >
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-md w-full">
+        <DialogContent className="bg-card border-border max-w-md w-full">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3">
+            <DialogTitle className="text-foreground flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
               </span>
               Confirmar eliminación
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-3 text-gray-300 text-sm">
+          <div className="mt-3 text-muted-foreground text-sm">
             ¿Estás seguro de que deseas eliminar esta donación de{" "}
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               {fmtMoney(deleteTarget?.amount)}
             </span>
             ? Esta acción no se puede deshacer.
@@ -774,7 +774,7 @@ export default function DonationsPage() {
               type="button"
               variant="outline"
               onClick={() => setDeleteModal(false)}
-              className="border-slate-600 text-gray-300 hover:text-white hover:border-slate-500"
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
             >
               Cancelar
             </Button>
