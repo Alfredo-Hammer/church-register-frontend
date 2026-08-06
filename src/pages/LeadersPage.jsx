@@ -28,6 +28,7 @@ import {
   UserCircle2,
   Layers,
   Printer,
+  ShieldAlert,
 } from "lucide-react";
 import {
   leadersService,
@@ -323,7 +324,10 @@ function InfoRow({icon, label, value}) {
 
 // ── Member Search Dropdown ────────────────────────────────────────────────────
 
-function MemberPicker({value, onChange, excludeIds = []}) {
+// `leadingIds` NO excluye: un miembro puede liderar varios grupos (requiere
+// autorización del pastor al guardar). Solo se marcan para que quien registra
+// sepa que ya tienen un cargo antes de elegirlos.
+function MemberPicker({value, onChange, leadingIds = []}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -349,9 +353,7 @@ function MemberPicker({value, onChange, excludeIds = []}) {
           const params = {status: "ACTIVO", limit: 10};
           if (query.trim()) params.search = query.trim();
           const data = await membersService.getAll(params);
-          setResults(
-            (data.members || []).filter((m) => !excludeIds.includes(m.id)),
-          );
+          setResults(data.members || []);
         } catch {
           /* silencioso */
         } finally {
@@ -443,8 +445,17 @@ function MemberPicker({value, onChange, excludeIds = []}) {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm text-foreground font-medium truncate">
+                  <p className="text-sm text-foreground font-medium truncate flex items-center gap-1.5">
                     {m.first_name} {m.last_name}
+                    {leadingIds.includes(m.id) && (
+                      <span
+                        title="Ya tiene un cargo de liderazgo"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 shrink-0"
+                      >
+                        <Crown className="w-2.5 h-2.5" />
+                        Ya lidera
+                      </span>
+                    )}
                   </p>
                   {m.phone && (
                     <p className="text-xs text-muted-foreground">{m.phone}</p>
@@ -548,7 +559,7 @@ function LeaderModal({
   open,
   onClose,
   editing,
-  existingIds,
+  leadingIds,
   onSaved,
   customPositions,
   customAreas,
@@ -560,6 +571,8 @@ function LeaderModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // { message, currentLeaderships } cuando el cargo requiere autorización
+  const [authPrompt, setAuthPrompt] = useState(null);
   const [addPos, setAddPos] = useState(false); // AddOptionDialog for position
   const [addArea, setAddArea] = useState(false); // AddOptionDialog for area
 
@@ -595,9 +608,28 @@ function LeaderModal({
     }
     setError("");
     setSuccess("");
+    setAuthPrompt(null);
   }, [open, editing]);
 
   const set = (k, v) => setForm((p) => ({...p, [k]: v}));
+
+  const buildPayload = () => ({
+    memberId: form.memberId,
+    groupId: form.groupId || undefined,
+    position: form.position?.trim() || undefined,
+    area: form.area?.trim() || undefined,
+    status: form.status,
+    startDate: form.startDate || undefined,
+    notes: form.notes?.trim() || undefined,
+  });
+
+  const finish = (result) => {
+    setSuccess(editing ? "Líder actualizado." : "Líder registrado.");
+    setTimeout(() => {
+      onSaved(result);
+      onClose();
+    }, 900);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -605,28 +637,35 @@ function LeaderModal({
     setSaving(true);
     setError("");
     try {
-      const payload = {
-        memberId: form.memberId,
-        groupId: form.groupId || undefined,
-        position: form.position?.trim() || undefined,
-        area: form.area?.trim() || undefined,
-        status: form.status,
-        startDate: form.startDate || undefined,
-        notes: form.notes?.trim() || undefined,
-      };
       const result = editing
-        ? await leadersService.update(editing.id, payload)
-        : await leadersService.create(payload);
-      setSuccess(editing ? "Líder actualizado." : "Líder registrado.");
-      setTimeout(() => {
-        onSaved(result);
-        onClose();
-      }, 900);
+        ? await leadersService.update(editing.id, buildPayload())
+        : await leadersService.create(buildPayload());
+      finish(result);
     } catch (err) {
-      setError(err.response?.data?.error || "Error al guardar.");
+      const data = err.response?.data;
+      // El miembro ya lidera otro grupo: pedir que un ADMIN/PASTOR reconfirme
+      // su contraseña antes de asignarle un cargo adicional.
+      if (data?.requiresAuthorization) {
+        setAuthPrompt({
+          message: data.error,
+          currentLeaderships: data.currentLeaderships || [],
+        });
+      } else {
+        setError(data?.error || "Error al guardar.");
+      }
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAuthorize = async (password, note) => {
+    const result = await leadersService.create({
+      ...buildPayload(),
+      authorizationPassword: password,
+      authorizationNote: note?.trim() || undefined,
+    });
+    setAuthPrompt(null);
+    finish(result);
   };
 
   const fieldCls =
@@ -673,7 +712,7 @@ function LeaderModal({
                 <MemberPicker
                   value={{memberId: form.memberId, memberName: form.memberName}}
                   onChange={(v) => setForm((p) => ({...p, ...v}))}
-                  excludeIds={existingIds}
+                  leadingIds={leadingIds}
                 />
               )}
             </div>
@@ -840,7 +879,150 @@ function LeaderModal({
           set("area", v);
         }}
       />
+
+      <AuthorizationDialog
+        prompt={authPrompt}
+        memberName={form.memberName}
+        onCancel={() => setAuthPrompt(null)}
+        onConfirm={handleAuthorize}
+      />
     </>
+  );
+}
+
+/**
+ * Pide al ADMIN/PASTOR en sesión que reconfirme SU PROPIA contraseña antes de
+ * asignar un cargo adicional a alguien que ya lidera otro grupo.
+ * La contraseña se envía una sola vez y no se guarda en ningún estado persistente.
+ */
+function AuthorizationDialog({prompt, memberName, onCancel, onConfirm}) {
+  const [password, setPassword] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    if (prompt) {
+      setPassword("");
+      setNote("");
+      setError("");
+    }
+  }, [prompt]);
+
+  if (!prompt) return null;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!password) return setError("Ingresa tu contraseña para autorizar.");
+    setWorking(true);
+    setError("");
+    try {
+      await onConfirm(password, note);
+    } catch (err) {
+      setError(err.response?.data?.error || "No se pudo autorizar.");
+    } finally {
+      setPassword("");
+      setWorking(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onCancel()}>
+      <DialogContent className="bg-card border-border max-w-md w-full">
+        <DialogHeader>
+          <DialogTitle className="text-foreground text-lg flex items-center gap-3">
+            <span className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+            </span>
+            Autorización requerida
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={submit} className="mt-4 space-y-4">
+          <p className="text-sm text-muted-foreground">{prompt.message}</p>
+
+          {prompt.currentLeaderships.length > 0 && (
+            <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                Cargos actuales
+              </p>
+              <ul className="space-y-1">
+                {prompt.currentLeaderships.map((c, i) => (
+                  <li key={i} className="text-sm text-foreground flex items-center gap-2">
+                    <Crown className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                    <span className="truncate">
+                      {c.groupName}
+                      {c.position && (
+                        <span className="text-muted-foreground"> — {c.position}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div>
+            <label
+              htmlFor="auth-password"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
+              Tu contraseña <span className="text-red-600 dark:text-red-400">*</span>
+            </label>
+            <Input
+              id="auth-password"
+              type="password"
+              autoFocus
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Confirma tu identidad"
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Se registrará que {memberName || "este miembro"} recibió un cargo
+              adicional con tu autorización.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="auth-note"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
+              Motivo <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <Input
+              id="auth-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ej: Aprobado en reunión de ancianos"
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={working}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={working}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {working ? "Autorizando…" : "Autorizar cargo"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -940,7 +1122,7 @@ export default function LeadersPage() {
     }
   };
 
-  const existingMemberIds = leaders.map((l) => l.memberId);
+  const leadingMemberIds = [...new Set(leaders.map((l) => l.memberId))];
 
   // Seed custom lists with values already in use but not in the predefined arrays
   useEffect(() => {
@@ -1102,7 +1284,9 @@ export default function LeadersPage() {
                   <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
                     Contacto
                   </th>
-                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden lg:table-cell">
+                  {/* Visible desde sm: un miembro puede liderar varios grupos,
+                      así que el grupo es lo que distingue filas del mismo líder */}
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider hidden sm:table-cell">
                     Grupo
                   </th>
                   <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
@@ -1129,10 +1313,18 @@ export default function LeadersPage() {
                             <Crown className="w-2.5 h-2.5 text-white" />
                           </span>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-foreground font-medium text-sm">
                             {l.firstName} {l.lastName}
                           </p>
+                          {/* En móvil la columna Grupo está oculta; sin esto,
+                              dos cargos del mismo líder se verían idénticos */}
+                          {l.groupName && (
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5 flex items-center gap-1 sm:hidden">
+                              <Users className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{l.groupName}</span>
+                            </p>
+                          )}
                           {l.startDate && (
                             <p className="text-xs text-muted-foreground mt-0.5">
                               Desde {fmtDate(l.startDate)}
@@ -1204,7 +1396,7 @@ export default function LeadersPage() {
                     </td>
 
                     {/* Group */}
-                    <td className="py-3 px-4 hidden lg:table-cell">
+                    <td className="py-3 px-4 hidden sm:table-cell">
                       {l.groupName ? (
                         <span className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
                           <Users className="w-3 h-3" />
@@ -1280,7 +1472,7 @@ export default function LeadersPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         editing={editing}
-        existingIds={existingMemberIds}
+        leadingIds={leadingMemberIds}
         customPositions={customPositions}
         customAreas={customAreas}
         onAddPosition={(v) =>
