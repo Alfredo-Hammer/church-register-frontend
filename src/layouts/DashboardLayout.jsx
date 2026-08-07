@@ -314,7 +314,6 @@ const navigation = [
   {name: "Líderes", href: "/dashboard/leaders", icon: Crown},
   {name: "Asistencia", href: "/dashboard/attendance", icon: CheckSquare},
   {name: "Eventos", href: "/dashboard/events", icon: CalendarDays},
-  {name: "Conferencias", href: "/dashboard/conference", icon: BookOpen},
   {name: "Programa", href: "/dashboard/programs", icon: ClipboardList},
   {name: "Actividades", href: "/dashboard/activities", icon: Rocket},
   {name: "Finanzas", href: "/dashboard/finances", icon: DollarSign},
