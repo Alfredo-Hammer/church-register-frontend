@@ -6,6 +6,7 @@ import {DashboardLayout} from "@/layouts/DashboardLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Pages
+import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -257,11 +258,11 @@ function App() {
               }
             />
 
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Landing page pública */}
+            <Route path="/" element={<LandingPage />} />
 
-            {/* 404 - Redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* 404 - Redirect to landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

@@ -253,7 +253,7 @@ export default function RegisterPage() {
         adminPassword: password,
       });
       setSuccess(true);
-      setTimeout(() => navigate("/login"), 3000);
+      setTimeout(() => navigate("/"), 3000);
     } catch (err) {
       setError(err.response?.data?.error || "Error al registrar la iglesia. Intente de nuevo.");
     } finally {

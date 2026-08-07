@@ -347,7 +347,7 @@ export const DashboardLayout = ({children}) => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (
