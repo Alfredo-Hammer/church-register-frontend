@@ -196,7 +196,7 @@ export default function RegisterPage() {
   const [pastorName, setPastorName] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
   const [churchCity, setChurchCity] = useState("");
-  const [churchCountry, setChurchCountry] = useState("República Dominicana");
+  const [churchCountry, setChurchCountry] = useState("");
   const [churchAddress, setChurchAddress] = useState("");
   const [churchPhone, setChurchPhone] = useState("");
   const [churchEmail, setChurchEmail] = useState("");
@@ -230,7 +230,7 @@ export default function RegisterPage() {
 
     if (!adminName.trim()) return setError("El nombre del administrador es obligatorio.");
     if (!adminEmail.trim()) return setError("El correo del administrador es obligatorio.");
-    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    if (password.length < 8) return setError("La contraseña debe tener al menos 8 caracteres.");
     if (password !== confirmPassword) return setError("Las contraseñas no coinciden.");
 
     setLoading(true);
@@ -313,8 +313,8 @@ export default function RegisterPage() {
 
           {/* ── STEP 1: CHURCH INFO ─────────────────────────────────────────── */}
           {step === 1 && (
-            <div className="p-6 space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-border">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-border">
                 <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0">
                   <Building2 className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                 </div>
@@ -359,7 +359,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Pastor + founded year */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Pastor Principal">
                   <IconInput
                     icon={User}
@@ -382,11 +382,11 @@ export default function RegisterPage() {
               </div>
 
               {/* City + country */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Ciudad">
                   <IconInput
                     icon={MapPin}
-                    placeholder="Santo Domingo"
+                    placeholder="Ciudad"
                     value={churchCity}
                     onChange={(e) => setChurchCity(e.target.value)}
                   />
@@ -394,30 +394,41 @@ export default function RegisterPage() {
                 <Field label="País">
                   <IconInput
                     icon={Globe}
-                    placeholder="República Dominicana"
+                    placeholder="País"
                     value={churchCountry}
                     onChange={(e) => setChurchCountry(e.target.value)}
                   />
                 </Field>
               </div>
 
-              {/* Address */}
-              <Field label="Dirección">
-                <IconInput
-                  icon={MapPin}
-                  placeholder="Av. Principal #123, Sector, Ciudad"
-                  value={churchAddress}
-                  onChange={(e) => setChurchAddress(e.target.value)}
-                />
-              </Field>
+              {/* Dirección + sitio web: emparejados para acortar el formulario */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Dirección">
+                  <IconInput
+                    icon={MapPin}
+                    placeholder="Calle, número y sector"
+                    value={churchAddress}
+                    onChange={(e) => setChurchAddress(e.target.value)}
+                  />
+                </Field>
+                <Field label="Sitio Web">
+                  <IconInput
+                    icon={Globe}
+                    type="url"
+                    placeholder="https://www.miglesia.com"
+                    value={churchWebsite}
+                    onChange={(e) => setChurchWebsite(e.target.value)}
+                  />
+                </Field>
+              </div>
 
               {/* Phone + email */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Teléfono">
                   <IconInput
                     icon={Phone}
                     type="tel"
-                    placeholder="+1 (809) 000-0000"
+                    placeholder="Número de contacto"
                     value={churchPhone}
                     onChange={(e) => setChurchPhone(e.target.value)}
                   />
@@ -433,22 +444,11 @@ export default function RegisterPage() {
                 </Field>
               </div>
 
-              {/* Website */}
-              <Field label="Sitio Web">
-                <IconInput
-                  icon={Globe}
-                  type="url"
-                  placeholder="https://www.miglesia.com"
-                  value={churchWebsite}
-                  onChange={(e) => setChurchWebsite(e.target.value)}
-                />
-              </Field>
-
               {/* Description */}
               <Field label="Visión / Descripción">
                 <textarea
-                  rows={3}
-                  placeholder="Describe brevemente la misión y visión de tu iglesia..."
+                  rows={2}
+                  placeholder="Describe brevemente la misión y visión de tu iglesia…"
                   value={churchDescription}
                   onChange={(e) => setChurchDescription(e.target.value)}
                   className="w-full px-3 py-2 bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground rounded-md text-sm focus:outline-none focus:border-blue-500 resize-none"
@@ -470,7 +470,7 @@ export default function RegisterPage() {
           {/* ── STEP 2: ADMIN ACCOUNT ───────────────────────────────────────── */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-border">
+              <div className="flex items-center gap-3 pb-3 border-b border-border">
                 <div className="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center">
                   <User className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                 </div>
@@ -529,7 +529,7 @@ export default function RegisterPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
                     type={showPass ? "text" : "password"}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
