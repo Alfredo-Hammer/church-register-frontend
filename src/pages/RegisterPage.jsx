@@ -264,7 +264,7 @@ export default function RegisterPage() {
   // ─── Success screen ─────────────────────────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background flex items-center justify-center p-4">
+      <div className="surface-public min-h-screen bg-gradient-to-br from-background via-muted to-background flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
           <div className="w-24 h-24 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto mb-6 animate-pulse">
             <CheckCircle className="w-12 h-12 text-emerald-700 dark:text-emerald-400" />
@@ -283,7 +283,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background py-8 px-4">
+    <div className="surface-public min-h-screen bg-gradient-to-br from-background via-muted to-background py-8 px-4">
       <div className="relative w-full max-w-2xl mx-auto">
         {/* Header compacto */}
         <div className="flex items-center justify-between mb-6">

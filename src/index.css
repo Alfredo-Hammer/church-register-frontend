@@ -53,6 +53,35 @@
     --input: 217 33% 20%;
     --ring: 217 91% 60%;
   }
+
+  /* ── Superficie pública (landing, login, registro) ───────────────────
+     En tema oscuro estas páginas usan una paleta tipo GitHub: un negro
+     bastante más profundo que el azul pizarra del panel interno.
+     Solo redefine variables, así que los componentes no cambian: basta
+     con poner la clase `surface-public` en el contenedor raíz de la página.
+     En tema claro no altera nada. */
+  .dark .surface-public {
+    --background: 216 28% 7%; /* #0d1117 */
+    --foreground: 208 35% 93%; /* #e6edf3 */
+    --card: 215 21% 11%; /* #161b22 */
+    --card-foreground: 208 35% 93%;
+    --popover: 215 21% 11%;
+    --popover-foreground: 208 35% 93%;
+    /* #1f6feb, el azul de botón de GitHub. Su acento de enlace (#2f81f7)
+       es demasiado claro para llevar texto blanco encima: se queda en
+       3.67:1, por debajo del mínimo AA. */
+    --primary: 216 84% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 21% 11%;
+    --secondary-foreground: 208 35% 93%;
+    --muted: 215 21% 11%;
+    --muted-foreground: 212 10% 65%;
+    --accent: 212 12% 18%;
+    --accent-foreground: 208 35% 93%;
+    --border: 212 12% 21%; /* #30363d */
+    --input: 212 12% 21%;
+    --ring: 215 93% 58%;
+  }
 }
 
 @layer base {
