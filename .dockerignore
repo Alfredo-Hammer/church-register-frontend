@@ -1,0 +1,16 @@
+node_modules
+dist
+npm-debug.log*
+.git
+.gitignore
+
+# La URL de la API se pasa como build arg, no copiando el .env local: si no,
+# un build de producción podría quedar apuntando a localhost.
+.env
+.env.*
+!.env.example
+
+*.md
+.DS_Store
+.vscode
+.idea
