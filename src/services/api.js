@@ -51,6 +51,26 @@ export const authService = {
     const response = await api.post('/auth/register-church', data);
     return response.data;
   },
+
+  requestEmailVerification: async (email) => {
+    const response = await api.post('/auth/request-email-verification', { email });
+    return response.data;
+  },
+
+  verifyEmail: async (token, email) => {
+    const response = await api.post('/auth/verify-email', { token, email });
+    return response.data;
+  },
+
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async (token, email, newPassword) => {
+    const response = await api.post('/auth/reset-password', { token, email, newPassword });
+    return response.data;
+  },
 };
 
 // Servicios de miembros

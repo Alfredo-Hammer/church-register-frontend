@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [loading, setLoading] = useState(false);
   const {login} = useAuth();
   const navigate = useNavigate();
@@ -32,6 +33,9 @@ export default function LoginPage() {
         navigate("/dashboard");
       } else {
         setError(result.error || "Error al iniciar sesión");
+        // Sin esto el usuario queda con un mensaje que le dice que verifique
+        // su correo pero sin ningún sitio adonde ir a pedirlo de nuevo.
+        setNeedsVerification(result.code === "EMAIL_NOT_VERIFIED");
       }
     } catch (err) {
       setError("Error al conectar con el servidor");
@@ -70,7 +74,17 @@ export default function LoginPage() {
               {error && (
                 <div className="bg-red-500/10 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg p-3 flex items-start space-x-2">
                   <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{error}</span>
+                  <div className="text-sm">
+                    <p>{error}</p>
+                    {needsVerification && (
+                      <Link
+                        to={`/verify-email${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+                        className="mt-1 inline-block font-medium underline underline-offset-2"
+                      >
+                        Reenviar correo de verificación
+                      </Link>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -135,6 +149,15 @@ export default function LoginPage() {
                   "Iniciar sesión"
                 )}
               </Button>
+
+              <div className="text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 hover:underline font-medium"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </form>
 
             {/* Footer */}
