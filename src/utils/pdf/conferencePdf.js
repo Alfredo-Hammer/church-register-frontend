@@ -8,14 +8,6 @@ const NAVY  = '#0d1f3c';
 const GOLD  = '#b8933a';
 const CREAM = '#fdf8f0';
 
-const SESSION_LABELS = {
-  CLASE_BIBLICA:  'Clase Bíblica',
-  CULTO_ALABANZA: 'Culto / Alabanza',
-  ORACION:        'Oración',
-  ESPECIAL:       'Especial',
-  OTRO:           'Otro',
-};
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDate(dateStr) {
@@ -90,7 +82,7 @@ export async function generateProgramaPDF(conference, days, onStart, onEnd) {
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;
             color:#718096;font-family:Arial,sans-serif;">
-            ${SESSION_LABELS[s.session_type] || s.session_type}
+            ${s.type?.label || ''}
           </div>
           <div style="font-size:11px;font-weight:700;color:${NAVY};line-height:1.3;margin:1px 0;">
             ${s.title}

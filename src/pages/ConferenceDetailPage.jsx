@@ -11,26 +11,16 @@ import { ProgramQRDialog } from "@/components/ProgramQRDialog";
 import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
-  ChevronLeft, ChevronRight, StickyNote, GraduationCap,
-  Music2, FlameKindling, Star, MoreHorizontal, FileDown, Award,
-  Badge, QrCode,
+  ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
+  Badge, QrCode, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF } from "@/utils/pdf/conferencePdf";
+import { SESSION_TYPE_COLORS, badgeClasses, swatchClasses } from "@/utils/sessionTypeColors";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const SESSION_TYPES = [
-  { value: "CLASE_BIBLICA",  label: "Clase Bíblica",      icon: GraduationCap, color: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40" },
-  { value: "CULTO_ALABANZA", label: "Culto / Alabanza",    icon: Music2,        color: "bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/40" },
-  { value: "ORACION",        label: "Oración",             icon: FlameKindling, color: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40" },
-  { value: "ESPECIAL",       label: "Especial",             icon: Star,          color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
-  { value: "OTRO",           label: "Otro",                 icon: MoreHorizontal,color: "bg-muted text-muted-foreground border-border" },
-];
-
-const typeConfig = (type) => SESSION_TYPES.find(t => t.value === type) || SESSION_TYPES[4];
-
-const EMPTY_SESSION = { sessionType: "CLASE_BIBLICA", title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "" };
+const EMPTY_SESSION = { sessionTypeId: null, title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "" };
 const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "" };
 const LIMIT         = 20;
 
@@ -47,13 +37,17 @@ function formatTime(t) {
 }
 
 // ── Componente badge de tipo ──────────────────────────────────────────────────
+// Recibe el tipo ya resuelto por el backend ({label, color}): no hay ningún
+// mapa fijo en el frontend, así que un tipo personalizado se ve exactamente
+// igual que uno de fábrica. Un punto de color en vez de un ícono por tipo,
+// ya que los personalizados no tienen uno asignado.
 
 function TypeBadge({ type }) {
-  const cfg = typeConfig(type);
-  const Icon = cfg.icon;
+  if (!type) return null;
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border", cfg.color)}>
-      <Icon size={10} /> {cfg.label}
+    <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold border", badgeClasses(type.color))}>
+      <span className={cn("h-1.5 w-1.5 rounded-full", swatchClasses(type.color))} />
+      {type.label}
     </span>
   );
 }
@@ -82,6 +76,15 @@ export default function ConferenceDetailPage() {
   const [savingSession, setSavingSession] = useState(false);
   const [sessionError, setSessionError]   = useState("");
   const [deletingSession, setDeletingSession] = useState(null);
+
+  // Catálogo de tipos de sesión (por iglesia; incluye los personalizados)
+  const [sessionTypes, setSessionTypes]     = useState([]);
+  const [showNewType, setShowNewType]       = useState(false);
+  const [newTypeLabel, setNewTypeLabel]     = useState("");
+  const [newTypeColor, setNewTypeColor]     = useState(SESSION_TYPE_COLORS[0]);
+  const [savingType, setSavingType]         = useState(false);
+  const [typeError, setTypeError]           = useState("");
+  const [deletingTypeId, setDeletingTypeId] = useState(null);
 
   // Días
   const [addDayDialog, setAddDayDialog]   = useState(false);
@@ -125,6 +128,13 @@ export default function ConferenceDetailPage() {
     } catch { /* silent */ }
   }, [id]);
 
+  const fetchSessionTypes = useCallback(async () => {
+    try {
+      const data = await conferenceService.getSessionTypes();
+      setSessionTypes(data.types);
+    } catch { /* silent */ }
+  }, []);
+
   const fetchRegistrations = useCallback(async (search, page) => {
     setRegLoading(true);
     try {
@@ -142,6 +152,7 @@ export default function ConferenceDetailPage() {
       setLoading(true);
       await fetchConference();
       await fetchStats();
+      await fetchSessionTypes();
       setLoading(false);
     };
     load();
@@ -156,7 +167,7 @@ export default function ConferenceDetailPage() {
     ).catch(() =>
       setChurch({ name: user?.churchName || '', logoUrl: user?.churchLogo || null })
     );
-  }, [fetchConference, fetchStats]);
+  }, [fetchConference, fetchStats, fetchSessionTypes]);
 
   useEffect(() => {
     if (activeTab === "asistentes") fetchRegistrations(regSearch, regPage);
@@ -164,11 +175,18 @@ export default function ConferenceDetailPage() {
 
   // ── Sesiones ───────────────────────────────────────────────────────────────
 
+  // Tipo por defecto para una sesión nueva: "Clase bíblica" si existe (el más
+  // común), si no el primero del catálogo de la iglesia.
+  const defaultTypeId = () =>
+    sessionTypes.find((t) => t.key === "CLASE_BIBLICA")?.id ?? sessionTypes[0]?.id ?? null;
+
   const openAddSession = (dayId) => {
     setTargetDayId(dayId);
     setEditingSession(null);
-    setSessionForm(EMPTY_SESSION);
+    setSessionForm({ ...EMPTY_SESSION, sessionTypeId: defaultTypeId() });
     setSessionError("");
+    setShowNewType(false);
+    setTypeError("");
     setSessionDialog(true);
   };
 
@@ -176,7 +194,7 @@ export default function ConferenceDetailPage() {
     setTargetDayId(dayId);
     setEditingSession(session);
     setSessionForm({
-      sessionType:  session.session_type,
+      sessionTypeId: session.session_type_id ?? session.type?.id ?? defaultTypeId(),
       title:        session.title,
       timeStart:    session.time_start?.slice(0, 5) || "",
       timeEnd:      session.time_end?.slice(0, 5) || "",
@@ -185,6 +203,8 @@ export default function ConferenceDetailPage() {
       notes:        session.notes || "",
     });
     setSessionError("");
+    setShowNewType(false);
+    setTypeError("");
     setSessionDialog(true);
   };
 
@@ -213,6 +233,47 @@ export default function ConferenceDetailPage() {
       await fetchConference();
     } catch { /* silent */ }
     setDeletingSession(null);
+  };
+
+  // ── Tipos de sesión (personalizados por iglesia) ────────────────────────────
+
+  const handleCreateType = async () => {
+    if (!newTypeLabel.trim()) return setTypeError("Ponle un nombre al tipo.");
+    setSavingType(true);
+    setTypeError("");
+    try {
+      const data = await conferenceService.createSessionType({
+        label: newTypeLabel.trim(),
+        color: newTypeColor,
+      });
+      await fetchSessionTypes();
+      // Queda seleccionado de una vez: si alguien lo creó a mitad de armar
+      // una sesión, no tiene que volver a buscarlo en la lista.
+      setSessionForm((p) => ({ ...p, sessionTypeId: data.type.id }));
+      setNewTypeLabel("");
+      setNewTypeColor(SESSION_TYPE_COLORS[0]);
+      setShowNewType(false);
+    } catch (err) {
+      setTypeError(err.response?.data?.error || "No se pudo crear el tipo.");
+    }
+    setSavingType(false);
+  };
+
+  const handleDeleteType = async (typeId) => {
+    setDeletingTypeId(typeId);
+    setTypeError("");
+    try {
+      await conferenceService.deleteSessionType(typeId);
+      await fetchSessionTypes();
+      // Si el tipo borrado era el seleccionado en el formulario, hay que
+      // recaer en otro para no dejar el formulario apuntando a un id muerto.
+      setSessionForm((p) => (p.sessionTypeId === typeId ? { ...p, sessionTypeId: defaultTypeId() } : p));
+    } catch (err) {
+      // "está en uso" es el caso esperado, no un error de verdad — se
+      // muestra igual que cualquier otro mensaje del backend.
+      setTypeError(err.response?.data?.error || "No se pudo eliminar el tipo.");
+    }
+    setDeletingTypeId(null);
   };
 
   // ── Días ───────────────────────────────────────────────────────────────────
@@ -425,13 +486,11 @@ export default function ConferenceDetailPage() {
                         <p className="text-center text-muted-foreground text-xs py-4 italic">Sin sesiones aún</p>
                       )}
                       {day.sessions.map((session) => {
-                        const cfg = typeConfig(session.session_type);
-                        const Icon = cfg.icon;
                         return (
                           <div key={session.id}
                             className="bg-muted/50 rounded-lg p-3 border border-border group relative">
                             <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <TypeBadge type={session.session_type} />
+                              <TypeBadge type={session.type} />
                               <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                 <button onClick={() => openEditSession(session, day.id)}
                                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
@@ -597,24 +656,90 @@ export default function ConferenceDetailPage() {
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
-            {/* Tipo */}
+            {/* Tipo — el catálogo es de la iglesia: incluye sus tipos
+                personalizados igual que los de fábrica, sin distinción. */}
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Tipo de sesión</label>
               <div className="grid grid-cols-2 gap-2">
-                {SESSION_TYPES.map((t) => {
-                  const Icon = t.icon;
+                {sessionTypes.map((t) => {
+                  const selected = sessionForm.sessionTypeId === t.id;
                   return (
-                    <button key={t.value} type="button"
-                      onClick={() => setSessionForm(p => ({ ...p, sessionType: t.value }))}
+                    <button key={t.id} type="button"
+                      onClick={() => setSessionForm(p => ({ ...p, sessionTypeId: t.id }))}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-bold transition-all",
-                        sessionForm.sessionType === t.value ? t.color : "bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/40"
+                        "group/type relative flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-bold transition-all text-left",
+                        selected ? badgeClasses(t.color) : "bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/40"
                       )}>
-                      <Icon size={14} /> {t.label}
+                      <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", swatchClasses(t.color))} />
+                      <span className="truncate flex-1">{t.label}</span>
+                      {!t.is_system && (
+                        // Solo los personalizados se pueden borrar; los de
+                        // fábrica se quedan siempre disponibles. stopPropagation
+                        // para que el clic en la papelera no seleccione el tipo.
+                        <span
+                          role="button"
+                          title="Eliminar tipo"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteType(t.id); }}
+                          className="shrink-0 p-0.5 rounded opacity-0 group-hover/type:opacity-100 hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-400 transition-opacity"
+                        >
+                          {deletingTypeId === t.id
+                            ? <Loader2 size={11} className="animate-spin" />
+                            : <X size={11} />}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
+
+                <button type="button" onClick={() => setShowNewType((v) => !v)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed text-xs font-bold transition-all",
+                    showNewType
+                      ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-500/10"
+                      : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
+                  )}>
+                  <Plus size={14} /> Crear tipo
+                </button>
               </div>
+
+              {showNewType && (
+                <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30 space-y-3">
+                  <Input
+                    placeholder="Nombre del tipo (ej. Bautismos)"
+                    value={newTypeLabel}
+                    onChange={(e) => setNewTypeLabel(e.target.value)}
+                    maxLength={80}
+                  />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {SESSION_TYPE_COLORS.map((color) => (
+                      <button key={color} type="button" title={color}
+                        onClick={() => setNewTypeColor(color)}
+                        className={cn(
+                          "h-7 w-7 rounded-full flex items-center justify-center transition-transform",
+                          swatchClasses(color),
+                          newTypeColor === color ? "ring-2 ring-offset-2 ring-offset-card ring-foreground scale-105" : "hover:scale-105"
+                        )}>
+                        {newTypeColor === color && <Check size={13} className="text-white" />}
+                      </button>
+                    ))}
+                  </div>
+                  {typeError && <p className="text-xs text-red-700 dark:text-red-400">{typeError}</p>}
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" size="sm"
+                      onClick={() => { setShowNewType(false); setTypeError(""); }}>
+                      Cancelar
+                    </Button>
+                    <Button type="button" size="sm" onClick={handleCreateType} disabled={savingType}
+                      className="flex items-center gap-1.5">
+                      {savingType && <Loader2 size={13} className="animate-spin" />}
+                      Guardar tipo
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {typeError && !showNewType && (
+                <p className="text-xs text-red-700 dark:text-red-400 mt-2">{typeError}</p>
+              )}
             </div>
 
             <div>

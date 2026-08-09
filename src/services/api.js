@@ -811,6 +811,24 @@ export const conferenceService = {
     return response.data;
   },
 
+  // ── Tipos de sesión (catálogo por iglesia) ─
+  getSessionTypes: async () => {
+    const response = await api.get('/conference/session-types');
+    return response.data;
+  },
+  createSessionType: async (data) => {
+    const response = await api.post('/conference/session-types', data);
+    return response.data;
+  },
+  updateSessionType: async (id, data) => {
+    const response = await api.put(`/conference/session-types/${id}`, data);
+    return response.data;
+  },
+  deleteSessionType: async (id) => {
+    const response = await api.delete(`/conference/session-types/${id}`);
+    return response.data;
+  },
+
   // ── Días ──────────────────────────────────
   addDay: async (conferenceId, data) => {
     const response = await api.post(`/conference/${conferenceId}/days`, data);

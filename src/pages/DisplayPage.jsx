@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useMemo, useCallback} from "react";
 import {useParams} from "react-router-dom";
 import {Church, MapPin, User, BookOpen, Clock} from "lucide-react";
+import {accentClasses} from "@/utils/sessionTypeColors";
 
 /**
  * Pantalla del salón: muestra el programa del día de una conferencia.
@@ -23,14 +24,6 @@ import {Church, MapPin, User, BookOpen, Clock} from "lucide-react";
  */
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
-const TIPO = {
-  CLASE_BIBLICA: {label: "Clase bíblica", color: "bg-blue-400"},
-  CULTO_ALABANZA: {label: "Alabanza", color: "bg-violet-400"},
-  ORACION: {label: "Oración", color: "bg-amber-400"},
-  ESPECIAL: {label: "Especial", color: "bg-emerald-400"},
-  OTRO: {label: "", color: "bg-slate-400"},
-};
 
 /** "HH:MM" -> minutos desde medianoche. */
 const toMinutes = (hhmm) => {
@@ -223,7 +216,7 @@ export default function DisplayPage() {
 
   if (error && !data) {
     return (
-      <div className="relative min-h-screen text-white flex items-center justify-center p-8">
+      <div className="relative min-h-screen bg-[#1e1b4b] text-white flex items-center justify-center p-8">
         <FondoAnimado />
         <p className="relative text-3xl text-slate-300">{error}</p>
       </div>
@@ -231,7 +224,7 @@ export default function DisplayPage() {
   }
   if (!data) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center">
+      <div className="relative min-h-screen bg-[#1e1b4b] flex items-center justify-center">
         <FondoAnimado />
         <div className="relative h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-blue-400" />
       </div>
@@ -239,7 +232,15 @@ export default function DisplayPage() {
   }
 
   return (
-    <div className="relative min-h-screen text-white p-6 sm:p-10">
+    // bg-[#1e1b4b]: respaldo sólido, del mismo tono con el que arranca el
+    // gradiente de FondoAnimado. Sin esto, si esa capa (fixed, decorativa)
+    // no llegara a pintar, el fondo caería en el <body> de la app — que
+    // sigue el tema claro/oscuro que tenga guardado ESE equipo — rompiendo
+    // la garantía de "esta pantalla siempre es oscura" que persigue todo
+    // el diseño. Encontrado auditando: mi propio script de contraste no veía
+    // ningún fondo en la cadena de ancestros y caía en el <body>, que en ese
+    // momento estaba en tema claro por otra pestaña de la misma sesión.
+    <div className="relative min-h-screen bg-[#1e1b4b] text-white p-6 sm:p-10">
       <FondoAnimado />
 
       <div className="relative">
@@ -292,7 +293,6 @@ export default function DisplayPage() {
         ) : (
           <ul className="mt-8 space-y-4">
             {sesiones.map((s) => {
-              const t = TIPO[s.type] || TIPO.OTRO;
               const activa = s.estado === "encurso";
               const pasada = s.estado === "pasada";
               const siguiente = s.id === proxima?.id;
@@ -308,7 +308,7 @@ export default function DisplayPage() {
                         : "border-white/10 bg-black/40"
                   }`}
                 >
-                  <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : t.color} ${pasada ? "opacity-40" : ""}`} />
+                  <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : accentClasses(s.type?.color)} ${pasada ? "opacity-40" : ""}`} />
 
                   <div className="w-32 sm:w-44 shrink-0">
                     <p className={`text-3xl sm:text-4xl font-bold tabular-nums ${activa ? "text-blue-200" : "text-slate-200"}`}>
@@ -321,7 +321,7 @@ export default function DisplayPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
-                      {t.label && (
+                      {s.type?.label && (
                         // bg-white/10 aclaraba el chip lo suficiente para que
                         // ni el blanco puro llegara a 4.5:1 sobre el fondo
                         // animado (medido: 3.18:1). Un fondo oscuro sólido en
@@ -331,8 +331,12 @@ export default function DisplayPage() {
                         // 5.17:1. Se encontró con una sesión realmente "en
                         // curso", no en la carga inicial: por eso la primera
                         // pasada del auditor no lo vio.
+                        //
+                        // El nombre del tipo (label) es el de la iglesia,
+                        // incluidos los personalizados: ya no hay un mapa fijo
+                        // de tipos en el frontend, todo llega de la API.
                         <span className={`rounded-full px-3 py-1 text-sm font-semibold ${activa ? "bg-blue-600 text-white" : "bg-black/50 text-slate-200"}`}>
-                          {t.label}
+                          {s.type.label}
                         </span>
                       )}
                       {activa && (
