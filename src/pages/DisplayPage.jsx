@@ -13,16 +13,23 @@ import {Church, MapPin, User, BookOpen, Clock} from "lucide-react";
  *    avanzando sola en vez de congelarse.
  *  - Toma la hora del servidor como referencia: el reloj de un equipo que
  *    lleva meses encendido suele estar corrido.
+ *
+ * El fondo es un gradiente animado con partículas flotantes — decorativo, en
+ * CSS puro (transform/opacity), no canvas ni WebGL: tiene que sostenerse
+ * horas sin que nadie lo mire, en el hardware que tenga a mano el kiosco o el
+ * televisor del vestíbulo. El contenido vive en paneles de vidrio semi-opacos
+ * por encima, para que el texto se lea igual sin importar qué color pase por
+ * detrás en ese momento del gradiente.
  */
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const TIPO = {
-  CLASE_BIBLICA: {label: "Clase bíblica", color: "bg-blue-500"},
-  CULTO_ALABANZA: {label: "Alabanza", color: "bg-violet-500"},
-  ORACION: {label: "Oración", color: "bg-amber-500"},
-  ESPECIAL: {label: "Especial", color: "bg-emerald-500"},
-  OTRO: {label: "", color: "bg-slate-500"},
+  CLASE_BIBLICA: {label: "Clase bíblica", color: "bg-blue-400"},
+  CULTO_ALABANZA: {label: "Alabanza", color: "bg-violet-400"},
+  ORACION: {label: "Oración", color: "bg-amber-400"},
+  ESPECIAL: {label: "Especial", color: "bg-emerald-400"},
+  OTRO: {label: "", color: "bg-slate-400"},
 };
 
 /** "HH:MM" -> minutos desde medianoche. */
@@ -38,6 +45,104 @@ const fmtFecha = (iso) =>
     day: "numeric",
     month: "long",
   });
+
+/**
+ * Fondo animado: gradiente en movimiento + manchas de luz + partículas que
+ * ascienden. Se genera una sola vez (useMemo con deps vacías) para que el
+ * reloj, que repinta cada 30 s, no vuelva a barajar las partículas y las
+ * haga saltar de posición.
+ */
+function FondoAnimado() {
+  const particulas = useMemo(
+    () =>
+      Array.from({length: 26}, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        size: 3 + Math.random() * 6,
+        duracion: 14 + Math.random() * 16,
+        // Delay negativo: al cargar, cada partícula ya está a mitad de un
+        // recorrido distinto en vez de que las 26 arranquen juntas del piso.
+        delay: -(Math.random() * 30),
+        deriva: (Math.random() - 0.5) * 120,
+        opacidad: 0.25 + Math.random() * 0.45,
+      })),
+    []
+  );
+
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <style>{`
+        @keyframes fondo-gradiente {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes mancha-flotar {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(var(--mx, 40px), var(--my, -30px)) scale(1.15); }
+        }
+        @keyframes particula-subir {
+          0% { transform: translate(0, 0); opacity: 0; }
+          10% { opacity: var(--op, 0.5); }
+          90% { opacity: var(--op, 0.5); }
+          100% { transform: translate(var(--dx, 0px), -110vh); opacity: 0; }
+        }
+      `}</style>
+
+      {/* Gradiente base: se desplaza muy despacio, nunca de golpe. Tonos
+          violeta/azul/índigo saturados — visiblemente más claro que el
+          slate-950 plano que tenía antes, pero sigue siendo oscuro de fondo
+          para que el texto blanco funcione encima sin ayuda. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(120deg, #1e1b4b, #4c1d95, #1e3a8a, #312e81, #1e1b4b)",
+          backgroundSize: "400% 400%",
+          animation: "fondo-gradiente 22s ease-in-out infinite",
+        }}
+      />
+
+      {/* Manchas de luz: grandes, difuminadas, derivan despacio. Dan
+          profundidad y "vida" sin competir con el texto. */}
+      <div
+        className="absolute -left-32 top-0 h-[560px] w-[560px] rounded-full bg-blue-500/30 blur-[120px]"
+        style={{"--mx": "60px", "--my": "40px", animation: "mancha-flotar 26s ease-in-out infinite"}}
+      />
+      <div
+        className="absolute right-0 top-1/3 h-[480px] w-[480px] rounded-full bg-fuchsia-500/20 blur-[120px]"
+        style={{"--mx": "-50px", "--my": "60px", animation: "mancha-flotar 32s ease-in-out infinite"}}
+      />
+      <div
+        className="absolute bottom-0 left-1/3 h-[520px] w-[520px] rounded-full bg-cyan-400/20 blur-[130px]"
+        style={{"--mx": "40px", "--my": "-50px", animation: "mancha-flotar 29s ease-in-out infinite"}}
+      />
+
+      {/* Partículas: puntos de luz que suben todo el alto de la pantalla y
+          se desvanecen en los extremos, con una leve deriva lateral. */}
+      {particulas.map((p) => (
+        <span
+          key={p.id}
+          className="absolute rounded-full bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.5)]"
+          style={{
+            left: `${p.left}%`,
+            bottom: "-10px",
+            width: p.size,
+            height: p.size,
+            "--dx": `${p.deriva}px`,
+            "--op": p.opacidad,
+            animation: `particula-subir ${p.duracion}s linear infinite`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
+
+      {/* Velo sutil para que los paneles de texto, que ya llevan su propia
+          opacidad, no tengan que pelear solos contra el punto más brillante
+          del gradiente. */}
+      <div className="absolute inset-0 bg-black/25" />
+    </div>
+  );
+}
 
 export default function DisplayPage() {
   const {token} = useParams();
@@ -118,142 +223,154 @@ export default function DisplayPage() {
 
   if (error && !data) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-8">
-        <p className="text-3xl text-slate-400">{error}</p>
+      <div className="relative min-h-screen text-white flex items-center justify-center p-8">
+        <FondoAnimado />
+        <p className="relative text-3xl text-slate-300">{error}</p>
       </div>
     );
   }
   if (!data) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500" />
+      <div className="relative min-h-screen flex items-center justify-center">
+        <FondoAnimado />
+        <div className="relative h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-blue-400" />
       </div>
     );
   }
 
   return (
-    // Fondo oscuro fijo, no los tokens del tema: un televisor en un salón en
-    // penumbra tiene que ser oscuro siempre, sin depender de la preferencia
-    // guardada en ese equipo.
-    <div className="min-h-screen bg-slate-950 text-white p-6 sm:p-10">
-      <header className="flex flex-wrap items-start justify-between gap-6 border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-5 min-w-0">
-          {data.church.logoUrl ? (
-            <img src={data.church.logoUrl} alt="" className="h-16 w-16 rounded-2xl object-contain bg-white/5 p-1" />
-          ) : (
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600">
-              <Church className="h-9 w-9 text-white" />
-            </span>
-          )}
-          <div className="min-w-0">
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight truncate">
-              {data.conference.name}
-            </h1>
-            <p className="mt-1 text-lg sm:text-2xl text-blue-300">
-              {data.conference.theme}
-              {data.conference.themeVerse && (
-                <span className="text-slate-400"> · {data.conference.themeVerse}</span>
-              )}
-            </p>
+    <div className="relative min-h-screen text-white p-6 sm:p-10">
+      <FondoAnimado />
+
+      <div className="relative">
+        <header className="flex flex-wrap items-start justify-between gap-6 rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-md">
+          <div className="flex items-center gap-5 min-w-0">
+            {data.church.logoUrl ? (
+              <img src={data.church.logoUrl} alt="" className="h-16 w-16 rounded-2xl object-contain bg-white/5 p-1" />
+            ) : (
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600">
+                <Church className="h-9 w-9 text-white" />
+              </span>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight truncate">
+                {data.conference.name}
+              </h1>
+              <p className="mt-1 text-lg sm:text-2xl text-blue-300">
+                {data.conference.theme}
+                {data.conference.themeVerse && (
+                  <span className="text-slate-300"> · {data.conference.themeVerse}</span>
+                )}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="text-right shrink-0">
-          <p className="text-5xl sm:text-7xl font-bold tabular-nums leading-none">{reloj}</p>
-          <p className="mt-2 text-lg sm:text-2xl capitalize text-slate-400">
-            {data.day ? fmtFecha(data.day.date) : "—"}
-          </p>
-          {data.day && (
-            <p className="text-base sm:text-lg text-slate-500">
-              Día {data.day.dayNumber} de {data.totalDays}
-              {!data.day.isToday && " · próxima jornada"}
+          <div className="text-right shrink-0">
+            <p className="text-5xl sm:text-7xl font-bold tabular-nums leading-none">{reloj}</p>
+            <p className="mt-2 text-lg sm:text-2xl capitalize text-slate-300">
+              {data.day ? fmtFecha(data.day.date) : "—"}
             </p>
-          )}
-        </div>
-      </header>
+            {data.day && (
+              <p className="text-base sm:text-lg text-slate-400">
+                Día {data.day.dayNumber} de {data.totalDays}
+                {!data.day.isToday && " · próxima jornada"}
+              </p>
+            )}
+          </div>
+        </header>
 
-      {data.conference.location && (
-        <p className="mt-4 flex items-center gap-2 text-lg text-slate-400">
-          <MapPin className="h-5 w-5" /> {data.conference.location}
-        </p>
-      )}
+        {data.conference.location && (
+          <p className="mt-4 flex items-center gap-2 text-lg text-slate-300">
+            <MapPin className="h-5 w-5" /> {data.conference.location}
+          </p>
+        )}
 
-      {sesiones.length === 0 ? (
-        <p className="mt-24 text-center text-4xl text-slate-500">
-          No hay programa para este día.
-        </p>
-      ) : (
-        <ul className="mt-8 space-y-4">
-          {sesiones.map((s) => {
-            const t = TIPO[s.type] || TIPO.OTRO;
-            const activa = s.estado === "encurso";
-            const pasada = s.estado === "pasada";
-            const siguiente = s.id === proxima?.id;
+        {sesiones.length === 0 ? (
+          <p className="mt-24 text-center text-4xl text-slate-300">
+            No hay programa para este día.
+          </p>
+        ) : (
+          <ul className="mt-8 space-y-4">
+            {sesiones.map((s) => {
+              const t = TIPO[s.type] || TIPO.OTRO;
+              const activa = s.estado === "encurso";
+              const pasada = s.estado === "pasada";
+              const siguiente = s.id === proxima?.id;
 
-            return (
-              <li
-                key={s.id}
-                className={`flex items-stretch gap-5 rounded-2xl border p-5 sm:p-6 transition-all ${
-                  activa
-                    ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10"
-                    : pasada
-                      ? "border-slate-800/60 bg-slate-900/30 opacity-45"
-                      : "border-slate-800 bg-slate-900/60"
-                }`}
-              >
-                <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-400" : t.color} ${pasada ? "opacity-40" : ""}`} />
+              return (
+                <li
+                  key={s.id}
+                  className={`flex items-stretch gap-5 rounded-2xl border p-5 sm:p-6 backdrop-blur-md transition-all ${
+                    activa
+                      ? "border-blue-400/60 bg-blue-500/20 shadow-lg shadow-blue-500/20"
+                      : pasada
+                        ? "border-white/5 bg-black/30 opacity-45"
+                        : "border-white/10 bg-black/40"
+                  }`}
+                >
+                  <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : t.color} ${pasada ? "opacity-40" : ""}`} />
 
-                <div className="w-32 sm:w-44 shrink-0">
-                  <p className={`text-3xl sm:text-4xl font-bold tabular-nums ${activa ? "text-blue-300" : "text-slate-300"}`}>
-                    {s.timeStart || "—"}
-                  </p>
-                  {s.timeEnd && (
-                    <p className="text-lg text-slate-500 tabular-nums">a {s.timeEnd}</p>
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    {t.label && (
-                      <span className={`rounded-full px-3 py-1 text-sm font-semibold ${activa ? "bg-blue-500 text-white" : "bg-slate-800 text-slate-300"}`}>
-                        {t.label}
-                      </span>
-                    )}
-                    {activa && (
-                      <span className="flex items-center gap-2 rounded-full bg-blue-500 px-3 py-1 text-sm font-bold text-white">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-                        EN CURSO
-                      </span>
-                    )}
-                    {siguiente && (
-                      <span className="flex items-center gap-2 rounded-full border border-slate-600 px-3 py-1 text-sm font-semibold text-slate-300">
-                        <Clock className="h-4 w-4" /> A CONTINUACIÓN
-                      </span>
+                  <div className="w-32 sm:w-44 shrink-0">
+                    <p className={`text-3xl sm:text-4xl font-bold tabular-nums ${activa ? "text-blue-200" : "text-slate-200"}`}>
+                      {s.timeStart || "—"}
+                    </p>
+                    {s.timeEnd && (
+                      <p className="text-lg text-slate-400 tabular-nums">a {s.timeEnd}</p>
                     )}
                   </div>
 
-                  <h2 className={`mt-2 text-2xl sm:text-4xl font-bold leading-tight ${activa ? "text-white" : "text-slate-200"}`}>
-                    {s.title}
-                  </h2>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {t.label && (
+                        // bg-white/10 aclaraba el chip lo suficiente para que
+                        // ni el blanco puro llegara a 4.5:1 sobre el fondo
+                        // animado (medido: 3.18:1). Un fondo oscuro sólido en
+                        // vez de un tinte claro deja de sumarle brillo al chip.
+                        // blue-500 con texto blanco da 3.68:1, por debajo del
+                        // mínimo AA (4.5) para texto pequeño — blue-600 sube a
+                        // 5.17:1. Se encontró con una sesión realmente "en
+                        // curso", no en la carga inicial: por eso la primera
+                        // pasada del auditor no lo vio.
+                        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${activa ? "bg-blue-600 text-white" : "bg-black/50 text-slate-200"}`}>
+                          {t.label}
+                        </span>
+                      )}
+                      {activa && (
+                        <span className="flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                          EN CURSO
+                        </span>
+                      )}
+                      {siguiente && (
+                        <span className="flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-sm font-semibold text-slate-200">
+                          <Clock className="h-4 w-4" /> A CONTINUACIÓN
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-lg sm:text-xl text-slate-400">
-                    {s.speaker && (
-                      <span className="flex items-center gap-2">
-                        <User className="h-5 w-5 shrink-0" /> {s.speaker}
-                      </span>
-                    )}
-                    {s.scriptureRef && (
-                      <span className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 shrink-0" /> {s.scriptureRef}
-                      </span>
-                    )}
+                    <h2 className={`mt-2 text-2xl sm:text-4xl font-bold leading-tight ${activa ? "text-white" : "text-slate-100"}`}>
+                      {s.title}
+                    </h2>
+
+                    <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-lg sm:text-xl text-slate-300">
+                      {s.speaker && (
+                        <span className="flex items-center gap-2">
+                          <User className="h-5 w-5 shrink-0" /> {s.speaker}
+                        </span>
+                      )}
+                      {s.scriptureRef && (
+                        <span className="flex items-center gap-2">
+                          <BookOpen className="h-5 w-5 shrink-0" /> {s.scriptureRef}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
