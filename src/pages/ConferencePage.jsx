@@ -4,10 +4,11 @@ import { conferenceService } from "@/services/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/Dialog";
+import { ProgramQRDialog } from "@/components/ProgramQRDialog";
 import {
   BookOpen, Plus, CalendarDays, Users, MapPin,
   ChevronRight, Pencil, Trash2, Loader2, CheckCircle2,
-  Clock, XCircle,
+  Clock, XCircle, Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ export default function ConferencePage() {
   const [formError, setFormError]     = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [qrConference, setQrConference] = useState(null);
   const [deleting, setDeleting]         = useState(false);
 
   const fetchAll = async () => {
@@ -207,6 +209,13 @@ export default function ConferencePage() {
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
+                      title="Ver QR de la pantalla del salón"
+                      onClick={(e) => { e.stopPropagation(); setQrConference(conf); }}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                    >
+                      <Monitor size={13} />
+                    </button>
+                    <button
                       onClick={(e) => openEdit(e, conf)}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                     >
@@ -339,6 +348,12 @@ export default function ConferencePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProgramQRDialog
+        open={Boolean(qrConference)}
+        onClose={() => setQrConference(null)}
+        conference={qrConference}
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import {useState} from "react";
 import {QRCodeSVG} from "qrcode.react";
 import {Dialog, DialogContent, DialogHeader, DialogFooter} from "@/components/ui/Dialog";
 import {Button} from "@/components/ui/Button";
-import {Copy, Check, Monitor} from "lucide-react";
+import {Copy, Check, Monitor, ExternalLink} from "lucide-react";
 
 /**
  * QR del programa general: apunta a la pantalla pública (/pantalla/:token),
@@ -44,6 +44,19 @@ export function ProgramQRDialog({open, onClose, conference}) {
             Cualquiera que escanee este código ve el programa del día en su
             propio teléfono, tal como aparece en la pantalla del salón.
           </p>
+
+          {/* En el televisor o kiosco del salón, este botón evita tener que
+              escribir la URL a mano con un control remoto: se abre el
+              navegador del equipo en esa dirección y se deja ahí. */}
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm font-medium transition-colors"
+          >
+            <ExternalLink size={14} /> Abrir pantalla en pestaña nueva
+          </a>
+
           <button
             onClick={copiar}
             className="w-full flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-left text-xs text-muted-foreground hover:border-blue-500 transition-colors"
