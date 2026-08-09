@@ -23,10 +23,17 @@ const STATUS = {
 const STATUS_ICONS = { ACTIVO: CheckCircle2, FINALIZADO: Clock, CANCELADO: XCircle };
 
 function formatDateRange(start, end) {
-  const s = new Date(start + 'T00:00:00');
-  const e = new Date(end   + 'T00:00:00');
+  // Postgres devuelve las columnas DATE como timestamp completo
+  // ("2026-08-08T04:00:00.000Z"), no como "2026-08-08". Sin el slice, el
+  // 'T00:00:00' se concatena sobre ese timestamp y el resultado es
+  // "Invalid Date" — ya se había resuelto así en ConferenceDetailPage,
+  // pero esta lista se quedó con la versión vieja.
+  const startDay = String(start).slice(0, 10);
+  const endDay   = String(end).slice(0, 10);
+  const s = new Date(startDay + 'T00:00:00');
+  const e = new Date(endDay   + 'T00:00:00');
   const opts = { day: 'numeric', month: 'short', year: 'numeric' };
-  if (start === end) return s.toLocaleDateString('es', opts);
+  if (startDay === endDay) return s.toLocaleDateString('es', opts);
   if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear())
     return `${s.getDate()} – ${e.toLocaleDateString('es', opts)}`;
   return `${s.toLocaleDateString('es', { day: 'numeric', month: 'short' })} – ${e.toLocaleDateString('es', opts)}`;
