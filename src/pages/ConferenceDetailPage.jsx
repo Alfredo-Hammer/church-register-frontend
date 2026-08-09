@@ -6,14 +6,17 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/Dialog";
 import { CertificatePreviewDialog } from "@/components/CertificatePreviewDialog";
+import { BadgePreviewDialog } from "@/components/BadgePreviewDialog";
+import { ProgramQRDialog } from "@/components/ProgramQRDialog";
 import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
   ChevronLeft, ChevronRight, StickyNote, GraduationCap,
   Music2, FlameKindling, Star, MoreHorizontal, FileDown, Award,
+  Badge, QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateProgramaPDF, generateCertificadoPDF } from "@/utils/pdf/conferencePdf";
+import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF } from "@/utils/pdf/conferencePdf";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -27,7 +30,7 @@ const SESSION_TYPES = [
 
 const typeConfig = (type) => SESSION_TYPES.find(t => t.value === type) || SESSION_TYPES[4];
 
-const EMPTY_SESSION = { sessionType: "CLASE_BIBLICA", title: "", timeStart: "", speaker: "", scriptureRef: "", notes: "" };
+const EMPTY_SESSION = { sessionType: "CLASE_BIBLICA", title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "" };
 const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "" };
 const LIMIT         = 20;
 
@@ -102,6 +105,8 @@ export default function ConferenceDetailPage() {
   // PDF
   const [pdfLoading, setPdfLoading] = useState(null);
   const [previewReg, setPreviewReg] = useState(null);
+  const [badgeReg, setBadgeReg] = useState(null);
+  const [showProgramQR, setShowProgramQR] = useState(false);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -174,6 +179,7 @@ export default function ConferenceDetailPage() {
       sessionType:  session.session_type,
       title:        session.title,
       timeStart:    session.time_start?.slice(0, 5) || "",
+      timeEnd:      session.time_end?.slice(0, 5) || "",
       speaker:      session.speaker || "",
       scriptureRef: session.scripture_ref || "",
       notes:        session.notes || "",
@@ -364,6 +370,10 @@ export default function ConferenceDetailPage() {
               className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40">
               <Plus size={14} /> Agregar Día
             </Button>
+            <Button variant="outline" onClick={() => setShowProgramQR(true)}
+              className="flex items-center gap-2 text-sm border-blue-700/60 text-blue-700 dark:text-blue-400 hover:border-blue-500">
+              <QrCode size={14} /> Ver QR
+            </Button>
             <Button variant="outline" disabled={pdfLoading === 'programa'}
               onClick={() => generateProgramaPDF(
                 conference, days,
@@ -441,6 +451,7 @@ export default function ConferenceDetailPage() {
                             {session.time_start && (
                               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                 <Clock size={10} /> {formatTime(session.time_start)}
+                                {session.time_end && ` – ${formatTime(session.time_end)}`}
                               </p>
                             )}
                             {session.speaker && (
@@ -528,6 +539,12 @@ export default function ConferenceDetailPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           <button
+                            title="Gafete con QR de asistencia"
+                            onClick={() => setBadgeReg(reg)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                            <Badge size={13} />
+                          </button>
+                          <button
                             title="Vista previa del certificado"
                             onClick={() => setPreviewReg(reg)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 transition-colors">
@@ -612,19 +629,31 @@ export default function ConferenceDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                  <Clock size={10} className="inline mr-1" />Hora
+                  <Clock size={10} className="inline mr-1" />Desde
                 </label>
                 <Input type="time" value={sessionForm.timeStart}
                   onChange={(e) => setSessionForm(p => ({ ...p, timeStart: e.target.value }))} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                  <BookOpen size={10} className="inline mr-1" />Versículo
+                  <Clock size={10} className="inline mr-1" />Hasta
                 </label>
-                <Input placeholder="Ej. Juan 3:16"
-                  value={sessionForm.scriptureRef}
-                  onChange={(e) => setSessionForm(p => ({ ...p, scriptureRef: e.target.value }))} />
+                {/* Sin esto, la pantalla del salón solo puede adivinar cuándo
+                    termina una sesión mirando cuándo empieza la siguiente —
+                    y un receso o almuerzo aparece como si la clase anterior
+                    siguiera en curso. */}
+                <Input type="time" value={sessionForm.timeEnd}
+                  onChange={(e) => setSessionForm(p => ({ ...p, timeEnd: e.target.value }))} />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                <BookOpen size={10} className="inline mr-1" />Versículo
+              </label>
+              <Input placeholder="Ej. Juan 3:16"
+                value={sessionForm.scriptureRef}
+                onChange={(e) => setSessionForm(p => ({ ...p, scriptureRef: e.target.value }))} />
             </div>
 
             <div>
@@ -770,6 +799,28 @@ export default function ConferenceDetailPage() {
           () => setPdfLoading(`cert-${previewReg?.id}`),
           () => setPdfLoading(null),
         )}
+      />
+
+      {/* ════ Dialog: Vista previa del gafete ════ */}
+      <BadgePreviewDialog
+        open={Boolean(badgeReg)}
+        onClose={() => setBadgeReg(null)}
+        conference={conference}
+        registration={badgeReg}
+        church={church}
+        downloading={pdfLoading === `badge-${badgeReg?.id}`}
+        onDownload={() => generateGafetePDF(
+          conference, badgeReg, church,
+          () => setPdfLoading(`badge-${badgeReg?.id}`),
+          () => setPdfLoading(null),
+        )}
+      />
+
+      {/* ════ Dialog: QR del programa general ════ */}
+      <ProgramQRDialog
+        open={showProgramQR}
+        onClose={() => setShowProgramQR(false)}
+        conference={conference}
       />
     </div>
   );

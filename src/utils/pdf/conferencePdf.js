@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
 
 // ── Constantes de diseño ──────────────────────────────────────────────────────
 
@@ -36,7 +37,9 @@ function safeName(str) {
   return str.replace(/[\s/\\?%*:|"<>]/g, '-');
 }
 
-async function domToPDF(el, filename, orientation, elW, elH) {
+// `format` sigue la firma de jsPDF: 'letter', 'a4', o [ancho, alto] en mm
+// para tamaños que no son de página completa, como el gafete.
+async function domToPDF(el, filename, orientation, elW, elH, format = 'letter') {
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
@@ -50,7 +53,7 @@ async function domToPDF(el, filename, orientation, elW, elH) {
     windowHeight: elH,
   });
   const img = canvas.toDataURL('image/jpeg', 0.93);
-  const pdf = new jsPDF({ orientation, unit: 'mm', format: 'letter' });
+  const pdf = new jsPDF({ orientation, unit: 'mm', format });
   const pw  = pdf.internal.pageSize.getWidth();
   const ph  = pdf.internal.pageSize.getHeight();
   pdf.addImage(img, 'JPEG', 0, 0, pw, ph);
@@ -311,6 +314,104 @@ export async function generateCertificadoPDF(conference, registration, church, o
   } catch (err) {
     console.error(err);
     onEnd?.('Error al generar el certificado.');
+  } finally {
+    document.body.removeChild(el);
+  }
+}
+
+// ── PDF del Gafete ────────────────────────────────────────────────────────────
+// Tarjeta que el asistente porta durante la conferencia, con el QR que el
+// equipo escanea en la puerta de cada sesión. El QR se genera con la
+// librería `qrcode` (no `qrcode.react`, que se usa en el diálogo de vista
+// previa) porque produce directamente una imagen PNG lista para incrustar en
+// el HTML que se rasteriza, sin depender de montar un componente React fuera
+// de pantalla y esperar a que el canvas termine de pintarse.
+
+const BADGE_W = 384; // 4 in a 96 dpi
+const BADGE_H = 576; // 6 in a 96 dpi
+const BADGE_FORMAT_MM = [101.6, 152.4]; // 4in × 6in
+
+export async function generateGafetePDF(conference, registration, church, onStart, onEnd) {
+  onStart?.();
+
+  if (!registration.check_in_token) {
+    onEnd?.('Este registro no tiene un token de gafete. Vuelve a cargar la página.');
+    return;
+  }
+
+  const churchName = church?.name || '';
+  const logo = church?.logoUrl || null;
+
+  let qrDataUrl;
+  try {
+    qrDataUrl = await QRCode.toDataURL(registration.check_in_token, {
+      width: 280, margin: 1, color: {dark: '#0d1f3c', light: '#ffffff'},
+    });
+  } catch (err) {
+    console.error(err);
+    onEnd?.('Error al generar el código QR.');
+    return;
+  }
+
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed;left:-9999px;top:0;
+    width:${BADGE_W}px;height:${BADGE_H}px;
+    background:${CREAM};overflow:hidden;
+    font-family:Georgia,"Times New Roman",serif;
+  `;
+
+  el.innerHTML = `
+    <div style="width:100%;height:100%;background:${CREAM};display:flex;flex-direction:column;
+      align-items:center;box-sizing:border-box;padding:28px 24px;border:6px solid ${NAVY};">
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        ${logo ? `<img src="${logo}" alt="${churchName}" style="width:44px;height:44px;object-fit:contain;
+          border-radius:50%;border:2px solid ${GOLD};" />` : ''}
+        <div style="font-size:13px;font-weight:700;color:${NAVY};text-align:center;">${churchName}</div>
+      </div>
+
+      <div style="width:160px;height:1px;background:${GOLD};margin:14px 0;"></div>
+
+      <div style="font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+        color:${GOLD};font-family:Arial,sans-serif;">Gafete de Participante</div>
+
+      <div style="margin-top:18px;font-size:30px;font-weight:700;color:${NAVY};
+        text-align:center;line-height:1.15;word-break:break-word;">
+        ${registration.full_name}
+      </div>
+
+      ${registration.origin_church ? `
+        <div style="margin-top:6px;font-size:12px;color:#4a5568;font-family:Arial,sans-serif;text-align:center;">
+          ${registration.origin_church}
+        </div>` : ''}
+
+      <div style="margin-top:auto;margin-bottom:18px;background:#fff;padding:10px;border-radius:8px;">
+        <img src="${qrDataUrl}" alt="QR" style="width:140px;height:140px;display:block;" />
+      </div>
+
+      <div style="width:160px;height:1px;background:${GOLD};margin-bottom:10px;"></div>
+
+      <div style="font-size:13px;font-weight:700;color:${NAVY};text-align:center;line-height:1.2;">
+        ${conference.name}
+      </div>
+      <div style="font-size:10px;color:#718096;font-family:Arial,sans-serif;margin-top:2px;">
+        ${dateRange(conference.start_date, conference.end_date)}
+        ${conference.location ? ` · ${conference.location}` : ''}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(el);
+  try {
+    await domToPDF(
+      el, `gafete-${safeName(registration.full_name)}.pdf`,
+      'portrait', BADGE_W, BADGE_H, BADGE_FORMAT_MM
+    );
+    onEnd?.(null);
+  } catch (err) {
+    console.error(err);
+    onEnd?.('Error al generar el gafete.');
   } finally {
     document.body.removeChild(el);
   }
