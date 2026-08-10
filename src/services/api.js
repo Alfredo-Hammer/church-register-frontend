@@ -874,6 +874,20 @@ export const conferenceService = {
     const response = await api.delete(`/conference/${conferenceId}/registrations/${regId}`);
     return response.data;
   },
+
+  // ── Asistencia por sesión (gafetes) ────────
+  checkIn: async (checkInToken, sessionId) => {
+    const response = await api.post('/conference/check-in', { checkInToken, sessionId });
+    return response.data;
+  },
+  getSessionAttendance: async (sessionId) => {
+    const response = await api.get(`/conference/sessions/${sessionId}/attendance`);
+    return response.data;
+  },
+  getRegistrationAttendance: async (regId) => {
+    const response = await api.get(`/conference/registrations/${regId}/attendance`);
+    return response.data;
+  },
 };
 
 export default api;

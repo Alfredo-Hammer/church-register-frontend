@@ -12,7 +12,7 @@ import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
   ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
-  Badge, QrCode, Check, Camera, Cake,
+  Badge, QrCode, Check, Camera, Cake, ScanLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF } from "@/utils/pdf/conferencePdf";
@@ -561,6 +561,11 @@ export default function ConferenceDetailPage() {
                             <div className="flex items-start justify-between gap-2 mb-1.5">
                               <TypeBadge type={session.type} />
                               <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
+                                  title="Escanear asistencia"
+                                  className="p-1 rounded text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                  <ScanLine size={11} />
+                                </button>
                                 <button onClick={() => openEditSession(session, day.id)}
                                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                                   <Pencil size={11} />

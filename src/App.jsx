@@ -34,6 +34,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import LettersPage from "@/pages/LettersPage";
 import ConferencePage from "@/pages/ConferencePage";
 import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
+import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
 
 function App() {
   return (
@@ -251,6 +252,16 @@ function App() {
                   <DashboardLayout>
                     <ConferenceDetailPage />
                   </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Sin DashboardLayout a propósito: pantalla de uso rápido en el
+                celular, en la puerta de la clase — el sidebar solo estorba. */}
+            <Route
+              path="/dashboard/conference/:id/check-in/:sessionId"
+              element={
+                <ProtectedRoute>
+                  <ConferenceCheckInPage />
                 </ProtectedRoute>
               }
             />
