@@ -117,10 +117,20 @@ export function BadgeTemplate({conference, registration, church}) {
         </div>
       )}
 
-      {/* QR: separado del resto para que el equipo lo escanee sin taparlo */}
-      <div style={{marginTop: "auto", marginBottom: 16, background: "#fff", padding: 10, borderRadius: 8}}>
+      {/* QR: separado del resto para que el equipo lo escanee sin taparlo.
+          El código también va como texto debajo — si la cámara falla o el
+          gafete se dañó, el equipo puede escribirlo a mano en el check-in. */}
+      <div style={{marginTop: "auto", marginBottom: 6, background: "#fff", padding: 10, borderRadius: 8}}>
         <QRCodeSVG value={registration.check_in_token || ""} size={116} level="M" />
       </div>
+      {registration.check_in_token && (
+        <div style={{
+          fontFamily: "Menlo, Consolas, monospace", fontSize: 9, letterSpacing: 1,
+          color: "#8a8578", marginBottom: 10, userSelect: "all",
+        }}>
+          {registration.check_in_token}
+        </div>
+      )}
 
       <div style={{width: 160, height: 1, background: GOLD, marginBottom: 10}} />
 

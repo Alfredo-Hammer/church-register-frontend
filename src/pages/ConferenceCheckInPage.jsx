@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
   ArrowLeft, Camera, CameraOff, QrCode, Check, AlertTriangle, X,
-  Loader2, Users, ChevronDown,
+  Loader2, Users, ChevronDown, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,25 @@ function formatTime(t) {
   const [h, m] = t.split(':');
   const hour = parseInt(h);
   return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+}
+
+// Mismo criterio que el backend en checkInAttendance: solo se sabe con
+// certeza que una clase terminó si tiene time_end y ya pasó, o si es de un
+// día anterior. El backend es la autoridad final (por si el reloj del
+// celular está mal); esto es solo para no dejar escanear algo que de
+// entrada se sabe que va a fallar.
+function isSessionPast(day, session) {
+  if (!day || !session) return false;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dayDate = new Date(String(day.day_date).slice(0, 10) + 'T00:00:00');
+  if (dayDate < today) return true;
+  if (dayDate.getTime() === today.getTime() && session.time_end) {
+    const [h, m] = session.time_end.split(':').map(Number);
+    const end = new Date();
+    end.setHours(h, m, 0, 0);
+    return new Date() > end;
+  }
+  return false;
 }
 
 export default function ConferenceCheckInPage() {
@@ -170,6 +189,17 @@ export default function ConferenceCheckInPage() {
     navigate(`/dashboard/conference/${id}/check-in/${newSessionId}`, { replace: true });
   };
 
+  const selectedDay = days.find((d) => d.sessions.some((s) => s.id === sessionId));
+  const selectedSession = selectedDay?.sessions.find((s) => s.id === sessionId);
+  const sessionPast = isSessionPast(selectedDay, selectedSession);
+
+  // Si la clase termina mientras la cámara sigue abierta (o al cambiar a
+  // una sesión que ya pasó), hay que apagarla — no tiene sentido seguir
+  // escaneando algo que el backend va a rechazar de todos modos.
+  useEffect(() => {
+    if (sessionPast) stopCamera();
+  }, [sessionPast, stopCamera]);
+
   return (
     <div className="min-h-screen bg-background px-4 py-6 sm:px-6 max-w-2xl mx-auto">
       <Link to={`/dashboard/conference/${id}`}
@@ -224,6 +254,14 @@ export default function ConferenceCheckInPage() {
         )}
       </div>
 
+      {/* Sesión ya finalizada: no tiene caso ofrecer escanear */}
+      {sessionPast && (
+        <div className="mb-4 rounded-lg border px-4 py-3 flex items-center gap-2.5 text-sm font-semibold bg-muted/50 border-border text-muted-foreground">
+          <Clock size={16} className="flex-shrink-0" />
+          <span className="flex-1">Esta sesión ya finalizó. No se puede registrar más asistencia aquí.</span>
+        </div>
+      )}
+
       {/* Feedback del último escaneo */}
       {feedback && (
         <div className={cn(
@@ -257,7 +295,7 @@ export default function ConferenceCheckInPage() {
         <div className="p-3">
           <Button
             onClick={cameraOn ? stopCamera : startCamera}
-            disabled={!sessionId}
+            disabled={!sessionId || sessionPast}
             variant={cameraOn ? "outline" : "default"}
             className="w-full flex items-center justify-center gap-2">
             {cameraOn ? <><CameraOff size={15} /> Detener cámara</> : <><Camera size={15} /> Activar cámara</>}
@@ -272,11 +310,11 @@ export default function ConferenceCheckInPage() {
           autoFocus
           placeholder="Código del gafete (o escanéalo con un lector)"
           value={manualToken}
-          disabled={!sessionId}
+          disabled={!sessionId || sessionPast}
           onChange={(e) => setManualToken(e.target.value)}
           className="flex-1"
         />
-        <Button type="submit" disabled={!sessionId || submitting || !manualToken.trim()}>
+        <Button type="submit" disabled={!sessionId || sessionPast || submitting || !manualToken.trim()}>
           {submitting ? <Loader2 size={15} className="animate-spin" /> : "Marcar"}
         </Button>
       </form>

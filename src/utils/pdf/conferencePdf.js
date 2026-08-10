@@ -393,8 +393,11 @@ export async function generateGafetePDF(conference, registration, church, onStar
           ${registration.origin_church}
         </div>` : ''}
 
-      <div style="margin-top:auto;margin-bottom:16px;background:#fff;padding:10px;border-radius:8px;">
+      <div style="margin-top:auto;margin-bottom:6px;background:#fff;padding:10px;border-radius:8px;">
         <img src="${qrDataUrl}" alt="QR" style="width:116px;height:116px;display:block;" />
+      </div>
+      <div style="font-family:Menlo,Consolas,monospace;font-size:9px;letter-spacing:1px;color:#8a8578;margin-bottom:10px;">
+        ${registration.check_in_token}
       </div>
 
       <div style="width:160px;height:1px;background:${GOLD};margin-bottom:10px;"></div>

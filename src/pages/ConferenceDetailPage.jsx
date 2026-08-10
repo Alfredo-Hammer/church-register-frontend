@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { conferenceService, settingsService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
   ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
-  Badge, QrCode, Check, Camera, Cake, ScanLine,
+  Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF } from "@/utils/pdf/conferencePdf";
@@ -126,7 +126,11 @@ export default function ConferenceDetailPage() {
   const [days, setDays]               = useState([]);
   const [stats, setStats]             = useState(null);
   const [loading, setLoading]         = useState(true);
-  const [activeTab, setActiveTab]     = useState("programa"); // "programa" | "asistentes"
+  const [activeTab, setActiveTab]     = useState("programa"); // "programa" | "asistentes" | "reportes"
+
+  // Reportes (resumen por iglesia + matriz de asistencia)
+  const [report, setReport]           = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Sesiones
   const [sessionDialog, setSessionDialog] = useState(false);
@@ -232,6 +236,19 @@ export default function ConferenceDetailPage() {
   useEffect(() => {
     if (activeTab === "asistentes") fetchRegistrations(regSearch, regPage);
   }, [activeTab, fetchRegistrations, regSearch, regPage]);
+
+  const fetchReport = useCallback(async () => {
+    setReportLoading(true);
+    try {
+      const data = await conferenceService.getAttendanceReport(id);
+      setReport(data);
+    } catch { /* silent */ }
+    setReportLoading(false);
+  }, [id]);
+
+  useEffect(() => {
+    if (activeTab === "reportes") fetchReport();
+  }, [activeTab, fetchReport]);
 
   // ── Sesiones ───────────────────────────────────────────────────────────────
 
@@ -421,6 +438,15 @@ export default function ConferenceDetailPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  // Set de "registrationId:sessionId" para lookup O(1) al pintar la matriz
+  // celda por celda, en vez de recorrer el arreglo de pares en cada render.
+  // Debe ir antes de los `return` condicionales de abajo: los hooks no
+  // pueden depender de si `conference` ya cargó o no.
+  const attendedSet = useMemo(() => {
+    if (!report) return new Set();
+    return new Set(report.attendance.map((a) => `${a.registration_id}:${a.session_id}`));
+  }, [report]);
+
   if (loading) return (
     <div className="flex justify-center items-center py-32 text-muted-foreground">
       <Loader2 size={36} className="animate-spin" />
@@ -477,6 +503,7 @@ export default function ConferenceDetailPage() {
         {[
           { key: "programa",   label: "Programa",   icon: CalendarDays },
           { key: "asistentes", label: "Asistentes", icon: Users },
+          { key: "reportes",   label: "Reportes",   icon: BarChart3 },
         ].map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={cn(
@@ -729,6 +756,117 @@ export default function ConferenceDetailPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          TAB: REPORTES (por iglesia + matriz de asistencia)
+      ════════════════════════════════════════ */}
+      {activeTab === "reportes" && (
+        <div className="space-y-6">
+          {reportLoading ? (
+            <div className="flex justify-center py-16 text-muted-foreground">
+              <Loader2 size={24} className="animate-spin" />
+            </div>
+          ) : !report || report.registrants.length === 0 ? (
+            <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
+              <BarChart3 size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="font-medium text-muted-foreground">Sin datos todavía</p>
+              <p className="text-sm mt-1">Registra asistentes y marca asistencia para ver reportes aquí</p>
+            </div>
+          ) : (
+            <>
+              {/* Resumen por iglesia */}
+              <div>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Church size={12} /> Asistencia por iglesia
+                </h2>
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          {["Iglesia", "Inscritos", "Asistencias registradas", "Promedio por persona"].map((h) => (
+                            <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.byChurch.map((c) => (
+                          <tr key={c.church} className="border-b border-border last:border-0">
+                            <td className="px-4 py-2.5 font-medium text-foreground">{c.church}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground">{c.registrants}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground">{c.checkins}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground">
+                              {c.registrants ? (c.checkins / c.registrants).toFixed(1) : "0.0"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Matriz de asistencia: inscrito × sesión */}
+              <div>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <BarChart3 size={12} /> Tabla de asistencia
+                </h2>
+                {report.sessions.length === 0 ? (
+                  <div className="bg-card rounded-xl border border-border p-8 text-center text-muted-foreground text-sm">
+                    Aún no hay sesiones en el programa
+                  </div>
+                ) : (
+                  <div className="bg-card rounded-xl border border-border overflow-auto max-h-[32rem]">
+                    <table className="text-sm border-collapse w-full">
+                      <thead className="sticky top-0 z-20">
+                        <tr>
+                          <th className="sticky left-0 z-30 bg-card text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide border-b border-r border-border whitespace-nowrap">
+                            Asistente
+                          </th>
+                          {report.sessions.map((s) => (
+                            <th key={s.id} title={s.title}
+                              className="bg-card text-center text-xs font-semibold text-muted-foreground px-3 py-3 border-b border-border whitespace-nowrap min-w-[84px]">
+                              <div>Día {s.day_number}</div>
+                              <div className="font-normal normal-case text-[11px] truncate max-w-[90px] mx-auto">{s.title}</div>
+                              {s.time_start && <div className="font-normal normal-case text-[10px]">{formatTime(s.time_start)}</div>}
+                            </th>
+                          ))}
+                          <th className="bg-card text-center text-xs font-semibold text-muted-foreground px-3 py-3 border-b border-border whitespace-nowrap">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.registrants.map((r) => {
+                          const attendedCount = report.sessions.filter((s) => attendedSet.has(`${r.id}:${s.id}`)).length;
+                          return (
+                            <tr key={r.id} className="hover:bg-muted/50 transition-colors">
+                              <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-b border-border">
+                                <p className="font-medium text-foreground whitespace-nowrap">{r.full_name}</p>
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">{r.origin_church || "—"}</p>
+                              </td>
+                              {report.sessions.map((s) => (
+                                <td key={s.id} className="text-center px-3 py-2 border-b border-border">
+                                  {attendedSet.has(`${r.id}:${s.id}`)
+                                    ? <Check size={14} className="mx-auto text-emerald-700 dark:text-emerald-400" />
+                                    : <Minus size={12} className="mx-auto text-muted-foreground/40" />}
+                                </td>
+                              ))}
+                              <td className="text-center px-3 py-2 border-b border-border font-semibold text-foreground">
+                                {attendedCount}/{report.sessions.length}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 

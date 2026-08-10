@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Sin VITE_API_URL (dev normal) usamos una ruta relativa: así la petición
+// sale hacia el mismo origen que sirvió la página — sea localhost o la IP
+// de la red local desde el celular — y el proxy de Vite ('/api' →
+// localhost:3000, en vite.config.js) la reenvía al backend. Un
+// 'http://localhost:3000' fijo aquí "funciona" en la máquina de desarrollo
+// de pura casualidad (su propio localhost sí es el backend), pero en
+// cualquier otro dispositivo — como el celular probando en red local —
+// localhost apunta al dispositivo mismo, no al backend.
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -886,6 +894,10 @@ export const conferenceService = {
   },
   getRegistrationAttendance: async (regId) => {
     const response = await api.get(`/conference/registrations/${regId}/attendance`);
+    return response.data;
+  },
+  getAttendanceReport: async (conferenceId) => {
+    const response = await api.get(`/conference/${conferenceId}/attendance-report`);
     return response.data;
   },
 };
