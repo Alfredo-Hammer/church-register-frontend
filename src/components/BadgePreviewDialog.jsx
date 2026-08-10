@@ -29,9 +29,19 @@ function dateRange(start, end) {
  * al terminar, este se lleva puesto durante el evento y se escanea en cada
  * puerta de salón.
  */
+// Grupos etarios distintos de "adulto" llevan una franja de color en el
+// gafete: útil de un vistazo para el equipo en la puerta (p. ej. dirigir a
+// un niño al área infantil sin tener que leer letra pequeña).
+const AGE_TAG = {
+  NIÑO:  {label: "NIÑO",  bg: "#c0392b"},
+  JOVEN: {label: "JOVEN", bg: "#1d6f8c"},
+};
+
 export function BadgeTemplate({conference, registration, church}) {
   const churchName = church?.name || "";
   const logo = church?.logoUrl || null;
+  const photo = registration.photo_url || null;
+  const ageTag = AGE_TAG[registration.age_group] || null;
 
   return (
     <div
@@ -43,50 +53,73 @@ export function BadgeTemplate({conference, registration, church}) {
         flexDirection: "column",
         alignItems: "center",
         boxSizing: "border-box",
-        padding: "28px 24px",
+        padding: "24px 24px 28px",
         border: `6px solid ${NAVY}`,
         fontFamily: "Georgia, \"Times New Roman\", serif",
         position: "relative",
       }}
     >
+      {ageTag && (
+        <div style={{
+          position: "absolute", top: 14, right: 14, background: ageTag.bg, color: "#fff",
+          fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: 1,
+          padding: "3px 9px", borderRadius: 999,
+        }}>
+          {ageTag.label}
+        </div>
+      )}
+
       {/* Cabecera de iglesia */}
       <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: 6}}>
         {logo && (
           <img
             src={logo}
             alt={churchName}
-            style={{width: 44, height: 44, objectFit: "contain", borderRadius: "50%", border: `2px solid ${GOLD}`}}
+            style={{width: 32, height: 32, objectFit: "contain", borderRadius: "50%", border: `2px solid ${GOLD}`}}
           />
         )}
-        <div style={{fontSize: 13, fontWeight: 700, color: NAVY, textAlign: "center"}}>{churchName}</div>
+        <div style={{fontSize: 12, fontWeight: 700, color: NAVY, textAlign: "center"}}>{churchName}</div>
       </div>
 
-      <div style={{width: 160, height: 1, background: GOLD, margin: "14px 0"}} />
+      <div style={{width: 160, height: 1, background: GOLD, margin: "12px 0"}} />
+
+      {/* Foto del asistente: lo primero que identifica a la persona */}
+      <div style={{
+        width: 108, height: 108, borderRadius: "50%", overflow: "hidden",
+        border: `3px solid ${GOLD}`, background: "#e8e2d4",
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+      }}>
+        {photo
+          ? <img src={photo} alt="" style={{width: "100%", height: "100%", objectFit: "cover"}} />
+          : <span style={{fontFamily: "Arial, sans-serif", fontSize: 34, fontWeight: 700, color: NAVY}}>
+              {registration.full_name?.charAt(0)?.toUpperCase()}
+            </span>}
+      </div>
 
       <div style={{
         fontSize: 8, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase",
-        color: GOLD, fontFamily: "Arial, sans-serif",
+        color: GOLD, fontFamily: "Arial, sans-serif", marginTop: 10,
       }}>
         Gafete de Participante
       </div>
 
       {/* Nombre: lo central del gafete, debe leerse a distancia */}
       <div style={{
-        marginTop: 18, fontSize: 30, fontWeight: 700, color: NAVY,
+        marginTop: 10, fontSize: 24, fontWeight: 700, color: NAVY,
         textAlign: "center", lineHeight: 1.15, wordBreak: "break-word",
       }}>
         {registration.full_name}
       </div>
 
       {registration.origin_church && (
-        <div style={{marginTop: 6, fontSize: 12, color: "#4a5568", fontFamily: "Arial, sans-serif", textAlign: "center"}}>
+        <div style={{marginTop: 4, fontSize: 12, color: "#4a5568", fontFamily: "Arial, sans-serif", textAlign: "center"}}>
           {registration.origin_church}
         </div>
       )}
 
       {/* QR: separado del resto para que el equipo lo escanee sin taparlo */}
-      <div style={{marginTop: "auto", marginBottom: 18, background: "#fff", padding: 10, borderRadius: 8}}>
-        <QRCodeSVG value={registration.check_in_token || ""} size={140} level="M" />
+      <div style={{marginTop: "auto", marginBottom: 16, background: "#fff", padding: 10, borderRadius: 8}}>
+        <QRCodeSVG value={registration.check_in_token || ""} size={116} level="M" />
       </div>
 
       <div style={{width: 160, height: 1, background: GOLD, marginBottom: 10}} />

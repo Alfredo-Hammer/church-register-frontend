@@ -333,6 +333,8 @@ export async function generateGafetePDF(conference, registration, church, onStar
 
   const churchName = church?.name || '';
   const logo = church?.logoUrl || null;
+  const photo = registration.photo_url || null;
+  const ageTag = {NIÑO: {label: 'NIÑO', bg: '#c0392b'}, JOVEN: {label: 'JOVEN', bg: '#1d6f8c'}}[registration.age_group] || null;
 
   let qrDataUrl;
   try {
@@ -355,31 +357,44 @@ export async function generateGafetePDF(conference, registration, church, onStar
 
   el.innerHTML = `
     <div style="width:100%;height:100%;background:${CREAM};display:flex;flex-direction:column;
-      align-items:center;box-sizing:border-box;padding:28px 24px;border:6px solid ${NAVY};">
+      align-items:center;box-sizing:border-box;padding:24px 24px 28px;border:6px solid ${NAVY};position:relative;">
+
+      ${ageTag ? `
+        <div style="position:absolute;top:14px;right:14px;background:${ageTag.bg};color:#fff;
+          font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;
+          padding:3px 9px;border-radius:999px;">${ageTag.label}</div>` : ''}
 
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-        ${logo ? `<img src="${logo}" alt="${churchName}" style="width:44px;height:44px;object-fit:contain;
+        ${logo ? `<img src="${logo}" alt="${churchName}" style="width:32px;height:32px;object-fit:contain;
           border-radius:50%;border:2px solid ${GOLD};" />` : ''}
-        <div style="font-size:13px;font-weight:700;color:${NAVY};text-align:center;">${churchName}</div>
+        <div style="font-size:12px;font-weight:700;color:${NAVY};text-align:center;">${churchName}</div>
       </div>
 
-      <div style="width:160px;height:1px;background:${GOLD};margin:14px 0;"></div>
+      <div style="width:160px;height:1px;background:${GOLD};margin:12px 0;"></div>
+
+      <div style="width:108px;height:108px;border-radius:50%;overflow:hidden;border:3px solid ${GOLD};
+        background:#e8e2d4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        ${photo
+          ? `<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<span style="font-family:Arial,sans-serif;font-size:34px;font-weight:700;color:${NAVY};">
+              ${(registration.full_name || '?').charAt(0).toUpperCase()}</span>`}
+      </div>
 
       <div style="font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
-        color:${GOLD};font-family:Arial,sans-serif;">Gafete de Participante</div>
+        color:${GOLD};font-family:Arial,sans-serif;margin-top:10px;">Gafete de Participante</div>
 
-      <div style="margin-top:18px;font-size:30px;font-weight:700;color:${NAVY};
+      <div style="margin-top:10px;font-size:24px;font-weight:700;color:${NAVY};
         text-align:center;line-height:1.15;word-break:break-word;">
         ${registration.full_name}
       </div>
 
       ${registration.origin_church ? `
-        <div style="margin-top:6px;font-size:12px;color:#4a5568;font-family:Arial,sans-serif;text-align:center;">
+        <div style="margin-top:4px;font-size:12px;color:#4a5568;font-family:Arial,sans-serif;text-align:center;">
           ${registration.origin_church}
         </div>` : ''}
 
-      <div style="margin-top:auto;margin-bottom:18px;background:#fff;padding:10px;border-radius:8px;">
-        <img src="${qrDataUrl}" alt="QR" style="width:140px;height:140px;display:block;" />
+      <div style="margin-top:auto;margin-bottom:16px;background:#fff;padding:10px;border-radius:8px;">
+        <img src="${qrDataUrl}" alt="QR" style="width:116px;height:116px;display:block;" />
       </div>
 
       <div style="width:160px;height:1px;background:${GOLD};margin-bottom:10px;"></div>

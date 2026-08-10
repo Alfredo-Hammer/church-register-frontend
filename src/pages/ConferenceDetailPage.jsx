@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { conferenceService, settingsService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
   ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
-  Badge, QrCode, Check,
+  Badge, QrCode, Check, Camera, Cake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF } from "@/utils/pdf/conferencePdf";
@@ -21,8 +21,25 @@ import { SESSION_TYPE_COLORS, badgeClasses, swatchClasses } from "@/utils/sessio
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const EMPTY_SESSION = { sessionTypeId: null, title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "" };
-const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "" };
+const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "", photoUrl: null, birthDate: "", gender: "", ageGroup: "ADULTO" };
 const LIMIT         = 20;
+
+const AGE_GROUPS = [
+  { value: "ADULTO", label: "Adulto" },
+  { value: "JOVEN",  label: "Joven" },
+  { value: "NIÑO",   label: "Niño" },
+];
+
+function calcAge(birthDate) {
+  if (!birthDate) return null;
+  const b = new Date(String(birthDate).slice(0, 10) + 'T00:00:00');
+  if (Number.isNaN(b.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}
 
 function formatDate(dateStr) {
   const d = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
@@ -49,6 +66,49 @@ function TypeBadge({ type }) {
       <span className={cn("h-1.5 w-1.5 rounded-full", swatchClasses(type.color))} />
       {type.label}
     </span>
+  );
+}
+
+// ── Foto de asistente ─────────────────────────────────────────────────────────
+// Mismo patrón que PhotoUploader en MembersPage: base64 inline, 2MB máx., sin
+// subir a ningún storage aparte — se guarda directo en photo_url.
+function RegPhotoUploader({ preview, onChange, onRemove }) {
+  const ref = useRef();
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return alert("Solo imágenes.");
+    if (file.size > 2 * 1024 * 1024) return alert("Máximo 2MB.");
+    const reader = new FileReader();
+    reader.onload = (ev) => onChange(ev.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+  return (
+    <div className="flex items-center gap-4">
+      <div
+        onClick={() => ref.current?.click()}
+        className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border hover:border-blue-500 cursor-pointer flex items-center justify-center transition-colors shrink-0"
+      >
+        {preview
+          ? <img src={preview} alt="preview" className="w-full h-full object-cover" />
+          : <Camera className="w-6 h-6 text-muted-foreground" />}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <button type="button" onClick={() => ref.current?.click()}
+          className="text-xs text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+          {preview ? "Cambiar foto" : "Subir foto (opcional)"}
+        </button>
+        {preview && (
+          <button type="button" onClick={onRemove}
+            className="text-xs text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">
+            Quitar foto
+          </button>
+        )}
+        <p className="text-xs text-muted-foreground">PNG, JPG — máx. 2MB. Sale en el gafete.</p>
+      </div>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
   );
 }
 
@@ -316,6 +376,10 @@ export default function ConferenceDetailPage() {
       originChurch: reg.origin_church || "",
       city:         reg.city || "",
       notes:        reg.notes || "",
+      photoUrl:     reg.photo_url || null,
+      birthDate:    reg.birth_date ? String(reg.birth_date).slice(0, 10) : "",
+      gender:       reg.gender || "",
+      ageGroup:     reg.age_group || "ADULTO",
     });
     setRegError("");
     setRegDialog(true);
@@ -326,10 +390,15 @@ export default function ConferenceDetailPage() {
     setSavingReg(true);
     setRegError("");
     try {
+      const payload = {
+        ...regForm,
+        photoBase64: regForm.photoUrl || null,
+        removePhoto: !regForm.photoUrl,
+      };
       if (editingReg) {
-        await conferenceService.updateRegistration(id, editingReg.id, regForm);
+        await conferenceService.updateRegistration(id, editingReg.id, payload);
       } else {
-        await conferenceService.createRegistration(id, regForm);
+        await conferenceService.createRegistration(id, payload);
       }
       setRegDialog(false);
       fetchRegistrations(regSearch, regPage);
@@ -571,26 +640,39 @@ export default function ConferenceDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Nombre","Iglesia","Ciudad","Teléfono",""].map(h => (
-                      <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
+                    {["#","","Nombre","Iglesia","Ciudad","Teléfono",""].map((h, i) => (
+                      <th key={`${h}-${i}`} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {regLoading ? (
-                    <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
+                    <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">
                       <Loader2 size={24} className="animate-spin mx-auto" />
                     </td></tr>
                   ) : registrations.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
+                    <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">
                       <Users size={28} className="mx-auto mb-2 opacity-30" />
                       <p>Sin asistentes registrados</p>
                     </td></tr>
-                  ) : registrations.map((reg) => (
+                  ) : registrations.map((reg, i) => (
                     <tr key={reg.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 text-muted-foreground text-xs tabular-nums">{regPage * LIMIT + i + 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">
+                          {reg.photo_url
+                            ? <img src={reg.photo_url} alt="" className="w-full h-full object-cover" />
+                            : <span className="text-[10px] font-semibold text-muted-foreground">{reg.full_name?.charAt(0)?.toUpperCase()}</span>}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {reg.full_name}
                         {reg.notes && <StickyNote size={11} className="inline ml-1.5 text-muted-foreground" title={reg.notes} />}
+                        {reg.age_group === "NIÑO" && (
+                          <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/40 align-middle">
+                            Niño
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{reg.origin_church || <span className="text-muted-foreground italic text-xs">—</span>}</td>
                       <td className="px-4 py-3 text-muted-foreground">{reg.city || <span className="text-muted-foreground italic text-xs">—</span>}</td>
@@ -845,6 +927,11 @@ export default function ConferenceDetailPage() {
             </h2>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            <RegPhotoUploader
+              preview={regForm.photoUrl}
+              onChange={(dataUrl) => setRegForm(p => ({ ...p, photoUrl: dataUrl }))}
+              onRemove={() => setRegForm(p => ({ ...p, photoUrl: null }))}
+            />
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Nombre Completo <span className="text-red-700 dark:text-red-400">*</span>
@@ -868,12 +955,58 @@ export default function ConferenceDetailPage() {
                   onChange={(e) => setRegForm(p => ({ ...p, city: e.target.value }))} />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  <Phone size={10} className="inline mr-1" />Teléfono
+                </label>
+                <Input placeholder="(000) 000-0000" value={regForm.phone}
+                  onChange={(e) => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  <Cake size={10} className="inline mr-1" />Fecha de nacimiento
+                </label>
+                <Input type="date" value={regForm.birthDate}
+                  onChange={(e) => setRegForm(p => ({ ...p, birthDate: e.target.value }))} />
+              </div>
+            </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                <Phone size={10} className="inline mr-1" />Teléfono
-              </label>
-              <Input placeholder="(000) 000-0000" value={regForm.phone}
-                onChange={(e) => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sexo</label>
+              <div className="flex gap-2">
+                {[{v: "MASCULINO", l: "Masculino"}, {v: "FEMENINO", l: "Femenino"}, {v: "OTRO", l: "Otro"}].map(({v, l}) => (
+                  <button key={v} type="button"
+                    onClick={() => setRegForm(p => ({ ...p, gender: p.gender === v ? "" : v }))}
+                    className={cn(
+                      "flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors",
+                      regForm.gender === v
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "bg-background border-border text-muted-foreground hover:bg-accent"
+                    )}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Grupo de edad</label>
+              <div className="flex gap-2">
+                {AGE_GROUPS.map(({value, label}) => (
+                  <button key={value} type="button"
+                    onClick={() => setRegForm(p => ({ ...p, ageGroup: value }))}
+                    className={cn(
+                      "flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors",
+                      regForm.ageGroup === value
+                        ? "bg-amber-600 border-amber-600 text-white"
+                        : "bg-background border-border text-muted-foreground hover:bg-accent"
+                    )}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {regForm.birthDate && calcAge(regForm.birthDate) != null && (
+                <p className="text-xs text-muted-foreground mt-1">Edad calculada: {calcAge(regForm.birthDate)} años</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notas</label>
