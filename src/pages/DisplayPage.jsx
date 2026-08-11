@@ -9,9 +9,12 @@ import {accentClasses} from "@/utils/sessionTypeColors";
  * Pensada para colgarse en un televisor y quedarse ahí, así que:
  *  - No usa el cliente axios de la app: ese adjunta el token de sesión y, ante
  *    un 401, echa al login. Aquí no hay sesión que perder.
- *  - Recalcula la sesión en curso cada 30 s con el reloj propio, y solo pide
- *    datos al servidor cada 60 s. Si la red se cae, la pantalla sigue
- *    avanzando sola en vez de congelarse.
+ *  - Recalcula la sesión en curso cada 30 s con el reloj propio, y pide datos
+ *    al servidor cada 5 s. Quien controla la conferencia normalmente está
+ *    lejos del televisor — cambia el estado de una sesión desde su celular y
+ *    no hay forma de "refrescar la pantalla" a mano, así que el margen para
+ *    que se entere solo tiene el tamaño de este intervalo. Si la red se cae,
+ *    la pantalla sigue avanzando sola con el reloj en vez de congelarse.
  *  - Toma la hora del servidor como referencia: el reloj de un equipo que
  *    lleva meses encendido suele estar corrido.
  *
@@ -166,7 +169,7 @@ export default function DisplayPage() {
 
   useEffect(() => {
     cargar();
-    const id = setInterval(cargar, 60_000);
+    const id = setInterval(cargar, 5_000);
     return () => clearInterval(id);
   }, [cargar]);
 
