@@ -175,6 +175,10 @@ export default function ConferenceDetailPage() {
   const [badgeReg, setBadgeReg] = useState(null);
   const [showProgramQR, setShowProgramQR] = useState(false);
 
+  // Filtro de la tabla de asistencia: "all" | "day:<n>" | "session:<id>" —
+  // codificado como un solo string para que sea un <select> simple.
+  const [reportFilter, setReportFilter] = useState("all");
+
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
   const fetchConference = useCallback(async () => {
@@ -446,6 +450,22 @@ export default function ConferenceDetailPage() {
     if (!report) return new Set();
     return new Set(report.attendance.map((a) => `${a.registration_id}:${a.session_id}`));
   }, [report]);
+
+  // Columnas que muestra la tabla de asistencia según el filtro elegido:
+  // todas las sesiones, solo las de un día, o una sola clase.
+  const visibleSessions = useMemo(() => {
+    if (!report) return [];
+    if (reportFilter === "all") return report.sessions;
+    if (reportFilter.startsWith("day:")) {
+      const dayNumber = Number(reportFilter.slice(4));
+      return report.sessions.filter((s) => s.day_number === dayNumber);
+    }
+    if (reportFilter.startsWith("session:")) {
+      const sessionId = reportFilter.slice(8);
+      return report.sessions.filter((s) => s.id === sessionId);
+    }
+    return report.sessions;
+  }, [report, reportFilter]);
 
   if (loading) return (
     <div className="flex justify-center items-center py-32 text-muted-foreground">
@@ -810,12 +830,29 @@ export default function ConferenceDetailPage() {
 
               {/* Matriz de asistencia: inscrito × sesión */}
               <div>
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <BarChart3 size={12} /> Tabla de asistencia
-                </h2>
-                {report.sessions.length === 0 ? (
+                <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <BarChart3 size={12} /> Tabla de asistencia
+                  </h2>
+                  <select
+                    value={reportFilter}
+                    onChange={(e) => setReportFilter(e.target.value)}
+                    className="bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Todas las sesiones</option>
+                    {Array.from(new Set(report.sessions.map((s) => s.day_number))).map((dayNumber) => (
+                      <optgroup key={dayNumber} label={`Día ${dayNumber}`}>
+                        <option value={`day:${dayNumber}`}>Todo el día {dayNumber}</option>
+                        {report.sessions.filter((s) => s.day_number === dayNumber).map((s) => (
+                          <option key={s.id} value={`session:${s.id}`}>{s.title}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+                {visibleSessions.length === 0 ? (
                   <div className="bg-card rounded-xl border border-border p-8 text-center text-muted-foreground text-sm">
-                    Aún no hay sesiones en el programa
+                    {report.sessions.length === 0 ? "Aún no hay sesiones en el programa" : "Ninguna sesión coincide con el filtro"}
                   </div>
                 ) : (
                   <div className="bg-card rounded-xl border border-border overflow-auto max-h-[32rem]">
@@ -825,7 +862,7 @@ export default function ConferenceDetailPage() {
                           <th className="sticky left-0 z-30 bg-card text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide border-b border-r border-border whitespace-nowrap">
                             Asistente
                           </th>
-                          {report.sessions.map((s) => (
+                          {visibleSessions.map((s) => (
                             <th key={s.id} title={s.title}
                               className="bg-card text-center text-xs font-semibold text-muted-foreground px-3 py-3 border-b border-border whitespace-nowrap min-w-[84px]">
                               <div>Día {s.day_number}</div>
@@ -840,14 +877,14 @@ export default function ConferenceDetailPage() {
                       </thead>
                       <tbody>
                         {report.registrants.map((r) => {
-                          const attendedCount = report.sessions.filter((s) => attendedSet.has(`${r.id}:${s.id}`)).length;
+                          const attendedCount = visibleSessions.filter((s) => attendedSet.has(`${r.id}:${s.id}`)).length;
                           return (
                             <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                               <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-b border-border">
                                 <p className="font-medium text-foreground whitespace-nowrap">{r.full_name}</p>
                                 <p className="text-xs text-muted-foreground whitespace-nowrap">{r.origin_church || "—"}</p>
                               </td>
-                              {report.sessions.map((s) => (
+                              {visibleSessions.map((s) => (
                                 <td key={s.id} className="text-center px-3 py-2 border-b border-border">
                                   {attendedSet.has(`${r.id}:${s.id}`)
                                     ? <Check size={14} className="mx-auto text-emerald-700 dark:text-emerald-400" />
@@ -855,7 +892,7 @@ export default function ConferenceDetailPage() {
                                 </td>
                               ))}
                               <td className="text-center px-3 py-2 border-b border-border font-semibold text-foreground">
-                                {attendedCount}/{report.sessions.length}
+                                {attendedCount}/{visibleSessions.length}
                               </td>
                             </tr>
                           );

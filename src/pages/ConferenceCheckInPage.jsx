@@ -308,7 +308,7 @@ export default function ConferenceCheckInPage() {
         <Input
           ref={inputRef}
           autoFocus
-          placeholder="Código del gafete (o escanéalo con un lector)"
+          placeholder="PIN de 6 dígitos, código del gafete, o un lector"
           value={manualToken}
           disabled={!sessionId || sessionPast}
           onChange={(e) => setManualToken(e.target.value)}
