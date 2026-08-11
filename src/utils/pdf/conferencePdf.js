@@ -334,7 +334,6 @@ export async function generateGafetePDF(conference, registration, church, onStar
   const churchName = church?.name || '';
   const logo = church?.logoUrl || null;
   const photo = registration.photo_url || null;
-  const ageTag = {NIÑO: {label: 'NIÑO', bg: '#c0392b'}, JOVEN: {label: 'JOVEN', bg: '#1d6f8c'}}[registration.age_group] || null;
 
   let qrDataUrl;
   try {
@@ -358,11 +357,6 @@ export async function generateGafetePDF(conference, registration, church, onStar
   el.innerHTML = `
     <div style="width:100%;height:100%;background:${CREAM};display:flex;flex-direction:column;
       align-items:center;box-sizing:border-box;padding:24px 24px 28px;border:6px solid ${NAVY};position:relative;">
-
-      ${ageTag ? `
-        <div style="position:absolute;top:14px;right:14px;background:${ageTag.bg};color:#fff;
-          font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;
-          padding:3px 9px;border-radius:999px;">${ageTag.label}</div>` : ''}
 
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
         ${logo ? `<img src="${logo}" alt="${churchName}" style="width:32px;height:32px;object-fit:contain;

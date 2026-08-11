@@ -29,19 +29,10 @@ function dateRange(start, end) {
  * al terminar, este se lleva puesto durante el evento y se escanea en cada
  * puerta de salón.
  */
-// Grupos etarios distintos de "adulto" llevan una franja de color en el
-// gafete: útil de un vistazo para el equipo en la puerta (p. ej. dirigir a
-// un niño al área infantil sin tener que leer letra pequeña).
-const AGE_TAG = {
-  NIÑO:  {label: "NIÑO",  bg: "#c0392b"},
-  JOVEN: {label: "JOVEN", bg: "#1d6f8c"},
-};
-
 export function BadgeTemplate({conference, registration, church}) {
   const churchName = church?.name || "";
   const logo = church?.logoUrl || null;
   const photo = registration.photo_url || null;
-  const ageTag = AGE_TAG[registration.age_group] || null;
 
   return (
     <div
@@ -59,16 +50,6 @@ export function BadgeTemplate({conference, registration, church}) {
         position: "relative",
       }}
     >
-      {ageTag && (
-        <div style={{
-          position: "absolute", top: 14, right: 14, background: ageTag.bg, color: "#fff",
-          fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: 1,
-          padding: "3px 9px", borderRadius: 999,
-        }}>
-          {ageTag.label}
-        </div>
-      )}
-
       {/* Cabecera de iglesia */}
       <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: 6}}>
         {logo && (
