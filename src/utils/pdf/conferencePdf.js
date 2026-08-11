@@ -430,8 +430,36 @@ export async function generateGafetePDF(conference, registration, church, onStar
   }
 }
 
-// PDF de varios gafetes en un solo archivo, una tarjeta por página — se manda
-// a imprimir de una vez en vez de descargar uno por uno. onProgress avisa
+// Hoja carta — lo que cualquier impresora normal tiene cargado, a
+// diferencia de una página a la medida exacta del gafete (que exigiría
+// cartulina precortada a 4×6, algo que casi nadie tiene a mano).
+const SHEET_FORMAT_MM = [215.9, 279.4]; // Carta/Letter, portrait
+const SHEET_MARGIN_MM = 4;
+const BADGE_GAP_MM = 3;
+
+// Cuántos gafetes de tamaño BADGE_FORMAT_MM entran por hoja, en cuadrícula,
+// y desde dónde arrancar para que la cuadrícula quede centrada en vez de
+// pegada a una esquina. Calculado en vez de fijo a 2×1: si el tamaño del
+// gafete cambia el día de mañana, esto se reacomoda solo.
+function computeBadgeGrid() {
+  const [pageW, pageH] = SHEET_FORMAT_MM;
+  const [cellW, cellH] = BADGE_FORMAT_MM;
+  const usableW = pageW - SHEET_MARGIN_MM * 2;
+  const usableH = pageH - SHEET_MARGIN_MM * 2;
+  const cols = Math.max(1, Math.floor((usableW + BADGE_GAP_MM) / (cellW + BADGE_GAP_MM)));
+  const rows = Math.max(1, Math.floor((usableH + BADGE_GAP_MM) / (cellH + BADGE_GAP_MM)));
+  const gridW = cols * cellW + (cols - 1) * BADGE_GAP_MM;
+  const gridH = rows * cellH + (rows - 1) * BADGE_GAP_MM;
+  return {
+    cols, rows,
+    startX: SHEET_MARGIN_MM + (usableW - gridW) / 2,
+    startY: SHEET_MARGIN_MM + (usableH - gridH) / 2,
+  };
+}
+
+// PDF de varios gafetes en cuadrícula sobre hojas carta — varios por hoja
+// en vez de uno por página, para no gastar una hoja entera por persona.
+// Cada celda lleva un borde fino como guía de corte. onProgress avisa
 // cuántos van, porque con muchos inscritos esto tarda unos segundos.
 export async function generateGafetesBatchPDF(conference, registrations, church, onStart, onProgress, onEnd) {
   onStart?.();
@@ -451,6 +479,10 @@ export async function generateGafetesBatchPDF(conference, registrations, church,
   `;
   document.body.appendChild(el);
 
+  const { cols, rows, startX, startY } = computeBadgeGrid();
+  const perPage = cols * rows;
+  const [cellW, cellH] = BADGE_FORMAT_MM;
+
   try {
     let pdf = null;
     for (let i = 0; i < conToken.length; i++) {
@@ -469,14 +501,23 @@ export async function generateGafetesBatchPDF(conference, registrations, church,
       });
       const img = canvas.toDataURL('image/jpeg', 0.93);
 
-      if (!pdf) {
-        pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: BADGE_FORMAT_MM });
-      } else {
-        pdf.addPage(BADGE_FORMAT_MM, 'portrait');
+      const posInPage = i % perPage;
+      if (posInPage === 0) {
+        if (!pdf) {
+          pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: SHEET_FORMAT_MM });
+        } else {
+          pdf.addPage(SHEET_FORMAT_MM, 'portrait');
+        }
       }
-      const pw = pdf.internal.pageSize.getWidth();
-      const ph = pdf.internal.pageSize.getHeight();
-      pdf.addImage(img, 'JPEG', 0, 0, pw, ph);
+      const col = posInPage % cols;
+      const row = Math.floor(posInPage / cols);
+      const x = startX + col * (cellW + BADGE_GAP_MM);
+      const y = startY + row * (cellH + BADGE_GAP_MM);
+
+      pdf.addImage(img, 'JPEG', x, y, cellW, cellH);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.2);
+      pdf.rect(x, y, cellW, cellH); // guía de corte
     }
 
     pdf.save(`gafetes-${safeName(conference.name)}.pdf`);
