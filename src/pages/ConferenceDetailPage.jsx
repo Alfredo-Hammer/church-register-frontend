@@ -556,18 +556,13 @@ export default function ConferenceDetailPage() {
     return new Set(report.attendance.map((a) => `${a.registration_id}:${a.session_id}`));
   }, [report]);
 
-  // Columnas que muestra la tabla de asistencia según el filtro elegido:
-  // todas las sesiones, solo las de un día, o una sola clase.
+  // Columnas que muestra la tabla de asistencia según la pestaña elegida:
+  // todas las sesiones, o solo las de un día.
   const visibleSessions = useMemo(() => {
     if (!report) return [];
-    if (reportFilter === "all") return report.sessions;
     if (reportFilter.startsWith("day:")) {
       const dayNumber = Number(reportFilter.slice(4));
       return report.sessions.filter((s) => s.day_number === dayNumber);
-    }
-    if (reportFilter.startsWith("session:")) {
-      const sessionId = reportFilter.slice(8);
-      return report.sessions.filter((s) => s.id === sessionId);
     }
     return report.sessions;
   }, [report, reportFilter]);
@@ -1012,26 +1007,36 @@ export default function ConferenceDetailPage() {
 
               {/* Matriz de asistencia: inscrito × sesión */}
               <div>
-                <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                    <BarChart3 size={12} /> Tabla de asistencia
-                  </h2>
-                  <select
-                    value={reportFilter}
-                    onChange={(e) => setReportFilter(e.target.value)}
-                    className="bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">Todas las sesiones</option>
-                    {Array.from(new Set(report.sessions.map((s) => s.day_number))).map((dayNumber) => (
-                      <optgroup key={dayNumber} label={`Día ${dayNumber}`}>
-                        <option value={`day:${dayNumber}`}>Todo el día {dayNumber}</option>
-                        {report.sessions.filter((s) => s.day_number === dayNumber).map((s) => (
-                          <option key={s.id} value={`session:${s.id}`}>{s.title}</option>
-                        ))}
-                      </optgroup>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
+                  <BarChart3 size={12} /> Tabla de asistencia
+                </h2>
+
+                {/* Pestañas por día — mismo patrón que el Programa: una tabla
+                    con todos los días mezclados era difícil de leer con la
+                    conferencia avanzada. "Todos" conserva la vista completa
+                    para cuando sí hace falta comparar entre días. */}
+                <div className="flex gap-1 bg-muted/50 p-1 rounded-lg w-fit overflow-x-auto max-w-full mb-3">
+                  <button onClick={() => setReportFilter("all")}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-md text-sm font-medium transition-all flex-shrink-0",
+                      reportFilter === "all" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                    )}>
+                    Todos
+                  </button>
+                  {Array.from(new Map(report.sessions.map((s) => [s.day_number, s.day_date])).entries())
+                    .sort(([a], [b]) => a - b)
+                    .map(([dayNumber, dayDate]) => (
+                      <button key={dayNumber} onClick={() => setReportFilter(`day:${dayNumber}`)}
+                        className={cn(
+                          "flex flex-col items-center px-3.5 py-1.5 rounded-md text-sm font-medium transition-all flex-shrink-0",
+                          reportFilter === `day:${dayNumber}` ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                        )}>
+                        <span>Día {dayNumber}</span>
+                        <span className="text-[10px] font-normal capitalize opacity-70">{formatDateShort(dayDate)}</span>
+                      </button>
                     ))}
-                  </select>
                 </div>
+
                 {visibleSessions.length === 0 ? (
                   <div className="bg-card rounded-xl border border-border p-8 text-center text-muted-foreground text-sm">
                     {report.sessions.length === 0 ? "Aún no hay sesiones en el programa" : "Ninguna sesión coincide con el filtro"}
