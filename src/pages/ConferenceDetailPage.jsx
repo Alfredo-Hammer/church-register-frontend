@@ -24,6 +24,26 @@ const EMPTY_SESSION = { sessionTypeId: null, title: "", timeStart: "", timeEnd: 
 const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "", photoUrl: null, birthDate: "", gender: "", ageGroup: "ADULTO" };
 const LIMIT         = 20;
 
+// Estado en vivo de una sesión, que controla a mano quien lleva la
+// conferencia — la pantalla del salón lo respeta por encima de su propio
+// cálculo automático por reloj (ver DisplayPage). Mismos 5 valores que el
+// CHECK de la migración 033.
+const SESSION_STATUSES = [
+  { value: "PROGRAMADA",     label: "Programada" },
+  { value: "EN_CURSO",       label: "En curso" },
+  { value: "A_CONTINUACION", label: "A continuación" },
+  { value: "FINALIZADA",     label: "Finalizada" },
+  { value: "CANCELADA",      label: "Cancelada" },
+];
+
+const SESSION_STATUS_CLASSES = {
+  PROGRAMADA:     "bg-muted text-muted-foreground border-border",
+  EN_CURSO:       "bg-blue-600 text-white border-blue-600",
+  A_CONTINUACION: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40",
+  FINALIZADA:     "bg-muted text-muted-foreground border-border",
+  CANCELADA:      "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40",
+};
+
 const AGE_GROUPS = [
   { value: "ADULTO", label: "Adulto" },
   { value: "JOVEN",  label: "Joven" },
@@ -140,6 +160,7 @@ export default function ConferenceDetailPage() {
   const [savingSession, setSavingSession] = useState(false);
   const [sessionError, setSessionError]   = useState("");
   const [deletingSession, setDeletingSession] = useState(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
 
   // Catálogo de tipos de sesión (por iglesia; incluye los personalizados)
   const [sessionTypes, setSessionTypes]     = useState([]);
@@ -314,6 +335,15 @@ export default function ConferenceDetailPage() {
       await fetchConference();
     } catch { /* silent */ }
     setDeletingSession(null);
+  };
+
+  const handleChangeSessionStatus = async (sessionId, status) => {
+    setUpdatingStatusId(sessionId);
+    try {
+      await conferenceService.updateSessionStatus(sessionId, status);
+      await fetchConference();
+    } catch { /* silent */ }
+    setUpdatingStatusId(null);
   };
 
   // ── Tipos de sesión (personalizados por iglesia) ────────────────────────────
@@ -644,6 +674,25 @@ export default function ConferenceDetailPage() {
                                 <BookOpen size={10} /> {session.scripture_ref}
                               </p>
                             )}
+
+                            {/* Estado en vivo: lo va cambiando quien controla la
+                                conferencia según avanza el programa — la pantalla
+                                del salón lo refleja solo (encuesta cada 60s). */}
+                            <div className="relative mt-2">
+                              <select
+                                value={session.status || "PROGRAMADA"}
+                                disabled={updatingStatusId === session.id}
+                                onChange={(e) => handleChangeSessionStatus(session.id, e.target.value)}
+                                className={cn(
+                                  "w-full appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60",
+                                  SESSION_STATUS_CLASSES[session.status] || SESSION_STATUS_CLASSES.PROGRAMADA
+                                )}
+                              >
+                                {SESSION_STATUSES.map((s) => (
+                                  <option key={s.value} value={s.value}>{s.label}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
                         );
                       })}

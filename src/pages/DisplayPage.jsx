@@ -189,12 +189,24 @@ export default function DisplayPage() {
     [now, offsetMs]
   );
 
-  /** Marca cada sesión como pasada, en curso o próxima. */
+  /**
+   * Marca cada sesión como cancelada, pasada, en curso o próxima.
+   *
+   * Quien lleva el control de la conferencia puede fijar el estado a mano
+   * (botón en el panel) y eso manda sobre el cálculo automático por reloj —
+   * un programa real casi nunca corre exacto a la hora impresa. Solo se
+   * calcula por reloj cuando la sesión sigue en su valor por defecto
+   * (PROGRAMADA), para no obligar a tocar cada sesión futura una por una.
+   */
   const sesiones = useMemo(() => {
     if (!data?.sessions?.length) return [];
     const esHoy = data.day?.isToday;
 
     return data.sessions.map((s, i) => {
+      if (s.status === "CANCELADA") return {...s, estado: "cancelada"};
+      if (s.status === "EN_CURSO") return {...s, estado: "encurso"};
+      if (s.status === "FINALIZADA") return {...s, estado: "pasada"};
+
       if (!esHoy || s.timeStart === null) return {...s, estado: "futura"};
       const ini = toMinutes(s.timeStart);
       // Sin hora de fin, la sesión se da por terminada cuando empieza la
@@ -210,9 +222,13 @@ export default function DisplayPage() {
     });
   }, [data, ahoraMin]);
 
-  // Se marca la próxima aunque haya algo en curso: sentado en una clase, lo
-  // que la gente quiere saber es qué viene después.
-  const proxima = sesiones.find((s) => s.estado === "futura");
+  // "A continuación" también se puede fijar a mano — útil cuando el orden
+  // real cambió en vivo y ya no coincide con la siguiente sesión futura del
+  // horario impreso. Sin nadie marcándola, se sigue calculando sola: la
+  // próxima sesión que aún no empieza (aunque haya algo en curso — sentado
+  // en una clase, lo que la gente quiere saber es qué viene después).
+  const marcadaSiguiente = sesiones.find((s) => s.status === "A_CONTINUACION");
+  const proxima = marcadaSiguiente || sesiones.find((s) => s.estado === "futura");
 
   if (error && !data) {
     return (
@@ -295,7 +311,8 @@ export default function DisplayPage() {
             {sesiones.map((s) => {
               const activa = s.estado === "encurso";
               const pasada = s.estado === "pasada";
-              const siguiente = s.id === proxima?.id;
+              const cancelada = s.estado === "cancelada";
+              const siguiente = !cancelada && s.id === proxima?.id;
 
               return (
                 <li
@@ -303,12 +320,14 @@ export default function DisplayPage() {
                   className={`flex items-stretch gap-5 rounded-2xl border p-5 sm:p-6 backdrop-blur-md transition-all ${
                     activa
                       ? "border-blue-400/60 bg-blue-500/20 shadow-lg shadow-blue-500/20"
-                      : pasada
-                        ? "border-white/5 bg-black/30 opacity-45"
-                        : "border-white/10 bg-black/40"
+                      : cancelada
+                        ? "border-red-500/20 bg-red-950/20 opacity-60"
+                        : pasada
+                          ? "border-white/5 bg-black/30 opacity-45"
+                          : "border-white/10 bg-black/40"
                   }`}
                 >
-                  <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : accentClasses(s.type?.color)} ${pasada ? "opacity-40" : ""}`} />
+                  <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : cancelada ? "bg-red-400" : accentClasses(s.type?.color)} ${pasada || cancelada ? "opacity-40" : ""}`} />
 
                   <div className="w-32 sm:w-44 shrink-0">
                     <p className={`text-3xl sm:text-4xl font-bold tabular-nums ${activa ? "text-blue-200" : "text-slate-200"}`}>
@@ -345,6 +364,11 @@ export default function DisplayPage() {
                           EN CURSO
                         </span>
                       )}
+                      {cancelada && (
+                        <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">
+                          CANCELADO
+                        </span>
+                      )}
                       {siguiente && (
                         <span className="flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-sm font-semibold text-slate-200">
                           <Clock className="h-4 w-4" /> A CONTINUACIÓN
@@ -352,7 +376,7 @@ export default function DisplayPage() {
                       )}
                     </div>
 
-                    <h2 className={`mt-2 text-2xl sm:text-4xl font-bold leading-tight ${activa ? "text-white" : "text-slate-100"}`}>
+                    <h2 className={`mt-2 text-2xl sm:text-4xl font-bold leading-tight ${activa ? "text-white" : "text-slate-100"} ${cancelada ? "line-through decoration-red-400/70" : ""}`}>
                       {s.title}
                     </h2>
 

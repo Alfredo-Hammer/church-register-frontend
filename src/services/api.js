@@ -856,6 +856,10 @@ export const conferenceService = {
     const response = await api.put(`/conference/sessions/${sessionId}`, data);
     return response.data;
   },
+  updateSessionStatus: async (sessionId, status) => {
+    const response = await api.put(`/conference/sessions/${sessionId}/status`, { status });
+    return response.data;
+  },
   deleteSession: async (sessionId) => {
     const response = await api.delete(`/conference/sessions/${sessionId}`);
     return response.data;
