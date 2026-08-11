@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { conferenceService, settingsService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -671,89 +671,87 @@ export default function ConferenceDetailPage() {
               <p className="text-sm mt-1">Usa "Agregar Día" para construir el calendario</p>
             </div>
           ) : (
-            /* Grid de días — scroll horizontal en mobile */
-            <div className="overflow-x-auto pb-2">
-              <div className="flex gap-4 min-w-max">
-                {days.map((day) => (
-                  <div key={day.id} className="w-72 flex-shrink-0 bg-card rounded-xl border border-border flex flex-col">
-
-                    {/* Cabecera del día */}
-                    <div className="bg-muted/50 rounded-t-xl px-4 py-3 flex items-center justify-between border-b border-border">
-                      <div>
-                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Día {day.day_number}</p>
-                        <p className="text-sm font-semibold text-foreground capitalize">{formatDate(day.day_date)}</p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteDay(day.id)}
-                        disabled={deletingDay === day.id}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors"
-                        title="Eliminar día"
-                      >
-                        {deletingDay === day.id
-                          ? <Loader2 size={13} className="animate-spin" />
-                          : <Trash2 size={13} />}
-                      </button>
-                    </div>
-
-                    {/* Sesiones */}
-                    <div className="flex flex-col gap-2 p-3 flex-1">
-                      {day.sessions.length === 0 && (
-                        <p className="text-center text-muted-foreground text-xs py-4 italic">Sin sesiones aún</p>
-                      )}
-                      {day.sessions.map((session) => {
-                        return (
-                          <div key={session.id}
-                            className="bg-muted/50 rounded-lg p-3 border border-border group relative">
-                            <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <TypeBadge type={session.type} />
-                              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
-                                  title="Escanear asistencia"
-                                  className="p-1 rounded text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                  <ScanLine size={11} />
+            /* Una sola tabla para toda la conferencia — con muchas sesiones,
+               columnas de tarjetas se vuelven un mar de rectángulos difícil
+               de escanear de un vistazo. Cada día es una fila separadora
+               (colSpan) dentro de la misma tabla, no una tabla aparte, para
+               que siga leyéndose como UN programa y no como N programas. */
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {["Hora", "Tipo", "Sesión", "Estado", ""].map((h) => (
+                        <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {days.map((day) => (
+                      <Fragment key={day.id}>
+                        <tr className="bg-muted/50 border-y border-border">
+                          <td colSpan={5} className="px-4 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Día {day.day_number}</span>
+                                <span className="text-sm font-semibold text-foreground capitalize">{formatDate(day.day_date)}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => openAddSession(day.id)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                                  <Plus size={12} /> Agregar Sesión
                                 </button>
-                                <button onClick={() => openEditSession(session, day.id)}
-                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                                  <Pencil size={11} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteSession(session.id)}
-                                  disabled={deletingSession === session.id}
-                                  className="p-1 rounded text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                                  {deletingSession === session.id
-                                    ? <Loader2 size={11} className="animate-spin" />
-                                    : <Trash2 size={11} />}
+                                <button onClick={() => handleDeleteDay(day.id)}
+                                  disabled={deletingDay === day.id}
+                                  title="Eliminar día"
+                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                                  {deletingDay === day.id
+                                    ? <Loader2 size={13} className="animate-spin" />
+                                    : <Trash2 size={13} />}
                                 </button>
                               </div>
                             </div>
-                            <p className="text-sm font-semibold text-foreground leading-tight">{session.title}</p>
-                            {session.time_start && (
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <Clock size={10} /> {formatTime(session.time_start)}
-                                {session.time_end && ` – ${formatTime(session.time_end)}`}
-                              </p>
-                            )}
-                            {session.speaker && (
-                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                                <Users size={10} /> {session.speaker}
-                              </p>
-                            )}
-                            {session.scripture_ref && (
-                              <p className="text-xs text-amber-400/70 mt-0.5 flex items-center gap-1">
-                                <BookOpen size={10} /> {session.scripture_ref}
-                              </p>
-                            )}
+                          </td>
+                        </tr>
 
-                            {/* Estado en vivo: lo va cambiando quien controla la
-                                conferencia según avanza el programa — la pantalla
-                                del salón lo refleja solo (encuesta cada 60s). */}
-                            <div className="relative mt-2">
+                        {day.sessions.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-4 text-center text-xs text-muted-foreground italic">Sin sesiones aún</td>
+                          </tr>
+                        ) : day.sessions.map((session) => (
+                          <tr key={session.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
+                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap align-top">
+                              {session.time_start ? formatTime(session.time_start) : "—"}
+                              {session.time_end && (
+                                <span className="block text-xs">a {formatTime(session.time_end)}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <TypeBadge type={session.type} />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <p className="font-semibold text-foreground">{session.title}</p>
+                              {(session.speaker || session.scripture_ref) && (
+                                <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                                  {session.speaker && (
+                                    <span className="flex items-center gap-1"><Users size={10} /> {session.speaker}</span>
+                                  )}
+                                  {session.scripture_ref && (
+                                    <span className="flex items-center gap-1"><BookOpen size={10} /> {session.scripture_ref}</span>
+                                  )}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              {/* Estado en vivo: lo va cambiando quien controla la
+                                  conferencia según avanza el programa — la pantalla
+                                  del salón lo refleja sola (encuesta cada 5s). */}
                               <select
                                 value={session.status || "PROGRAMADA"}
                                 disabled={updatingStatusId === session.id}
                                 onChange={(e) => handleChangeSessionStatus(session.id, e.target.value)}
                                 className={cn(
-                                  "w-full appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60",
+                                  "appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60",
                                   SESSION_STATUS_CLASSES[session.status] || SESSION_STATUS_CLASSES.PROGRAMADA
                                 )}
                               >
@@ -761,21 +759,34 @@ export default function ConferenceDetailPage() {
                                   <option key={s.value} value={s.value}>{s.label}</option>
                                 ))}
                               </select>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Botón agregar sesión */}
-                    <div className="p-3 pt-0">
-                      <button onClick={() => openAddSession(day.id)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 text-xs font-medium transition-colors">
-                        <Plus size={13} /> Agregar Sesión
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
+                                  title="Escanear asistencia"
+                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                  <ScanLine size={13} />
+                                </button>
+                                <button onClick={() => openEditSession(session, day.id)}
+                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSession(session.id)}
+                                  disabled={deletingSession === session.id}
+                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                                  {deletingSession === session.id
+                                    ? <Loader2 size={13} className="animate-spin" />
+                                    : <Trash2 size={13} />}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
