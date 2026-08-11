@@ -13,6 +13,7 @@ import {
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
   ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
+  CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -23,6 +24,17 @@ import { SESSION_TYPE_COLORS, badgeClasses, swatchClasses } from "@/utils/sessio
 const EMPTY_SESSION = { sessionTypeId: null, title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "" };
 const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "", photoUrl: null, birthDate: "", gender: "", ageGroup: "ADULTO" };
 const LIMIT         = 20;
+
+// Estado de la conferencia — manual a propósito (no derivado de end_date):
+// auto-bloquear por fecha haría que "Reabrir" se re-bloqueara solo en la
+// siguiente lectura si la fecha de fin ya pasó, que es justo el caso que
+// existe para reabrir. Mismos 3 valores que ConferencePage.jsx.
+const CONFERENCE_STATUS = {
+  ACTIVO:     { label: "Activa",     classes: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30", icon: CheckCircle2 },
+  FINALIZADO: { label: "Finalizada", classes: "bg-muted text-muted-foreground border-border", icon: Clock },
+  CANCELADO:  { label: "Cancelada",  classes: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30", icon: XCircle },
+};
+const CONFERENCE_LOCKED_STATUSES = ["FINALIZADO", "CANCELADO"];
 
 // Estado en vivo de una sesión, que controla a mano quien lleva la
 // conferencia — la pantalla del salón lo respeta por encima de su propio
@@ -201,6 +213,8 @@ export default function ConferenceDetailPage() {
   const [previewReg, setPreviewReg] = useState(null);
   const [badgeReg, setBadgeReg] = useState(null);
   const [showProgramQR, setShowProgramQR] = useState(false);
+  const [savingConfStatus, setSavingConfStatus] = useState(false);
+  const [confirmConfStatus, setConfirmConfStatus] = useState(null); // "FINALIZADO" | "CANCELADO" | null
 
   // Impresión de gafetes por lote
   const [selectedRegIds, setSelectedRegIds] = useState(() => new Set());
@@ -413,6 +427,16 @@ export default function ConferenceDetailPage() {
     setSavingDay(false);
   };
 
+  const handleChangeConferenceStatus = async (status) => {
+    setSavingConfStatus(true);
+    try {
+      await conferenceService.updateStatus(id, status);
+      await fetchConference();
+      setConfirmConfStatus(null);
+    } catch { /* silent */ }
+    setSavingConfStatus(false);
+  };
+
   const handleDeleteDay = async (dayId) => {
     setDeletingDay(dayId);
     try {
@@ -577,6 +601,13 @@ export default function ConferenceDetailPage() {
 
   const totalRegPages = Math.ceil(regTotal / LIMIT);
 
+  const confStatus = CONFERENCE_STATUS[conference.status] || CONFERENCE_STATUS.ACTIVO;
+  const ConfStatusIcon = confStatus.icon;
+  const isLocked = CONFERENCE_LOCKED_STATUSES.includes(conference.status);
+  // Sugerencia, no automatismo: si ya pasó end_date y nadie la cerró, se
+  // ofrece finalizarla con un clic en vez de cambiarle el estado sola.
+  const alreadyEnded = !isLocked && String(conference.end_date).slice(0, 10) < new Date().toISOString().slice(0, 10);
+
   // Día activo dentro de la pestaña Programa: si el que estaba activo ya no
   // existe (se borró, o es la primera carga) cae al primero de la lista en
   // vez de dejar la tabla vacía.
@@ -596,9 +627,12 @@ export default function ConferenceDetailPage() {
         <div className="bg-card rounded-xl border border-border p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <BookOpen size={20} className="text-amber-700 dark:text-amber-400 flex-shrink-0" />
                 <h1 className="text-xl font-bold text-foreground truncate">{conference.name}</h1>
+                <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border flex-shrink-0", confStatus.classes)}>
+                  <ConfStatusIcon size={11} /> {confStatus.label}
+                </span>
               </div>
               {conference.theme && (
                 <p className="text-muted-foreground italic text-sm mb-1">{conference.theme}</p>
@@ -620,7 +654,50 @@ export default function ConferenceDetailPage() {
                 <span className="flex items-center gap-1"><Church size={12} />{stats?.churches || 0} iglesias</span>
               </div>
             </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {isLocked ? (
+                <Button variant="outline" disabled={savingConfStatus}
+                  onClick={() => handleChangeConferenceStatus("ACTIVO")}
+                  className="flex items-center gap-2 text-sm border-blue-700/60 text-blue-700 dark:text-blue-400 hover:border-blue-500 disabled:opacity-50">
+                  {savingConfStatus ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                  Reabrir
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" disabled={savingConfStatus}
+                    onClick={() => setConfirmConfStatus("FINALIZADO")}
+                    className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 disabled:opacity-50">
+                    <CheckCircle2 size={14} /> Finalizar
+                  </Button>
+                  <Button variant="outline" disabled={savingConfStatus}
+                    onClick={() => setConfirmConfStatus("CANCELADO")}
+                    className="flex items-center gap-2 text-sm border-red-700/60 text-red-700 dark:text-red-400 hover:border-red-500 disabled:opacity-50">
+                    <XCircle size={14} /> Cancelar
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
+
+          {alreadyEnded && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm">
+              <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <AlertTriangle size={14} /> Esta conferencia ya terminó. ¿La marcamos como finalizada?
+              </span>
+              <button onClick={() => setConfirmConfStatus("FINALIZADO")}
+                className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex-shrink-0">
+                Finalizar ahora
+              </button>
+            </div>
+          )}
+
+          {isLocked && (
+            <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+              <Lock size={13} className="flex-shrink-0" />
+              Esta conferencia está {confStatus.label.toLowerCase()} — no se puede editar el programa ni los asistentes hasta que la reabras.
+            </div>
+          )}
         </div>
       </div>
 
@@ -649,8 +726,8 @@ export default function ConferenceDetailPage() {
       {activeTab === "programa" && (
         <div className="space-y-4">
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setAddDayDialog(true)}
-              className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40">
+            <Button variant="outline" onClick={() => setAddDayDialog(true)} disabled={isLocked}
+              className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 disabled:opacity-50">
               <Plus size={14} /> Agregar Día
             </Button>
             <Button variant="outline" onClick={() => setShowProgramQR(true)}
@@ -702,20 +779,22 @@ export default function ConferenceDetailPage() {
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
                   <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-muted/30">
                     <span className="text-sm font-semibold text-foreground capitalize">{formatDate(currentDay.day_date)}</span>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => openAddSession(currentDay.id)}
-                        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                        <Plus size={12} /> Agregar Sesión
-                      </button>
-                      <button onClick={() => handleDeleteDay(currentDay.id)}
-                        disabled={deletingDay === currentDay.id}
-                        title="Eliminar día"
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                        {deletingDay === currentDay.id
-                          ? <Loader2 size={13} className="animate-spin" />
-                          : <Trash2 size={13} />}
-                      </button>
-                    </div>
+                    {!isLocked && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openAddSession(currentDay.id)}
+                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                          <Plus size={12} /> Agregar Sesión
+                        </button>
+                        <button onClick={() => handleDeleteDay(currentDay.id)}
+                          disabled={deletingDay === currentDay.id}
+                          title="Eliminar día"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                          {deletingDay === currentDay.id
+                            ? <Loader2 size={13} className="animate-spin" />
+                            : <Trash2 size={13} />}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="overflow-x-auto">
@@ -762,10 +841,10 @@ export default function ConferenceDetailPage() {
                                   del salón lo refleja sola (encuesta cada 5s). */}
                               <select
                                 value={session.status || "PROGRAMADA"}
-                                disabled={updatingStatusId === session.id}
+                                disabled={updatingStatusId === session.id || isLocked}
                                 onChange={(e) => handleChangeSessionStatus(session.id, e.target.value)}
                                 className={cn(
-                                  "appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60",
+                                  "appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed",
                                   SESSION_STATUS_CLASSES[session.status] || SESSION_STATUS_CLASSES.PROGRAMADA
                                 )}
                               >
@@ -775,25 +854,27 @@ export default function ConferenceDetailPage() {
                               </select>
                             </td>
                             <td className="px-4 py-3 align-top">
-                              <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
-                                  title="Escanear asistencia"
-                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                  <ScanLine size={13} />
-                                </button>
-                                <button onClick={() => openEditSession(session, currentDay.id)}
-                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                                  <Pencil size={13} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteSession(session.id)}
-                                  disabled={deletingSession === session.id}
-                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                                  {deletingSession === session.id
-                                    ? <Loader2 size={13} className="animate-spin" />
-                                    : <Trash2 size={13} />}
-                                </button>
-                              </div>
+                              {!isLocked && (
+                                <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
+                                    title="Escanear asistencia"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                    <ScanLine size={13} />
+                                  </button>
+                                  <button onClick={() => openEditSession(session, currentDay.id)}
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                                    <Pencil size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSession(session.id)}
+                                    disabled={deletingSession === session.id}
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                                    {deletingSession === session.id
+                                      ? <Loader2 size={13} className="animate-spin" />
+                                      : <Trash2 size={13} />}
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -825,9 +906,11 @@ export default function ConferenceDetailPage() {
                 </button>
               )}
             </div>
-            <Button onClick={openAddReg} className="flex items-center gap-2 flex-shrink-0">
-              <Plus size={15} /> Registrar Asistente
-            </Button>
+            {!isLocked && (
+              <Button onClick={openAddReg} className="flex items-center gap-2 flex-shrink-0">
+                <Plus size={15} /> Registrar Asistente
+              </Button>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -920,14 +1003,18 @@ export default function ConferenceDetailPage() {
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 transition-colors">
                             <Award size={13} />
                           </button>
-                          <button onClick={() => openEditReg(reg)}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                            <Pencil size={13} />
-                          </button>
-                          <button onClick={() => setDeletingReg(reg)}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                            <Trash2 size={13} />
-                          </button>
+                          {!isLocked && (
+                            <>
+                              <button onClick={() => openEditReg(reg)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                                <Pencil size={13} />
+                              </button>
+                              <button onClick={() => setDeletingReg(reg)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                                <Trash2 size={13} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1407,6 +1494,30 @@ export default function ConferenceDetailPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeletingReg(null)}>Cancelar</Button>
             <Button onClick={handleDeleteReg} className="bg-red-600 hover:bg-red-700">Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ════ Dialog: Confirmar Finalizar/Cancelar conferencia ════ */}
+      <Dialog open={Boolean(confirmConfStatus)} onOpenChange={(v) => !v && setConfirmConfStatus(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <h2 className="text-lg font-semibold text-foreground">
+              {confirmConfStatus === "CANCELADO" ? "Cancelar conferencia" : "Finalizar conferencia"}
+            </h2>
+          </DialogHeader>
+          <p className="text-muted-foreground mt-2">
+            Ya no se va a poder editar el programa ni los asistentes de <strong className="text-foreground">{conference.name}</strong> hasta que la reabras.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmConfStatus(null)} disabled={savingConfStatus}>Cancelar</Button>
+            <Button
+              onClick={() => handleChangeConferenceStatus(confirmConfStatus)}
+              disabled={savingConfStatus}
+              className={cn("flex items-center gap-2", confirmConfStatus === "CANCELADO" ? "bg-red-600 hover:bg-red-700" : "")}>
+              {savingConfStatus && <Loader2 size={14} className="animate-spin" />}
+              {confirmConfStatus === "CANCELADO" ? "Sí, cancelar" : "Sí, finalizar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
