@@ -15,6 +15,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import DashboardPage from "@/pages/DashboardPage";
 import MembersPage from "@/pages/MembersPage";
+import MemberDetailPage from "@/pages/MemberDetailPage";
 import FamiliesPage from "@/pages/FamiliesPage";
 import GroupsPage from "@/pages/GroupsPage";
 import AttendancePage from "@/pages/AttendancePage";
@@ -77,6 +78,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <MembersPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/members/:id"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <MemberDetailPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

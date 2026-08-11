@@ -58,6 +58,14 @@ const AGE_GROUP_CFG = {
   JOVEN: {bg: "#ede9fe", color: "#5b21b6", border: "#c4b5fd", label: "Joven"},
 };
 
+const MARITAL_LABELS = {
+  SOLTERO: "Soltero/a",
+  CASADO: "Casado/a",
+  DIVORCIADO: "Divorciado/a",
+  VIUDO: "Viudo/a",
+  UNION_LIBRE: "Unión libre",
+};
+
 // ── sub-components ────────────────────────────────────────────────────────────
 
 function DataField({label, value, accent}) {
@@ -280,17 +288,19 @@ export default function MemberPrintCard({member, groups = [], church}) {
               )}
             </div>
 
-            {/* Fecha de ingreso */}
-            <p
-              style={{
-                fontSize: 10,
-                color: "#9ca3af",
-                margin: 0,
-                fontFamily: "Arial, sans-serif",
-              }}
-            >
-              Miembro desde {fmtDate(member.created_at)}
-            </p>
+            {/* Fecha de membresía — solo si está cargada, no se asume igual a created_at */}
+            {member.member_since && (
+              <p
+                style={{
+                  fontSize: 10,
+                  color: "#9ca3af",
+                  margin: 0,
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                Miembro desde {fmtDate(member.member_since)}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -327,6 +337,9 @@ export default function MemberPrintCard({member, groups = [], church}) {
                   : member.gender || null
             }
           />
+          <DataField label="Documento de identidad" value={member.document_id || null} />
+          <DataField label="Estado civil" value={MARITAL_LABELS[member.marital_status] || null} />
+          <DataField label="Ocupación" value={member.occupation || null} />
         </div>
 
         {/* Columna derecha — Datos de contacto */}
