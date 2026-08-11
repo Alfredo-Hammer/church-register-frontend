@@ -426,7 +426,7 @@ export default function SettingsPage() {
 
   // ─── Render Tabs ──────────────────────────────────────────────────────────
   const renderProfile = () => (
-    <div className="space-y-6 max-w-xl md:max-w-2xl lg:max-w-3xl">
+    <div className="space-y-6">
       {/* Info de sesión actual */}
       <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl border border-border">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
@@ -444,6 +444,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       {/* Editar nombre */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -568,11 +569,13 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 
   const renderChurch = () => (
-    <div className="space-y-5 max-w-xl md:max-w-2xl lg:max-w-3xl">
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
       {/* Logo Card */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -693,6 +696,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+      </div>
 
       {/* Church data Card */}
       <Card className="bg-card border-border">
@@ -973,7 +977,9 @@ export default function SettingsPage() {
         })}
       </div>
 
-      {/* Contenido */}
+      {/* Contenido — usa todo el ancho disponible en las tres pestañas (el
+          grid de dos columnas dentro de cada una evita que los inputs se
+          vean absurdamente anchos en monitores grandes) */}
       <div>
         {activeTab === "profile" && renderProfile()}
         {activeTab === "church" && renderChurch()}
