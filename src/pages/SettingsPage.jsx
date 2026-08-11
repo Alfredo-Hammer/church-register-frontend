@@ -26,7 +26,12 @@ import {
   ChevronDown,
   ImagePlus,
   Trash,
+  Smartphone,
+  Copy,
+  RefreshCw,
+  Check,
 } from "lucide-react";
+import {QRCodeSVG} from "qrcode.react";
 import {settingsService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
 
@@ -201,6 +206,45 @@ export default function SettingsPage() {
   const [churchEditing, setChurchEditing] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
 
+  // Código de invitación — lo que un miembro sin cuenta usa en la app móvil
+  // para asociarse a esta iglesia.
+  const [joinCode, setJoinCode] = useState(null);
+  const [regeneratingCode, setRegeneratingCode] = useState(false);
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const fetchJoinCode = useCallback(async () => {
+    try {
+      const data = await settingsService.getJoinCode();
+      setJoinCode(data.joinCode);
+    } catch {
+      /* silent */
+    }
+  }, []);
+
+  const handleRegenerateCode = async () => {
+    setRegeneratingCode(true);
+    try {
+      const data = await settingsService.regenerateJoinCode();
+      setJoinCode(data.joinCode);
+      setConfirmRegenerate(false);
+    } catch {
+      /* silent */
+    }
+    setRegeneratingCode(false);
+  };
+
+  const handleCopyCode = async () => {
+    if (!joinCode) return;
+    try {
+      await navigator.clipboard.writeText(joinCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      /* silent — algunos navegadores piden permiso/HTTPS para el portapapeles */
+    }
+  };
+
   const fetchChurch = useCallback(async () => {
     try {
       const data = await settingsService.getChurch();
@@ -220,6 +264,10 @@ export default function SettingsPage() {
   useEffect(() => {
     if (activeTab === "church" && !church) fetchChurch();
   }, [activeTab, church, fetchChurch]);
+
+  useEffect(() => {
+    if (activeTab === "church" && isAdmin && !joinCode) fetchJoinCode();
+  }, [activeTab, isAdmin, joinCode, fetchJoinCode]);
 
   const handleChurchSave = async (e) => {
     e.preventDefault();
@@ -581,6 +629,70 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Código de invitación (app móvil) */}
+      {isAdmin && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground text-base flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+              Código de Invitación
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row items-start gap-5">
+              <div className="bg-white p-3 rounded-xl shrink-0">
+                {joinCode ? (
+                  <QRCodeSVG value={joinCode} size={104} level="M" />
+                ) : (
+                  <div className="w-[104px] h-[104px] animate-pulse bg-muted rounded" />
+                )}
+              </div>
+              <div className="flex-1 space-y-3 min-w-0">
+                <p className="text-muted-foreground text-sm">
+                  Compártelo con tu congregación para que se unan desde la app móvil, sin necesitar una cuenta — impreso, de palabra, o escaneando el QR.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-lg font-bold tracking-wider text-foreground bg-background border border-border rounded-lg px-3 py-1.5">
+                    {joinCode || "···· ····"}
+                  </span>
+                  <button
+                    onClick={handleCopyCode}
+                    disabled={!joinCode}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40"
+                  >
+                    {codeCopied ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {codeCopied ? "Copiado" : "Copiar"}
+                  </button>
+                </div>
+
+                {confirmRegenerate ? (
+                  <div className="flex flex-wrap items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 flex-1 min-w-[180px]">
+                      El código actual dejará de funcionar. ¿Regenerar?
+                    </p>
+                    <Button size="sm" variant="ghost" onClick={() => setConfirmRegenerate(false)} disabled={regeneratingCode}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleRegenerateCode} disabled={regeneratingCode}
+                      className="bg-amber-600 hover:bg-amber-700 text-white">
+                      {regeneratingCode ? "Regenerando..." : "Sí, regenerar"}
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmRegenerate(true)}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Regenerar código
+                  </button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Church data Card */}
       <Card className="bg-card border-border">

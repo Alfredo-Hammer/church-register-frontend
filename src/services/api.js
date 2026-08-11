@@ -479,6 +479,16 @@ export const settingsService = {
     return response.data;
   },
 
+  // Código de invitación (acceso de miembros por la app móvil)
+  getJoinCode: async () => {
+    const response = await api.get('/settings/join-code');
+    return response.data;
+  },
+  regenerateJoinCode: async () => {
+    const response = await api.put('/settings/join-code/regenerate');
+    return response.data;
+  },
+
   // Logo de la iglesia
   uploadLogo: async (logoBase64) => {
     const response = await api.put('/settings/church/logo', { logoBase64 });
