@@ -15,7 +15,7 @@ import {
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF } from "@/utils/pdf/conferencePdf";
+import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
 import { SESSION_TYPE_COLORS, badgeClasses, swatchClasses } from "@/utils/sessionTypeColors";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -195,6 +195,12 @@ export default function ConferenceDetailPage() {
   const [previewReg, setPreviewReg] = useState(null);
   const [badgeReg, setBadgeReg] = useState(null);
   const [showProgramQR, setShowProgramQR] = useState(false);
+
+  // Impresión de gafetes por lote
+  const [selectedRegIds, setSelectedRegIds] = useState(() => new Set());
+  const [batchPrinting, setBatchPrinting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(null); // {current, total}
+  const [batchError, setBatchError] = useState("");
 
   // Filtro de la tabla de asistencia: "all" | "day:<n>" | "session:<id>" —
   // codificado como un solo string para que sea un <select> simple.
@@ -470,6 +476,69 @@ export default function ConferenceDetailPage() {
     } catch { /* silent */ }
   };
 
+  // ── Impresión de gafetes por lote ────────────────────────────────────────────
+
+  const toggleSelectReg = (regId) => {
+    setSelectedRegIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(regId)) next.delete(regId); else next.add(regId);
+      return next;
+    });
+  };
+
+  const allVisibleSelected = registrations.length > 0 && registrations.every((r) => selectedRegIds.has(r.id));
+
+  const toggleSelectAllVisible = () => {
+    setSelectedRegIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        registrations.forEach((r) => next.delete(r.id));
+      } else {
+        registrations.forEach((r) => next.add(r.id));
+      }
+      return next;
+    });
+  };
+
+  const runBatchPrint = async (regsToPrint) => {
+    setBatchPrinting(true);
+    setBatchError("");
+    setBatchProgress({ current: 0, total: regsToPrint.length });
+    await generateGafetesBatchPDF(
+      conference, regsToPrint, church,
+      () => {},
+      (current, total) => setBatchProgress({ current, total }),
+      (err) => {
+        if (err) setBatchError(err);
+        setBatchPrinting(false);
+        setBatchProgress(null);
+      }
+    );
+  };
+
+  const handlePrintSelected = () => {
+    const chosen = registrations.filter((r) => selectedRegIds.has(r.id));
+    if (chosen.length === 0) return;
+    runBatchPrint(chosen).then(() => setSelectedRegIds(new Set()));
+  };
+
+  // "Imprimir todos" trae la lista completa de la conferencia de una sola
+  // vez (ignora la paginación de la tabla) — es lo que se usa antes del
+  // evento para sacar todos los gafetes juntos.
+  const handlePrintAll = async () => {
+    setBatchPrinting(true);
+    setBatchError("");
+    setBatchProgress({ current: 0, total: 0 });
+    try {
+      const data = await conferenceService.getRegistrations(id, { limit: 5000, offset: 0 });
+      await runBatchPrint(data.registrations);
+    } catch {
+      setBatchError('No se pudo cargar la lista completa de asistentes.');
+      setBatchPrinting(false);
+      setBatchProgress(null);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   // Set de "registrationId:sessionId" para lookup O(1) al pintar la matriz
@@ -736,11 +805,41 @@ export default function ConferenceDetailPage() {
             </Button>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" disabled={batchPrinting || regTotal === 0}
+              onClick={handlePrintAll}
+              className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500 disabled:opacity-50">
+              <Badge size={14} /> Imprimir todos ({regTotal})
+            </Button>
+            {selectedRegIds.size > 0 && (
+              <Button variant="outline" disabled={batchPrinting}
+                onClick={handlePrintSelected}
+                className="flex items-center gap-2 text-sm border-blue-700/60 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:border-blue-500 disabled:opacity-50">
+                <Badge size={14} /> Imprimir seleccionados ({selectedRegIds.size})
+              </Button>
+            )}
+            {batchPrinting && batchProgress && (
+              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 size={13} className="animate-spin" />
+                {batchProgress.total > 0
+                  ? `Generando gafete ${batchProgress.current} de ${batchProgress.total}…`
+                  : "Cargando lista completa…"}
+              </span>
+            )}
+            {batchError && (
+              <span className="text-xs text-red-700 dark:text-red-400">{batchError}</span>
+            )}
+          </div>
+
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="px-4 py-3 w-8">
+                      <input type="checkbox" checked={allVisibleSelected} onChange={toggleSelectAllVisible}
+                        className="rounded border-border cursor-pointer" />
+                    </th>
                     {["#","","Nombre","Iglesia","Ciudad","Teléfono",""].map((h, i) => (
                       <th key={`${h}-${i}`} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
                     ))}
@@ -748,16 +847,20 @@ export default function ConferenceDetailPage() {
                 </thead>
                 <tbody>
                   {regLoading ? (
-                    <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">
                       <Loader2 size={24} className="animate-spin mx-auto" />
                     </td></tr>
                   ) : registrations.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">
                       <Users size={28} className="mx-auto mb-2 opacity-30" />
                       <p>Sin asistentes registrados</p>
                     </td></tr>
                   ) : registrations.map((reg, i) => (
                     <tr key={reg.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selectedRegIds.has(reg.id)} onChange={() => toggleSelectReg(reg.id)}
+                          className="rounded border-border cursor-pointer" />
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs tabular-nums">{regPage * LIMIT + i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">

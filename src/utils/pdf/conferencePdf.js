@@ -323,38 +323,14 @@ const BADGE_W = 384; // 4 in a 96 dpi
 const BADGE_H = 576; // 6 in a 96 dpi
 const BADGE_FORMAT_MM = [101.6, 152.4]; // 4in × 6in
 
-export async function generateGafetePDF(conference, registration, church, onStart, onEnd) {
-  onStart?.();
-
-  if (!registration.check_in_token) {
-    onEnd?.('Este registro no tiene un token de gafete. Vuelve a cargar la página.');
-    return;
-  }
-
+// Compartida entre el gafete individual y el lote: así los dos salen
+// idénticos siempre, en vez de arriesgarse a que diverjan con el tiempo.
+function buildBadgeHtml(conference, registration, church, qrDataUrl) {
   const churchName = church?.name || '';
   const logo = church?.logoUrl || null;
   const photo = registration.photo_url || null;
 
-  let qrDataUrl;
-  try {
-    qrDataUrl = await QRCode.toDataURL(registration.check_in_token, {
-      width: 280, margin: 1, color: {dark: '#0d1f3c', light: '#ffffff'},
-    });
-  } catch (err) {
-    console.error(err);
-    onEnd?.('Error al generar el código QR.');
-    return;
-  }
-
-  const el = document.createElement('div');
-  el.style.cssText = `
-    position:fixed;left:-9999px;top:0;
-    width:${BADGE_W}px;height:${BADGE_H}px;
-    background:${CREAM};overflow:hidden;
-    font-family:Georgia,"Times New Roman",serif;
-  `;
-
-  el.innerHTML = `
+  return `
     <div style="width:100%;height:100%;background:${CREAM};display:flex;flex-direction:column;
       align-items:center;box-sizing:border-box;padding:24px 24px 28px;border:6px solid ${NAVY};position:relative;">
 
@@ -409,6 +385,35 @@ export async function generateGafetePDF(conference, registration, church, onStar
       </div>
     </div>
   `;
+}
+
+export async function generateGafetePDF(conference, registration, church, onStart, onEnd) {
+  onStart?.();
+
+  if (!registration.check_in_token) {
+    onEnd?.('Este registro no tiene un token de gafete. Vuelve a cargar la página.');
+    return;
+  }
+
+  let qrDataUrl;
+  try {
+    qrDataUrl = await QRCode.toDataURL(registration.check_in_token, {
+      width: 280, margin: 1, color: {dark: '#0d1f3c', light: '#ffffff'},
+    });
+  } catch (err) {
+    console.error(err);
+    onEnd?.('Error al generar el código QR.');
+    return;
+  }
+
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed;left:-9999px;top:0;
+    width:${BADGE_W}px;height:${BADGE_H}px;
+    background:${CREAM};overflow:hidden;
+    font-family:Georgia,"Times New Roman",serif;
+  `;
+  el.innerHTML = buildBadgeHtml(conference, registration, church, qrDataUrl);
 
   document.body.appendChild(el);
   try {
@@ -420,6 +425,65 @@ export async function generateGafetePDF(conference, registration, church, onStar
   } catch (err) {
     console.error(err);
     onEnd?.('Error al generar el gafete.');
+  } finally {
+    document.body.removeChild(el);
+  }
+}
+
+// PDF de varios gafetes en un solo archivo, una tarjeta por página — se manda
+// a imprimir de una vez en vez de descargar uno por uno. onProgress avisa
+// cuántos van, porque con muchos inscritos esto tarda unos segundos.
+export async function generateGafetesBatchPDF(conference, registrations, church, onStart, onProgress, onEnd) {
+  onStart?.();
+
+  const conToken = registrations.filter((r) => r.check_in_token);
+  if (conToken.length === 0) {
+    onEnd?.('Ninguno de los inscritos seleccionados tiene gafete generado.');
+    return;
+  }
+
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed;left:-9999px;top:0;
+    width:${BADGE_W}px;height:${BADGE_H}px;
+    background:${CREAM};overflow:hidden;
+    font-family:Georgia,"Times New Roman",serif;
+  `;
+  document.body.appendChild(el);
+
+  try {
+    let pdf = null;
+    for (let i = 0; i < conToken.length; i++) {
+      const registration = conToken[i];
+      onProgress?.(i + 1, conToken.length);
+
+      const qrDataUrl = await QRCode.toDataURL(registration.check_in_token, {
+        width: 280, margin: 1, color: {dark: '#0d1f3c', light: '#ffffff'},
+      });
+      el.innerHTML = buildBadgeHtml(conference, registration, church, qrDataUrl);
+
+      const canvas = await html2canvas(el, {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+        scrollX: 0, scrollY: 0, width: BADGE_W, height: BADGE_H,
+        windowWidth: BADGE_W, windowHeight: BADGE_H,
+      });
+      const img = canvas.toDataURL('image/jpeg', 0.93);
+
+      if (!pdf) {
+        pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: BADGE_FORMAT_MM });
+      } else {
+        pdf.addPage(BADGE_FORMAT_MM, 'portrait');
+      }
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      pdf.addImage(img, 'JPEG', 0, 0, pw, ph);
+    }
+
+    pdf.save(`gafetes-${safeName(conference.name)}.pdf`);
+    onEnd?.(null);
+  } catch (err) {
+    console.error(err);
+    onEnd?.('Error al generar los gafetes.');
   } finally {
     document.body.removeChild(el);
   }
