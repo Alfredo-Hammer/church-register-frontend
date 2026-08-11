@@ -30,6 +30,7 @@ import {
   Flame,
   FileText,
   BookOpen,
+  Megaphone,
   Sun,
   Moon,
 } from "lucide-react";
@@ -320,6 +321,7 @@ const navigation = [
   {name: "Bautismos", href: "/dashboard/baptisms", icon: Droplet},
   {name: "Santa Cena", href: "/dashboard/communion", icon: Wine},
   {name: "Días de Oración", href: "/dashboard/prayer", icon: Flame},
+  {name: "Avisos", href: "/dashboard/announcements", icon: Megaphone},
   {name: "Cartas de Referencia", href: "/dashboard/letters", icon: FileText},
   {name: "Reportes", href: "/dashboard/reports", icon: BarChart3},
   {name: "Usuarios", href: "/dashboard/users", icon: UserCog},

@@ -35,6 +35,7 @@ import LettersPage from "@/pages/LettersPage";
 import ConferencePage from "@/pages/ConferencePage";
 import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
+import AnnouncementsPage from "@/pages/AnnouncementsPage";
 
 function App() {
   return (
@@ -200,6 +201,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <LettersPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/announcements"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AnnouncementsPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
