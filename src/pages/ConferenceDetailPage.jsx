@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo, Fragment } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { conferenceService, settingsService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,6 +64,11 @@ function calcAge(birthDate) {
 function formatDate(dateStr) {
   const d = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
   return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function formatDateShort(dateStr) {
+  const d = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
+  return d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 function formatTime(t) {
@@ -147,6 +152,7 @@ export default function ConferenceDetailPage() {
   const [stats, setStats]             = useState(null);
   const [loading, setLoading]         = useState(true);
   const [activeTab, setActiveTab]     = useState("programa"); // "programa" | "asistentes" | "reportes"
+  const [activeDayId, setActiveDayId] = useState(null); // pestaña de día dentro de Programa
 
   // Reportes (resumen por iglesia + matriz de asistencia)
   const [report, setReport]           = useState(null);
@@ -576,6 +582,12 @@ export default function ConferenceDetailPage() {
 
   const totalRegPages = Math.ceil(regTotal / LIMIT);
 
+  // Día activo dentro de la pestaña Programa: si el que estaba activo ya no
+  // existe (se borró, o es la primera carga) cae al primero de la lista en
+  // vez de dejar la tabla vacía.
+  const currentDayId = days.some((d) => d.id === activeDayId) ? activeDayId : days[0]?.id;
+  const currentDay = days.find((d) => d.id === currentDayId) || null;
+
   return (
     <div className="space-y-6">
 
@@ -671,54 +683,61 @@ export default function ConferenceDetailPage() {
               <p className="text-sm mt-1">Usa "Agregar Día" para construir el calendario</p>
             </div>
           ) : (
-            /* Una sola tabla para toda la conferencia — con muchas sesiones,
-               columnas de tarjetas se vuelven un mar de rectángulos difícil
-               de escanear de un vistazo. Cada día es una fila separadora
-               (colSpan) dentro de la misma tabla, no una tabla aparte, para
-               que siga leyéndose como UN programa y no como N programas. */
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      {["Hora", "Tipo", "Sesión", "Estado", ""].map((h) => (
-                        <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {days.map((day) => (
-                      <Fragment key={day.id}>
-                        <tr className="bg-muted/50 border-y border-border">
-                          <td colSpan={5} className="px-4 py-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Día {day.day_number}</span>
-                                <span className="text-sm font-semibold text-foreground capitalize">{formatDate(day.day_date)}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <button onClick={() => openAddSession(day.id)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                                  <Plus size={12} /> Agregar Sesión
-                                </button>
-                                <button onClick={() => handleDeleteDay(day.id)}
-                                  disabled={deletingDay === day.id}
-                                  title="Eliminar día"
-                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                                  {deletingDay === day.id
-                                    ? <Loader2 size={13} className="animate-spin" />
-                                    : <Trash2 size={13} />}
-                                </button>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
+            <>
+              {/* Pestañas de día — la tabla de abajo solo muestra un día a la
+                  vez. Con una conferencia de varios días, mezclar todo en una
+                  sola tabla larga era tan difícil de escanear como las
+                  tarjetas que reemplazó. */}
+              <div className="flex gap-1 bg-muted/50 p-1 rounded-lg w-fit overflow-x-auto max-w-full">
+                {days.map((day) => (
+                  <button key={day.id} onClick={() => setActiveDayId(day.id)}
+                    className={cn(
+                      "flex flex-col items-center px-3.5 py-1.5 rounded-md text-sm font-medium transition-all flex-shrink-0",
+                      currentDayId === day.id
+                        ? "bg-background text-foreground shadow"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}>
+                    <span>Día {day.day_number}</span>
+                    <span className="text-[10px] font-normal capitalize opacity-70">{formatDateShort(day.day_date)}</span>
+                  </button>
+                ))}
+              </div>
 
-                        {day.sessions.length === 0 ? (
+              {currentDay && (
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-muted/30">
+                    <span className="text-sm font-semibold text-foreground capitalize">{formatDate(currentDay.day_date)}</span>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openAddSession(currentDay.id)}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                        <Plus size={12} /> Agregar Sesión
+                      </button>
+                      <button onClick={() => handleDeleteDay(currentDay.id)}
+                        disabled={deletingDay === currentDay.id}
+                        title="Eliminar día"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                        {deletingDay === currentDay.id
+                          ? <Loader2 size={13} className="animate-spin" />
+                          : <Trash2 size={13} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          {["Hora", "Tipo", "Sesión", "Estado", ""].map((h) => (
+                            <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentDay.sessions.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="px-4 py-4 text-center text-xs text-muted-foreground italic">Sin sesiones aún</td>
+                            <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground italic">Sin sesiones aún</td>
                           </tr>
-                        ) : day.sessions.map((session) => (
+                        ) : currentDay.sessions.map((session) => (
                           <tr key={session.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap align-top">
                               {session.time_start ? formatTime(session.time_start) : "—"}
@@ -767,7 +786,7 @@ export default function ConferenceDetailPage() {
                                   className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
                                   <ScanLine size={13} />
                                 </button>
-                                <button onClick={() => openEditSession(session, day.id)}
+                                <button onClick={() => openEditSession(session, currentDay.id)}
                                   className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                                   <Pencil size={13} />
                                 </button>
@@ -783,12 +802,12 @@ export default function ConferenceDetailPage() {
                             </td>
                           </tr>
                         ))}
-                      </Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
