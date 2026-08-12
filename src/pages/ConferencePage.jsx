@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/Dialog";
 import { ProgramQRDialog } from "@/components/ProgramQRDialog";
+import { ParticipatingChurchesEditor, SpeakersEditor } from "@/components/ConferenceCatalogs";
 import {
   BookOpen, Plus, CalendarDays, Users, MapPin,
   ChevronRight, Pencil, Trash2, Loader2, CheckCircle2,
@@ -318,6 +319,11 @@ export default function ConferencePage() {
                 Las fechas no se pueden cambiar. Para agregar días usa el botón "+ Agregar Día" en el detalle.
               </p>
             )}
+
+            <div className="pt-2 border-t border-border space-y-4">
+              <ParticipatingChurchesEditor />
+              <SpeakersEditor />
+            </div>
 
             {formError && (
               <p className="text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">

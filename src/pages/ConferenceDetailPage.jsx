@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/
 import { CertificatePreviewDialog } from "@/components/CertificatePreviewDialog";
 import { BadgePreviewDialog } from "@/components/BadgePreviewDialog";
 import { ProgramQRDialog } from "@/components/ProgramQRDialog";
+import { ParticipatingChurchesEditor } from "@/components/ConferenceCatalogs";
 import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
@@ -201,11 +202,6 @@ export default function ConferenceDetailPage() {
 
   // Catálogo de iglesias participantes (por iglesia anfitriona) — se
   // gestiona desde el panel del link de registro
-  const [participatingChurches, setParticipatingChurches] = useState([]);
-  const [newChurchName, setNewChurchName]       = useState("");
-  const [savingChurch, setSavingChurch]         = useState(false);
-  const [churchListError, setChurchListError]   = useState("");
-  const [deletingChurchId, setDeletingChurchId] = useState(null);
 
   // Días
   const [addDayDialog, setAddDayDialog]   = useState(false);
@@ -282,13 +278,6 @@ export default function ConferenceDetailPage() {
     } catch { /* silent */ }
   }, []);
 
-  const fetchParticipatingChurches = useCallback(async () => {
-    try {
-      const data = await conferenceService.getParticipatingChurches();
-      setParticipatingChurches(data.churches);
-    } catch { /* silent */ }
-  }, []);
-
   const fetchRegistrations = useCallback(async (search, page) => {
     setRegLoading(true);
     try {
@@ -308,7 +297,6 @@ export default function ConferenceDetailPage() {
       await fetchStats();
       await fetchSessionTypes();
       await fetchSpeakers();
-      await fetchParticipatingChurches();
       setLoading(false);
     };
     load();
@@ -323,7 +311,7 @@ export default function ConferenceDetailPage() {
     ).catch(() =>
       setChurch({ name: user?.churchName || '', logoUrl: user?.churchLogo || null })
     );
-  }, [fetchConference, fetchStats, fetchSessionTypes, fetchSpeakers, fetchParticipatingChurches]);
+  }, [fetchConference, fetchStats, fetchSessionTypes, fetchSpeakers]);
 
   useEffect(() => {
     if (activeTab === "asistentes") fetchRegistrations(regSearch, regPage);
@@ -481,29 +469,6 @@ export default function ConferenceDetailPage() {
       await fetchSpeakers();
     } catch { /* silent */ }
     setDeletingSpeakerId(null);
-  };
-
-  const handleAddParticipatingChurch = async () => {
-    if (!newChurchName.trim()) return;
-    setSavingChurch(true);
-    setChurchListError("");
-    try {
-      await conferenceService.createParticipatingChurch(newChurchName.trim());
-      await fetchParticipatingChurches();
-      setNewChurchName("");
-    } catch (err) {
-      setChurchListError(err.response?.data?.error || "No se pudo agregar la iglesia.");
-    }
-    setSavingChurch(false);
-  };
-
-  const handleDeleteParticipatingChurch = async (churchId) => {
-    setDeletingChurchId(churchId);
-    try {
-      await conferenceService.deleteParticipatingChurch(churchId);
-      await fetchParticipatingChurches();
-    } catch { /* silent */ }
-    setDeletingChurchId(null);
   };
 
   // ── Días ───────────────────────────────────────────────────────────────────
@@ -1096,42 +1061,10 @@ export default function ConferenceDetailPage() {
 
                 {/* Catálogo de iglesias participantes: el formulario público
                     las ofrece como <select> en vez de texto libre, para que
-                    no queden escritas de formas distintas cada vez. */}
+                    no queden escritas de formas distintas cada vez. También
+                    se puede cargar desde el diálogo de crear conferencia. */}
                 <div className="pt-3 border-t border-purple-500/20">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                    <Church size={12} /> Iglesias participantes
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Aparecen como opción en el formulario de registro. Si la lista está vacía, el campo queda como texto libre.
-                  </p>
-                  {participatingChurches.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {participatingChurches.map((c) => (
-                        <span key={c.id}
-                          className="group/pc inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-background border border-border text-foreground">
-                          {c.name}
-                          <button type="button" title="Quitar" onClick={() => handleDeleteParticipatingChurch(c.id)}
-                            className="p-0.5 rounded opacity-0 group-hover/pc:opacity-100 hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-400 transition-opacity">
-                            {deletingChurchId === c.id
-                              ? <Loader2 size={10} className="animate-spin" />
-                              : <X size={10} />}
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Input placeholder="Nombre de la iglesia" value={newChurchName}
-                      onChange={(e) => setNewChurchName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddParticipatingChurch())}
-                      className="text-sm" maxLength={200} />
-                    <Button size="sm" onClick={handleAddParticipatingChurch} disabled={savingChurch || !newChurchName.trim()}
-                      className="flex items-center gap-1.5 shrink-0">
-                      {savingChurch ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-                      Agregar
-                    </Button>
-                  </div>
-                  {churchListError && <p className="text-xs text-red-700 dark:text-red-400 mt-1.5">{churchListError}</p>}
+                  <ParticipatingChurchesEditor />
                 </div>
               </div>
             );
