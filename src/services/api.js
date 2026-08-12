@@ -113,6 +113,11 @@ export const membersService = {
     return response.data;
   },
 
+  getBirthdays: async (month) => {
+    const response = await api.get('/members/birthdays', { params: { month } });
+    return response.data;
+  },
+
   getGroups: async (id) => {
     const response = await api.get(`/members/${id}/groups`);
     return response.data;
@@ -570,6 +575,10 @@ export const programsService = {
 export const visitorsService = {
   getAll: async (params = {}) => {
     const response = await api.get('/visitors', { params });
+    return response.data;
+  },
+  getBirthdays: async (month) => {
+    const response = await api.get('/visitors/birthdays', { params: { month } });
     return response.data;
   },
   getById: async (id) => {

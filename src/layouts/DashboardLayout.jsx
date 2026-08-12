@@ -31,6 +31,7 @@ import {
   FileText,
   BookOpen,
   Megaphone,
+  Cake,
   Sun,
   Moon,
 } from "lucide-react";
@@ -309,6 +310,7 @@ function GlobalSearch() {
 const navigation = [
   {name: "Inicio", href: "/dashboard", icon: Home},
   {name: "Miembros", href: "/dashboard/members", icon: Users},
+  {name: "Cumpleaños", href: "/dashboard/birthdays", icon: Cake},
   {name: "Visitantes", href: "/dashboard/visitors", icon: UserSearch},
   {name: "Familias", href: "/dashboard/families", icon: UserPlus},
   {name: "Grupos", href: "/dashboard/groups", icon: UsersRound},

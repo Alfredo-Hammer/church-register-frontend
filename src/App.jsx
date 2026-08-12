@@ -16,6 +16,7 @@ import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import DashboardPage from "@/pages/DashboardPage";
 import MembersPage from "@/pages/MembersPage";
 import MemberDetailPage from "@/pages/MemberDetailPage";
+import BirthdaysPage from "@/pages/BirthdaysPage";
 import FamiliesPage from "@/pages/FamiliesPage";
 import GroupsPage from "@/pages/GroupsPage";
 import AttendancePage from "@/pages/AttendancePage";
@@ -88,6 +89,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <MemberDetailPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/birthdays"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <BirthdaysPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
