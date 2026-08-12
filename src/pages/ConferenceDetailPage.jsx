@@ -14,6 +14,7 @@ import {
   ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
+  Link2, Copy, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -215,6 +216,13 @@ export default function ConferenceDetailPage() {
   const [showProgramQR, setShowProgramQR] = useState(false);
   const [savingConfStatus, setSavingConfStatus] = useState(false);
   const [confirmConfStatus, setConfirmConfStatus] = useState(null); // "FINALIZADO" | "CANCELADO" | null
+
+  // Link público de auto-registro (iglesias invitadas registran a sus
+  // miembros de antemano; en la puerta solo se recoge el gafete)
+  const [showRegLink, setShowRegLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [confirmRegenLink, setConfirmRegenLink] = useState(false);
+  const [regeneratingLink, setRegeneratingLink] = useState(false);
 
   // Impresión de gafetes por lote
   const [selectedRegIds, setSelectedRegIds] = useState(() => new Set());
@@ -435,6 +443,24 @@ export default function ConferenceDetailPage() {
       setConfirmConfStatus(null);
     } catch { /* silent */ }
     setSavingConfStatus(false);
+  };
+
+  const handleCopyRegLink = async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch { /* el navegador negó el permiso; no hay nada más que hacer */ }
+  };
+
+  const handleRegenerateRegLink = async () => {
+    setRegeneratingLink(true);
+    try {
+      const data = await conferenceService.regenerateRegistrationToken(id);
+      setConference((prev) => ({ ...prev, registration_token: data.registrationToken }));
+      setConfirmRegenLink(false);
+    } catch { /* silent */ }
+    setRegeneratingLink(false);
   };
 
   const handleDeleteDay = async (dayId) => {
@@ -914,6 +940,13 @@ export default function ConferenceDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {!isLocked && (
+              <Button variant="outline"
+                onClick={() => setShowRegLink((v) => !v)}
+                className="flex items-center gap-2 text-sm border-purple-700/60 text-purple-700 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:border-purple-500">
+                <Link2 size={14} /> Link de registro
+              </Button>
+            )}
             <Button variant="outline" disabled={batchPrinting || regTotal === 0}
               onClick={handlePrintAll}
               className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500 disabled:opacity-50">
@@ -938,6 +971,46 @@ export default function ConferenceDetailPage() {
               <span className="text-xs text-red-700 dark:text-red-400">{batchError}</span>
             )}
           </div>
+
+          {showRegLink && conference.registration_token && (() => {
+            const regUrl = `${window.location.origin}/registro-conferencia/${conference.registration_token}`;
+            return (
+              <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Comparte este link con las iglesias invitadas para que registren a sus propios miembros de antemano — al llegar, solo dan su nombre para recoger el gafete ya impreso.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <code className="flex-1 min-w-[220px] text-xs bg-background border border-border rounded-lg px-3 py-2 text-foreground truncate">
+                    {regUrl}
+                  </code>
+                  <Button size="sm" variant="outline" onClick={() => handleCopyRegLink(regUrl)}
+                    className="flex items-center gap-1.5 border-border">
+                    {linkCopied ? <Check size={14} className="text-emerald-700 dark:text-emerald-400" /> : <Copy size={14} />}
+                    {linkCopied ? "Copiado" : "Copiar"}
+                  </Button>
+                </div>
+                {confirmRegenLink ? (
+                  <div className="flex flex-wrap items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 flex-1 min-w-[180px]">
+                      El link actual dejará de funcionar. ¿Regenerar?
+                    </p>
+                    <Button size="sm" variant="ghost" onClick={() => setConfirmRegenLink(false)} disabled={regeneratingLink}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleRegenerateRegLink} disabled={regeneratingLink}
+                      className="bg-amber-600 hover:bg-amber-700 text-white">
+                      {regeneratingLink ? "Regenerando…" : "Sí, regenerar"}
+                    </Button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmRegenLink(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <RefreshCw size={12} /> Regenerar link
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="overflow-x-auto">

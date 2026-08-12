@@ -837,6 +837,10 @@ export const conferenceService = {
     const response = await api.put(`/conference/${id}/status`, { status });
     return response.data;
   },
+  regenerateRegistrationToken: async (id) => {
+    const response = await api.put(`/conference/${id}/registration-token/regenerate`);
+    return response.data;
+  },
   delete: async (id) => {
     const response = await api.delete(`/conference/${id}`);
     return response.data;

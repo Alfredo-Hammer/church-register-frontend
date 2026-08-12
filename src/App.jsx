@@ -8,6 +8,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 // Pages
 import LandingPage from "@/pages/LandingPage";
 import DisplayPage from "@/pages/DisplayPage";
+import PublicConferenceRegistrationPage from "@/pages/PublicConferenceRegistrationPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -312,6 +313,7 @@ function App() {
             {/* Landing page pública */}
             {/* Pantalla pública del salón: sin sesión, se identifica por token */}
             <Route path="/pantalla/:token" element={<DisplayPage />} />
+            <Route path="/registro-conferencia/:token" element={<PublicConferenceRegistrationPage />} />
 
             <Route path="/" element={<LandingPage />} />
 
