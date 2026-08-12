@@ -177,7 +177,7 @@ function App() {
             <Route
               path="/dashboard/finances"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={["ADMIN", "PASTOR", "TESORERO"]}>
                   <DashboardLayout>
                     <FinancesPage />
                   </DashboardLayout>

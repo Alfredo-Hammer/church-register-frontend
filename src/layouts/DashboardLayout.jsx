@@ -319,7 +319,7 @@ const navigation = [
   {name: "Eventos", href: "/dashboard/events", icon: CalendarDays},
   {name: "Programa", href: "/dashboard/programs", icon: ClipboardList},
   {name: "Actividades", href: "/dashboard/activities", icon: Rocket},
-  {name: "Finanzas", href: "/dashboard/finances", icon: DollarSign},
+  {name: "Finanzas", href: "/dashboard/finances", icon: DollarSign, roles: ["ADMIN", "PASTOR", "TESORERO"]},
   {name: "Bautismos", href: "/dashboard/baptisms", icon: Droplet},
   {name: "Santa Cena", href: "/dashboard/communion", icon: Wine},
   {name: "Días de Oración", href: "/dashboard/prayer", icon: Flame},
@@ -420,7 +420,9 @@ export const DashboardLayout = ({children}) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
+            {navigation
+              .filter((item) => !item.roles || item.roles.includes(user?.role))
+              .map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link

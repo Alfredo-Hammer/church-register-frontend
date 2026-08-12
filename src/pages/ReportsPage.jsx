@@ -6,6 +6,7 @@ import {
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
+import {useAuth} from "@/contexts/AuthContext";
 import {
   BarChart3,
   Users,
@@ -328,7 +329,14 @@ const TABS = [
 ];
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+// Diezmos/ofrendas son datos sensibles de dinero — mismo trío de roles que
+// ya exige el backend para crear/editar transacciones y donaciones; acá se
+// aplica también a solo-lectura para que un Líder ni siquiera vea el monto.
+const FINANCE_ROLES = ["ADMIN", "PASTOR", "TESORERO"];
+
 export default function ReportsPage() {
+  const {user} = useAuth();
+  const canSeeFinances = FINANCE_ROLES.includes(user?.role);
   const [activeTab, setActiveTab] = useState("overview");
 
   // church branding
@@ -374,19 +382,23 @@ export default function ReportsPage() {
   const fetchOverview = useCallback(async () => {
     setOverviewLoading(true);
     try {
-      const [mStats, fSummary, dSummary, bStats, gStats] = await Promise.all([
+      const [mStats, bStats, gStats, fSummary, dSummary] = await Promise.all([
         membersService.getStats(),
-        financesService.getSummary(),
-        donationsService.getSummary(),
         baptismsService.getStats(),
         groupsService.getStats(),
+        // Un Líder no tiene permiso en el backend para /finances/summary ni
+        // /donations/summary — pedirlos igual haría fallar todo el
+        // Promise.all (y con eso, también miembros/bautismos/grupos) por un
+        // 403 en dos llamadas que ni se van a mostrar.
+        canSeeFinances ? financesService.getSummary() : Promise.resolve(null),
+        canSeeFinances ? donationsService.getSummary() : Promise.resolve(null),
       ]);
       setOverviewData({mStats, fSummary, dSummary, bStats, gStats});
     } catch {
       /* silent */
     }
     setOverviewLoading(false);
-  }, []);
+  }, [canSeeFinances]);
 
   const fetchMembers = useCallback(async () => {
     setMemberLoading(true);
@@ -582,29 +594,12 @@ export default function ReportsPage() {
             color="blue"
           />
           <MetricCard
-            label="Balance General"
-            value={fmtMoney(Math.abs(balance))}
-            sub={balance >= 0 ? "Superávit" : "Déficit"}
-            icon={balance >= 0 ? TrendingUp : TrendingDown}
-            color={balance >= 0 ? "green" : "red"}
-          />
-          <MetricCard
-            label="Total Diezmos"
-            value={fmtMoney(dSummary?.summary?.total || 0)}
-            sub={`${dSummary?.summary?.count || 0} registros`}
-            icon={Heart}
-            color="purple"
-          />
-          <MetricCard
             label="Bautismos"
             value={bStats?.total || 0}
             sub={`${baptismsThisYear} este año`}
             icon={Droplet}
             color="cyan"
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             label="Grupos Activos"
             value={gStats?.total || 0}
@@ -612,21 +607,42 @@ export default function ReportsPage() {
             icon={Users2}
             color="amber"
           />
-          <MetricCard
-            label="Total Ingresos"
-            value={fmtMoney(fSummary?.summary?.totalIngresos || 0)}
-            sub="Todas las categorías"
-            icon={TrendingUp}
-            color="green"
-          />
-          <MetricCard
-            label="Total Egresos"
-            value={fmtMoney(fSummary?.summary?.totalEgresos || 0)}
-            sub="Todas las categorías"
-            icon={TrendingDown}
-            color="red"
-          />
+          {canSeeFinances && (
+            <MetricCard
+              label="Balance General"
+              value={fmtMoney(Math.abs(balance))}
+              sub={balance >= 0 ? "Superávit" : "Déficit"}
+              icon={balance >= 0 ? TrendingUp : TrendingDown}
+              color={balance >= 0 ? "green" : "red"}
+            />
+          )}
         </div>
+
+        {canSeeFinances && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard
+              label="Total Diezmos"
+              value={fmtMoney(dSummary?.summary?.total || 0)}
+              sub={`${dSummary?.summary?.count || 0} registros`}
+              icon={Heart}
+              color="purple"
+            />
+            <MetricCard
+              label="Total Ingresos"
+              value={fmtMoney(fSummary?.summary?.totalIngresos || 0)}
+              sub="Todas las categorías"
+              icon={TrendingUp}
+              color="green"
+            />
+            <MetricCard
+              label="Total Egresos"
+              value={fmtMoney(fSummary?.summary?.totalEgresos || 0)}
+              sub="Todas las categorías"
+              icon={TrendingDown}
+              color="red"
+            />
+          </div>
+        )}
       </div>
     );
   };
@@ -1475,7 +1491,9 @@ export default function ReportsPage() {
       {/* Tabs + Acciones */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {TABS.map((t) => {
+          {TABS.filter(
+            (t) => canSeeFinances || (t.id !== "finances" && t.id !== "donations"),
+          ).map((t) => {
             const Icon = t.icon;
             return (
               <button

@@ -108,8 +108,11 @@ function SectionHeader({ title, linkTo, linkLabel = "Ver todos", color = "text-m
 
 // ── Página ────────────────────────────────────────────────────────────────────
 
+const FINANCE_ROLES = ["ADMIN", "PASTOR", "TESORERO"];
+
 export default function DashboardPage() {
   const { user } = useAuth();
+  const canSeeFinances = FINANCE_ROLES.includes(user?.role);
   const navigate = useNavigate();
 
   const [memberStats,   setMemberStats]   = useState(null);
@@ -125,19 +128,23 @@ export default function DashboardPage() {
   useEffect(() => {
     const run = async () => {
       setLoading(true);
+      // Un Líder no tiene permiso en el backend para /finances/summary ni
+      // /finances/monthly — omitirlas de entrada evita dos 403 garantizados
+      // en cada carga del dashboard (Promise.allSettled ya las toleraría,
+      // pero no tiene sentido pedir algo que nunca se va a poder mostrar).
       const [ms, fs, gs, vs, ev, comm, pr, fin] = await Promise.allSettled([
         membersService.getStats(),
-        financesService.getSummary(),
+        canSeeFinances ? financesService.getSummary() : Promise.resolve(null),
         groupsService.getStats(),
         visitorsService.getStats(),
         eventsService.getAll({ limit: 100 }),
         communionService.getAll({ limit: 50 }),
         prayerService.getAll(),
-        financesService.getMonthly({ months: 6 }),
+        canSeeFinances ? financesService.getMonthly({ months: 6 }) : Promise.resolve(null),
       ]);
 
       if (ms.status === "fulfilled") setMemberStats(ms.value);
-      if (fs.status === "fulfilled") setBalance(fs.value?.summary?.balance ?? 0);
+      if (fs.status === "fulfilled" && fs.value) setBalance(fs.value.summary?.balance ?? 0);
       if (gs.status === "fulfilled") setGroupTotal(gs.value?.total ?? 0);
       if (vs.status === "fulfilled") setVisitorStats(vs.value?.stats);
 
@@ -210,7 +217,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPIs ────────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-2 gap-4 ${canSeeFinances ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
         <KpiCard
           icon={Users} label="Miembros Activos"
           value={memberStats?.active ?? memberStats?.total}
@@ -232,23 +239,27 @@ export default function DashboardPage() {
           color={{ bg: "bg-purple-500/15", icon: "text-purple-700 dark:text-purple-400", border: "border-border" }}
           href="/dashboard/groups" loading={loading}
         />
-        <KpiCard
-          icon={DollarSign} label="Balance"
-          value={balance !== null ? fmtMoney(balance) : undefined}
-          sub={balance >= 0 ? "Superávit" : "Déficit"}
-          color={balance >= 0
-            ? { bg: "bg-emerald-500/15", icon: "text-emerald-700 dark:text-emerald-400", border: "border-border" }
-            : { bg: "bg-red-500/15",     icon: "text-red-700 dark:text-red-400",     border: "border-red-900/40" }}
-          href="/dashboard/finances" loading={loading}
-        />
+        {canSeeFinances && (
+          <KpiCard
+            icon={DollarSign} label="Balance"
+            value={balance !== null ? fmtMoney(balance) : undefined}
+            sub={balance >= 0 ? "Superávit" : "Déficit"}
+            color={balance >= 0
+              ? { bg: "bg-emerald-500/15", icon: "text-emerald-700 dark:text-emerald-400", border: "border-border" }
+              : { bg: "bg-red-500/15",     icon: "text-red-700 dark:text-red-400",     border: "border-red-900/40" }}
+            href="/dashboard/finances" loading={loading}
+          />
+        )}
       </div>
 
       {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className={`grid grid-cols-2 gap-3 ${canSeeFinances ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
         <QuickAction icon={UserPlus}     label="Nuevo Miembro"     href="/dashboard/members"  color="bg-blue-600/10 border-blue-600/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600/20" />
         <QuickAction icon={UserSearch}   label="Nuevo Visitante"   href="/dashboard/visitors" color="bg-teal-600/10 border-teal-600/30 text-teal-700 dark:text-teal-300 hover:bg-teal-600/20" />
         <QuickAction icon={CalendarDays} label="Nuevo Evento"      href="/dashboard/events"   color="bg-purple-600/10 border-purple-600/30 text-purple-700 dark:text-purple-300 hover:bg-purple-600/20" />
-        <QuickAction icon={PlusCircle}   label="Registrar Ofrenda" href="/dashboard/finances" color="bg-emerald-600/10 border-emerald-600/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600/20" />
+        {canSeeFinances && (
+          <QuickAction icon={PlusCircle} label="Registrar Ofrenda" href="/dashboard/finances" color="bg-emerald-600/10 border-emerald-600/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600/20" />
+        )}
       </div>
 
 
@@ -396,12 +407,12 @@ export default function DashboardPage() {
             { label: "Familias",    href: "/dashboard/families",   icon: "👨‍👩‍👧" },
             { label: "Bautismos",   href: "/dashboard/baptisms",   icon: "💧" },
             { label: "Asistencia",  href: "/dashboard/attendance", icon: "✅" },
-            { label: "Donaciones",  href: "/dashboard/donations",  icon: "💝" },
+            canSeeFinances && { label: "Donaciones", href: "/dashboard/donations", icon: "💝" },
             { label: "Líderes",     href: "/dashboard/leaders",    icon: "👑" },
             { label: "Santa Cena",  href: "/dashboard/communion",  icon: "🍷" },
             { label: "Reportes",    href: "/dashboard/reports",    icon: "📊" },
             { label: "Oración",     href: "/dashboard/prayer",     icon: "🔥" },
-          ].map(({ label, href, icon }) => (
+          ].filter(Boolean).map(({ label, href, icon }) => (
             <Link key={href} to={href}
               className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-center">
               <span className="text-xl leading-none">{icon}</span>
