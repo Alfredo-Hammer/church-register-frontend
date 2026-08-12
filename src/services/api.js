@@ -864,6 +864,34 @@ export const conferenceService = {
     return response.data;
   },
 
+  // ── Iglesias participantes (catálogo por iglesia) ─
+  getParticipatingChurches: async () => {
+    const response = await api.get('/conference/participating-churches');
+    return response.data;
+  },
+  createParticipatingChurch: async (name) => {
+    const response = await api.post('/conference/participating-churches', { name });
+    return response.data;
+  },
+  deleteParticipatingChurch: async (id) => {
+    const response = await api.delete(`/conference/participating-churches/${id}`);
+    return response.data;
+  },
+
+  // ── Oradores (catálogo por iglesia) ─
+  getSpeakers: async () => {
+    const response = await api.get('/conference/speakers');
+    return response.data;
+  },
+  createSpeaker: async (data) => {
+    const response = await api.post('/conference/speakers', data);
+    return response.data;
+  },
+  deleteSpeaker: async (id) => {
+    const response = await api.delete(`/conference/speakers/${id}`);
+    return response.data;
+  },
+
   // ── Días ──────────────────────────────────
   addDay: async (conferenceId, data) => {
     const response = await api.post(`/conference/${conferenceId}/days`, data);

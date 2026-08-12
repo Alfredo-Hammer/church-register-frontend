@@ -190,6 +190,23 @@ export default function ConferenceDetailPage() {
   const [typeError, setTypeError]           = useState("");
   const [deletingTypeId, setDeletingTypeId] = useState(null);
 
+  // Catálogo de oradores (por iglesia) — mismo criterio que tipos de sesión
+  const [speakers, setSpeakers]                 = useState([]);
+  const [showNewSpeaker, setShowNewSpeaker]     = useState(false);
+  const [newSpeakerName, setNewSpeakerName]     = useState("");
+  const [newSpeakerTitle, setNewSpeakerTitle]   = useState("");
+  const [savingSpeaker, setSavingSpeaker]       = useState(false);
+  const [speakerError, setSpeakerError]         = useState("");
+  const [deletingSpeakerId, setDeletingSpeakerId] = useState(null);
+
+  // Catálogo de iglesias participantes (por iglesia anfitriona) — se
+  // gestiona desde el panel del link de registro
+  const [participatingChurches, setParticipatingChurches] = useState([]);
+  const [newChurchName, setNewChurchName]       = useState("");
+  const [savingChurch, setSavingChurch]         = useState(false);
+  const [churchListError, setChurchListError]   = useState("");
+  const [deletingChurchId, setDeletingChurchId] = useState(null);
+
   // Días
   const [addDayDialog, setAddDayDialog]   = useState(false);
   const [newDayDate, setNewDayDate]       = useState("");
@@ -258,6 +275,20 @@ export default function ConferenceDetailPage() {
     } catch { /* silent */ }
   }, []);
 
+  const fetchSpeakers = useCallback(async () => {
+    try {
+      const data = await conferenceService.getSpeakers();
+      setSpeakers(data.speakers);
+    } catch { /* silent */ }
+  }, []);
+
+  const fetchParticipatingChurches = useCallback(async () => {
+    try {
+      const data = await conferenceService.getParticipatingChurches();
+      setParticipatingChurches(data.churches);
+    } catch { /* silent */ }
+  }, []);
+
   const fetchRegistrations = useCallback(async (search, page) => {
     setRegLoading(true);
     try {
@@ -276,6 +307,8 @@ export default function ConferenceDetailPage() {
       await fetchConference();
       await fetchStats();
       await fetchSessionTypes();
+      await fetchSpeakers();
+      await fetchParticipatingChurches();
       setLoading(false);
     };
     load();
@@ -290,7 +323,7 @@ export default function ConferenceDetailPage() {
     ).catch(() =>
       setChurch({ name: user?.churchName || '', logoUrl: user?.churchLogo || null })
     );
-  }, [fetchConference, fetchStats, fetchSessionTypes]);
+  }, [fetchConference, fetchStats, fetchSessionTypes, fetchSpeakers, fetchParticipatingChurches]);
 
   useEffect(() => {
     if (activeTab === "asistentes") fetchRegistrations(regSearch, regPage);
@@ -419,6 +452,58 @@ export default function ConferenceDetailPage() {
       setTypeError(err.response?.data?.error || "No se pudo eliminar el tipo.");
     }
     setDeletingTypeId(null);
+  };
+
+  const handleCreateSpeaker = async () => {
+    if (!newSpeakerName.trim()) return setSpeakerError("Ponle un nombre al orador.");
+    setSavingSpeaker(true);
+    setSpeakerError("");
+    try {
+      const data = await conferenceService.createSpeaker({
+        fullName: newSpeakerName.trim(),
+        title: newSpeakerTitle.trim() || undefined,
+      });
+      await fetchSpeakers();
+      setSessionForm((p) => ({ ...p, speaker: data.speaker.full_name }));
+      setNewSpeakerName("");
+      setNewSpeakerTitle("");
+      setShowNewSpeaker(false);
+    } catch (err) {
+      setSpeakerError(err.response?.data?.error || "No se pudo agregar el orador.");
+    }
+    setSavingSpeaker(false);
+  };
+
+  const handleDeleteSpeaker = async (speakerId) => {
+    setDeletingSpeakerId(speakerId);
+    try {
+      await conferenceService.deleteSpeaker(speakerId);
+      await fetchSpeakers();
+    } catch { /* silent */ }
+    setDeletingSpeakerId(null);
+  };
+
+  const handleAddParticipatingChurch = async () => {
+    if (!newChurchName.trim()) return;
+    setSavingChurch(true);
+    setChurchListError("");
+    try {
+      await conferenceService.createParticipatingChurch(newChurchName.trim());
+      await fetchParticipatingChurches();
+      setNewChurchName("");
+    } catch (err) {
+      setChurchListError(err.response?.data?.error || "No se pudo agregar la iglesia.");
+    }
+    setSavingChurch(false);
+  };
+
+  const handleDeleteParticipatingChurch = async (churchId) => {
+    setDeletingChurchId(churchId);
+    try {
+      await conferenceService.deleteParticipatingChurch(churchId);
+      await fetchParticipatingChurches();
+    } catch { /* silent */ }
+    setDeletingChurchId(null);
   };
 
   // ── Días ───────────────────────────────────────────────────────────────────
@@ -1008,6 +1093,46 @@ export default function ConferenceDetailPage() {
                     <RefreshCw size={12} /> Regenerar link
                   </button>
                 )}
+
+                {/* Catálogo de iglesias participantes: el formulario público
+                    las ofrece como <select> en vez de texto libre, para que
+                    no queden escritas de formas distintas cada vez. */}
+                <div className="pt-3 border-t border-purple-500/20">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
+                    <Church size={12} /> Iglesias participantes
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Aparecen como opción en el formulario de registro. Si la lista está vacía, el campo queda como texto libre.
+                  </p>
+                  {participatingChurches.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {participatingChurches.map((c) => (
+                        <span key={c.id}
+                          className="group/pc inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-background border border-border text-foreground">
+                          {c.name}
+                          <button type="button" title="Quitar" onClick={() => handleDeleteParticipatingChurch(c.id)}
+                            className="p-0.5 rounded opacity-0 group-hover/pc:opacity-100 hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-400 transition-opacity">
+                            {deletingChurchId === c.id
+                              ? <Loader2 size={10} className="animate-spin" />
+                              : <X size={10} />}
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input placeholder="Nombre de la iglesia" value={newChurchName}
+                      onChange={(e) => setNewChurchName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddParticipatingChurch())}
+                      className="text-sm" maxLength={200} />
+                    <Button size="sm" onClick={handleAddParticipatingChurch} disabled={savingChurch || !newChurchName.trim()}
+                      className="flex items-center gap-1.5 shrink-0">
+                      {savingChurch ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                      Agregar
+                    </Button>
+                  </div>
+                  {churchListError && <p className="text-xs text-red-700 dark:text-red-400 mt-1.5">{churchListError}</p>}
+                </div>
               </div>
             );
           })()}
@@ -1391,12 +1516,71 @@ export default function ConferenceDetailPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 <Users size={10} className="inline mr-1" />Expositor / Speaker
               </label>
-              <Input placeholder="Nombre del predicador o equipo"
-                value={sessionForm.speaker}
-                onChange={(e) => setSessionForm(p => ({ ...p, speaker: e.target.value }))} />
+              <div className="flex flex-wrap gap-2">
+                {speakers.map((s) => {
+                  const selected = sessionForm.speaker === s.full_name;
+                  return (
+                    <button key={s.id} type="button"
+                      onClick={() => setSessionForm(p => ({ ...p, speaker: s.full_name }))}
+                      className={cn(
+                        "group/spk relative flex items-center gap-1.5 pl-3 pr-2 py-2 rounded-lg border text-xs font-bold transition-all",
+                        selected
+                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/50"
+                          : "bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/40"
+                      )}>
+                      {s.full_name}{s.title ? <span className="font-normal opacity-70">· {s.title}</span> : null}
+                      <span
+                        role="button"
+                        title="Eliminar orador"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteSpeaker(s.id); }}
+                        className="shrink-0 p-0.5 rounded opacity-0 group-hover/spk:opacity-100 hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-400 transition-opacity"
+                      >
+                        {deletingSpeakerId === s.id
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <X size={11} />}
+                      </span>
+                    </button>
+                  );
+                })}
+                <button type="button" onClick={() => setShowNewSpeaker((v) => !v)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed text-xs font-bold transition-all",
+                    showNewSpeaker
+                      ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-500/10"
+                      : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
+                  )}>
+                  <Plus size={14} /> Agregar orador
+                </button>
+              </div>
+
+              {showNewSpeaker && (
+                <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30 space-y-2">
+                  <Input placeholder="Nombre del orador" value={newSpeakerName}
+                    onChange={(e) => setNewSpeakerName(e.target.value)} maxLength={200} />
+                  <Input placeholder="Título u organización (opcional, ej. Evangelista)" value={newSpeakerTitle}
+                    onChange={(e) => setNewSpeakerTitle(e.target.value)} maxLength={100} />
+                  {speakerError && <p className="text-xs text-red-700 dark:text-red-400">{speakerError}</p>}
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" size="sm"
+                      onClick={() => { setShowNewSpeaker(false); setSpeakerError(""); }}>
+                      Cancelar
+                    </Button>
+                    <Button type="button" size="sm" onClick={handleCreateSpeaker} disabled={savingSpeaker}
+                      className="flex items-center gap-1.5">
+                      {savingSpeaker && <Loader2 size={13} className="animate-spin" />}
+                      Guardar orador
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {sessionForm.speaker && !speakers.some((s) => s.full_name === sessionForm.speaker) && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Expositor actual: <span className="font-medium text-foreground">{sessionForm.speaker}</span> (no está en el catálogo)
+                </p>
+              )}
             </div>
 
             <div>

@@ -50,6 +50,7 @@ export default function PublicConferenceRegistrationPage() {
   const [notFound, setNotFound] = useState(false);
   const [data, setData] = useState(null);
   const [form, setForm] = useState(emptyForm());
+  const [useOtherChurch, setUseOtherChurch] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
@@ -217,12 +218,46 @@ export default function PublicConferenceRegistrationPage() {
                 <label className="text-sm font-medium text-muted-foreground block mb-1.5">
                   Tu iglesia *
                 </label>
-                <Input
-                  value={form.originChurch}
-                  onChange={(e) => set("originChurch", e.target.value)}
-                  placeholder="Nombre de tu iglesia"
-                  className="bg-background border-border text-foreground"
-                />
+                {data.participatingChurches?.length > 0 && !useOtherChurch ? (
+                  <>
+                    <select
+                      value={form.originChurch}
+                      onChange={(e) => {
+                        if (e.target.value === "__OTHER__") {
+                          setUseOtherChurch(true);
+                          set("originChurch", "");
+                        } else {
+                          set("originChurch", e.target.value);
+                        }
+                      }}
+                      className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="" disabled>Selecciona tu iglesia…</option>
+                      {data.participatingChurches.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                      <option value="__OTHER__">Otra (no está en la lista)</option>
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      value={form.originChurch}
+                      onChange={(e) => set("originChurch", e.target.value)}
+                      placeholder="Nombre de tu iglesia"
+                      className="bg-background border-border text-foreground"
+                    />
+                    {data.participatingChurches?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => { setUseOtherChurch(false); set("originChurch", ""); }}
+                        className="text-xs text-blue-700 dark:text-blue-400 hover:underline mt-1.5"
+                      >
+                        Elegir de la lista
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
