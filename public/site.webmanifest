@@ -1,0 +1,21 @@
+{
+  "name": "Congrega - Sistema de administración para iglesias",
+  "short_name": "Congrega",
+  "description": "Miembros, visitantes, finanzas, asistencia y bautismos, todo en un solo lugar. Pensado y escrito en español.",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
