@@ -483,6 +483,14 @@ export const settingsService = {
     const response = await api.put('/settings/password', data);
     return response.data;
   },
+  uploadProfilePhoto: async (photoBase64) => {
+    const response = await api.put('/settings/profile/photo', { photoBase64 });
+    return response.data;
+  },
+  deleteProfilePhoto: async () => {
+    const response = await api.delete('/settings/profile/photo');
+    return response.data;
+  },
 
   // Código de invitación (acceso de miembros por la app móvil)
   getJoinCode: async () => {

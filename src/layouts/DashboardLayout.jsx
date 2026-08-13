@@ -333,6 +333,8 @@ const navigation = [
 export const DashboardLayout = ({children}) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const headerMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const {user, logout, updateUser} = useAuth();
@@ -349,10 +351,31 @@ export const DashboardLayout = ({children}) => {
     }
   }, []);
 
+  // Cerrar el menú del header al hacer clic fuera (queda visible en toda
+  // la página, a diferencia del menú del sidebar que vive en un drawer).
+  useEffect(() => {
+    if (!headerMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target)) {
+        setHeaderMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [headerMenuOpen]);
+
   const handleLogout = () => {
     logout();
     navigate("/");
   };
+
+  const initials =
+    user?.fullName
+      ?.split(" ")
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "U";
 
   return (
     <div className="min-h-screen bg-background">
@@ -520,13 +543,70 @@ export const DashboardLayout = ({children}) => {
               <ThemeToggle />
 
               {/* Desktop user menu */}
-              <div className="hidden lg:block">
-                <span className="text-sm text-muted-foreground">
-                  Bienvenido,{" "}
-                  <span className="font-semibold text-foreground">
+              <div className="hidden lg:block relative" ref={headerMenuRef}>
+                <button
+                  onClick={() => setHeaderMenuOpen((v) => !v)}
+                  className="flex items-center gap-2.5 pl-1.5 pr-2 py-1.5 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center",
+                      user?.photoUrl || user?.churchLogo
+                        ? "bg-background ring-1 ring-border"
+                        : "bg-gradient-to-br from-blue-500 to-blue-700",
+                    )}
+                  >
+                    {user?.photoUrl ? (
+                      <img
+                        src={user.photoUrl}
+                        alt={user.fullName || "Foto de perfil"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : user?.churchLogo ? (
+                      <img
+                        src={user.churchLogo}
+                        alt="Logo"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs font-semibold text-white">
+                        {initials}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">
                     {user?.fullName}
                   </span>
-                </span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+
+                {headerMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-20">
+                    <div className="px-4 py-3 border-b border-border">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user?.fullName || "Usuario"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                    <Link
+                      to="/dashboard/profile"
+                      onClick={() => setHeaderMenuOpen(false)}
+                      className="flex items-center w-full px-4 py-3 text-sm text-muted-foreground hover:bg-accent transition-colors"
+                    >
+                      <User className="h-4 w-4 mr-3" />
+                      Mi Perfil
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full px-4 py-3 text-sm text-muted-foreground hover:bg-accent transition-colors"
+                    >
+                      <LogOut className="h-4 w-4 mr-3" />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

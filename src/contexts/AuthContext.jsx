@@ -59,6 +59,7 @@ export const AuthProvider = ({children}) => {
         role: u.role,
         fullName: u.fullName,
         email: u.email,
+        photoUrl: u.photoUrl ?? null,
       };
 
       localStorage.setItem("token", response.token);

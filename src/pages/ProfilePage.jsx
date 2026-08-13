@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from "react";
+import React, {useState, useEffect, useCallback, useRef} from "react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -15,6 +15,9 @@ import {
   Edit2,
   Building2,
   Calendar,
+  Camera,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import {settingsService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
@@ -115,6 +118,8 @@ export default function ProfilePage() {
     confirmPassword: "",
   });
   const [pwSaving, setPwSaving] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const notify = (msg, type = "success") => setToast({msg, type});
 
@@ -151,6 +156,50 @@ export default function ProfilePage() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/"))
+      return notify("Solo se permiten archivos de imagen.", "error");
+    if (file.size > 2 * 1024 * 1024)
+      return notify("La imagen debe ser menor a 2MB.", "error");
+    setPhotoUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result;
+        try {
+          const res = await settingsService.uploadProfilePhoto(base64);
+          setProfile((prev) => ({...prev, photoUrl: res.photoUrl}));
+          updateUser({photoUrl: res.photoUrl});
+          notify("Foto de perfil actualizada.");
+        } catch (err) {
+          notify(err?.response?.data?.error || "Error al subir la foto.", "error");
+        } finally {
+          setPhotoUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setPhotoUploading(false);
+    }
+    e.target.value = "";
+  };
+
+  const handlePhotoDelete = async () => {
+    setPhotoUploading(true);
+    try {
+      await settingsService.deleteProfilePhoto();
+      setProfile((prev) => ({...prev, photoUrl: null}));
+      updateUser({photoUrl: null});
+      notify("Foto de perfil eliminada.");
+    } catch (err) {
+      notify(err?.response?.data?.error || "Error al eliminar la foto.", "error");
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -212,8 +261,50 @@ export default function ProfilePage() {
         <CardContent className="p-6">
           <div className="flex items-start gap-5">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-lg">
-              <span className="text-2xl font-bold text-white">{initials}</span>
+            <div className="relative shrink-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
+                {profile?.photoUrl ? (
+                  <img
+                    src={profile.photoUrl}
+                    alt={profile?.fullName || "Foto de perfil"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-white">{initials}</span>
+                )}
+                {photoUploading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl">
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={photoUploading}
+                title="Cambiar foto"
+                className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-blue-500 transition-colors shadow"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+              {profile?.photoUrl && (
+                <button
+                  type="button"
+                  onClick={handlePhotoDelete}
+                  disabled={photoUploading}
+                  title="Quitar foto"
+                  className="absolute -bottom-1.5 -left-1.5 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:border-red-500/50 transition-colors shadow"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Info */}
