@@ -399,28 +399,21 @@ export const DashboardLayout = ({children}) => {
           <div className="border-b border-border px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
-                {/* Logo / icon — con logo real, solo un borde fino: la caja
-                    con degradado era para el ✝ de respaldo, no para tapar
-                    el logo con relleno azul alrededor. */}
+                {/* Logo / icon — si la iglesia no subió su propio logo,
+                    mostramos el logo de Congrega en su lugar. */}
                 <div
                   className={cn(
                     "w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center shadow-lg",
                     user?.churchLogo
                       ? "bg-background ring-1 ring-border"
-                      : "bg-gradient-to-br from-blue-500 to-blue-700 ring-2 ring-blue-500/30",
+                      : "ring-2 ring-blue-500/30",
                   )}
                 >
-                  {user?.churchLogo ? (
-                    <img
-                      src={user.churchLogo}
-                      alt="Logo"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-white font-bold text-xl leading-none">
-                      ✝
-                    </span>
-                  )}
+                  <img
+                    src={user?.churchLogo || "/logo.png"}
+                    alt={user?.churchLogo ? "Logo" : "Congrega"}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 {/* Church name + tagline */}
                 <div className="min-w-0">

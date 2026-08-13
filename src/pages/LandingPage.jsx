@@ -248,9 +248,11 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600">
-              <Church className="h-5 w-5 text-white" />
-            </span>
+            <img
+              src="/logo.png"
+              alt="Congrega"
+              className="h-9 w-9 shrink-0 rounded-xl shadow"
+            />
             {/* En móvil no cabe junto al toggle y el botón: queda solo el
                 icono, y el nombre lo retoma el titular del hero */}
             <span className="hidden truncate font-bold text-foreground sm:inline">
@@ -509,7 +511,7 @@ export default function LandingPage() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <Church className="h-4 w-4" />
+            <img src="/logo.png" alt="Congrega" className="h-4 w-4 rounded-[4px]" />
             CONGREGA
           </div>
           <div className="flex items-center gap-6">

@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
-import {Church, Mail, Lock, AlertCircle} from "lucide-react";
+import {Mail, Lock, AlertCircle} from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -49,6 +49,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo y título */}
         <div className="text-center mb-8">
+          <img
+            src="/logo.png"
+            alt="Congrega"
+            className="w-16 h-16 rounded-2xl shadow-lg mx-auto mb-4"
+          />
           <h1 className="text-3xl font-bold text-foreground mb-2">
             CONGREGA
           </h1>

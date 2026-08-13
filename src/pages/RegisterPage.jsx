@@ -287,9 +287,16 @@ export default function RegisterPage() {
       <div className="relative w-full max-w-2xl mx-auto">
         {/* Header compacto */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Registra tu Iglesia</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Comienza a gestionar tu comunidad hoy</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="Congrega"
+              className="w-10 h-10 rounded-xl shadow-lg shrink-0"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Registra tu Iglesia</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Comienza a gestionar tu comunidad hoy</p>
+            </div>
           </div>
           <Link to="/login" className="text-sm text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 font-medium">
             Iniciar sesión
