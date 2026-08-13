@@ -955,6 +955,14 @@ export const conferenceService = {
     const response = await api.get(`/conference/registrations/${regId}/attendance`);
     return response.data;
   },
+  markAttendance: async (sessionId, regId, status = 'PRESENTE') => {
+    const response = await api.post(`/conference/sessions/${sessionId}/attendance/${regId}`, { status });
+    return response.data;
+  },
+  unmarkAttendance: async (sessionId, regId) => {
+    const response = await api.delete(`/conference/sessions/${sessionId}/attendance/${regId}`);
+    return response.data;
+  },
   getAttendanceReport: async (conferenceId) => {
     const response = await api.get(`/conference/${conferenceId}/attendance-report`);
     return response.data;

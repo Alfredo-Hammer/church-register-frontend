@@ -38,6 +38,7 @@ import LettersPage from "@/pages/LettersPage";
 import ConferencePage from "@/pages/ConferencePage";
 import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
+import ConferenceManualAttendancePage from "@/pages/ConferenceManualAttendancePage";
 import AnnouncementsPage from "@/pages/AnnouncementsPage";
 
 function App() {
@@ -296,6 +297,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ConferenceCheckInPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/conference/:id/attendance/:sessionId"
+              element={
+                <ProtectedRoute>
+                  <ConferenceManualAttendancePage />
                 </ProtectedRoute>
               }
             />

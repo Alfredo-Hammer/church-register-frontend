@@ -15,6 +15,12 @@ import { cn } from "@/lib/utils";
 // hace menos de este tiempo.
 const RESCAN_COOLDOWN_MS = 4000;
 
+// Le dice a quien escanea que ya lo habían marcado a mano con un status
+// distinto de Presente — el scan nunca pisa esa marca (ver ON CONFLICT
+// DO NOTHING en checkInAttendance), así que sin esto quedaría invisible
+// que alguien "Justificado" en realidad sí llegó.
+const NON_PRESENT_LABELS = { TARDE: "Tarde", JUSTIFICADO: "Justificado" };
+
 function formatTime(t) {
   if (!t) return null;
   const [h, m] = t.split(':');
@@ -56,7 +62,8 @@ export default function ConferenceCheckInPage() {
 
   const [manualToken, setManualToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState(null); // { kind: 'ok'|'warn'|'error', text }
+  const [feedback, setFeedback] = useState(null); // { kind: 'ok'|'warn'|'error', text, correction? }
+  const [correctingId, setCorrectingId] = useState(null);
 
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraError, setCameraError] = useState("");
@@ -110,11 +117,15 @@ export default function ConferenceCheckInPage() {
     setSubmitting(true);
     try {
       const data = await conferenceService.checkIn(token, sessionId);
+      const nonPresentLabel = data.alreadyCheckedIn ? NON_PRESENT_LABELS[data.status] : null;
       setFeedback({
         kind: data.alreadyCheckedIn ? "warn" : "ok",
-        text: data.alreadyCheckedIn
-          ? `${data.attendee.fullName} ya estaba registrado`
-          : `${data.attendee.fullName} — asistencia registrada`,
+        text: nonPresentLabel
+          ? `${data.attendee.fullName} estaba marcado como "${nonPresentLabel}" — ¿corregir a Presente?`
+          : data.alreadyCheckedIn
+            ? `${data.attendee.fullName} ya estaba registrado`
+            : `${data.attendee.fullName} — asistencia registrada`,
+        correction: nonPresentLabel ? { regId: data.attendee.id, name: data.attendee.fullName } : null,
       });
       fetchAttendance();
     } catch (err) {
@@ -122,6 +133,18 @@ export default function ConferenceCheckInPage() {
     }
     setSubmitting(false);
   }, [sessionId, submitting, fetchAttendance]);
+
+  const handleCorrectToPresente = async (regId, name) => {
+    setCorrectingId(regId);
+    try {
+      await conferenceService.markAttendance(sessionId, regId, "PRESENTE");
+      setFeedback({ kind: "ok", text: `${name} — corregido a Presente` });
+      fetchAttendance();
+    } catch {
+      setFeedback({ kind: "error", text: "No se pudo corregir el estado." });
+    }
+    setCorrectingId(null);
+  };
 
   useEffect(() => {
     if (!feedback) return;
@@ -274,6 +297,18 @@ export default function ConferenceCheckInPage() {
           {feedback.kind === "warn" && <AlertTriangle size={16} className="flex-shrink-0" />}
           {feedback.kind === "error" && <X size={16} className="flex-shrink-0" />}
           <span className="flex-1">{feedback.text}</span>
+          {feedback.correction && (
+            <button
+              onClick={() => handleCorrectToPresente(feedback.correction.regId, feedback.correction.name)}
+              disabled={correctingId === feedback.correction.regId}
+              className="flex-shrink-0 flex items-center gap-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 px-2.5 py-1 text-xs font-bold transition-colors disabled:opacity-60"
+            >
+              {correctingId === feedback.correction.regId
+                ? <Loader2 size={12} className="animate-spin" />
+                : <Check size={12} />}
+              Corregir
+            </button>
+          )}
         </div>
       )}
 
@@ -336,9 +371,20 @@ export default function ConferenceCheckInPage() {
             <ul className="divide-y divide-border max-h-96 overflow-y-auto">
               {attendance.map((a) => (
                 <li key={a.id} className="px-4 py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{a.full_name}</p>
-                    {a.origin_church && <p className="text-xs text-muted-foreground truncate">{a.origin_church}</p>}
+                  <div className="min-w-0 flex items-center gap-2">
+                    {a.status !== "PRESENTE" && (
+                      <span
+                        title={NON_PRESENT_LABELS[a.status] || a.status}
+                        className={cn(
+                          "w-2 h-2 rounded-full flex-shrink-0",
+                          a.status === "TARDE" ? "bg-amber-500" : "bg-blue-500",
+                        )}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{a.full_name}</p>
+                      {a.origin_church && <p className="text-xs text-muted-foreground truncate">{a.origin_church}</p>}
+                    </div>
                   </div>
                   <span className="text-xs text-muted-foreground flex-shrink-0">
                     {new Date(a.checked_in_at).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}

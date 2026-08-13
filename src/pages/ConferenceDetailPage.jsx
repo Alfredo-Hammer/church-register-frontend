@@ -12,10 +12,10 @@ import { ParticipatingChurchesEditor } from "@/components/ConferenceCatalogs";
 import {
   BookOpen, ArrowLeft, Plus, Trash2, Pencil, Users, Church,
   MapPin, Phone, CalendarDays, Clock, Loader2, Search, X,
-  ChevronLeft, ChevronRight, StickyNote, FileDown, Award,
+  ChevronLeft, ChevronRight, ChevronDown, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
-  Link2, Copy, RefreshCw,
+  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -90,6 +90,34 @@ function formatTime(t) {
   const [h, m] = t.split(':');
   const hour = parseInt(h);
   return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+}
+
+// "Ausente" solo aplica a una sesión que ya ocurrió y a la que nadie marcó
+// asistencia; una sesión futura o en curso sin marcar es "pendiente", no una
+// falta real. El backend ya manda `is_past` calculado con su propio reloj,
+// pero por si acaso una sesión vieja no lo trae, se recalcula aquí igual.
+function isSessionPast(session) {
+  if (session.is_past !== undefined && session.is_past !== null) return session.is_past;
+  if (!session.day_date) return false;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dayDate = new Date(String(session.day_date).slice(0, 10) + 'T00:00:00');
+  if (dayDate < today) return true;
+  if (dayDate.getTime() === today.getTime() && session.time_end) {
+    const [h, m] = session.time_end.split(':').map(Number);
+    const end = new Date();
+    end.setHours(h, m, 0, 0);
+    return new Date() > end;
+  }
+  return false;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // ── Componente badge de tipo ──────────────────────────────────────────────────
@@ -214,6 +242,9 @@ export default function ConferenceDetailPage() {
   const [regTotal, setRegTotal]           = useState(0);
   const [regPage, setRegPage]             = useState(0);
   const [regSearch, setRegSearch]         = useState("");
+  const [regChurchFilter, setRegChurchFilter] = useState("all");
+  const [regDayFilter, setRegDayFilter]   = useState("all");
+  const [regChurchOptions, setRegChurchOptions] = useState([]);
   const [regLoading, setRegLoading]       = useState(false);
   const [regDialog, setRegDialog]         = useState(false);
   const [editingReg, setEditingReg]       = useState(null);
@@ -278,17 +309,27 @@ export default function ConferenceDetailPage() {
     } catch { /* silent */ }
   }, []);
 
-  const fetchRegistrations = useCallback(async (search, page) => {
+  const fetchRegistrations = useCallback(async (
+    search = regSearch,
+    page = regPage,
+    churchFilter = regChurchFilter,
+    dayFilter = regDayFilter
+  ) => {
     setRegLoading(true);
     try {
       const data = await conferenceService.getRegistrations(id, {
-        search: search || undefined, limit: LIMIT, offset: page * LIMIT,
+        search: search || undefined,
+        originChurch: churchFilter && churchFilter !== 'all' ? churchFilter : undefined,
+        dayNumber: dayFilter && dayFilter !== 'all' ? dayFilter : undefined,
+        limit: LIMIT,
+        offset: page * LIMIT,
       });
       setRegistrations(data.registrations);
       setRegTotal(data.pagination.total);
+      setRegChurchOptions(data.churches || []);
     } catch { /* silent */ }
     setRegLoading(false);
-  }, [id]);
+  }, [id, regSearch, regPage, regChurchFilter, regDayFilter]);
 
   useEffect(() => {
     const load = async () => {
@@ -314,8 +355,10 @@ export default function ConferenceDetailPage() {
   }, [fetchConference, fetchStats, fetchSessionTypes, fetchSpeakers]);
 
   useEffect(() => {
-    if (activeTab === "asistentes") fetchRegistrations(regSearch, regPage);
-  }, [activeTab, fetchRegistrations, regSearch, regPage]);
+    if (activeTab === "asistentes") {
+      fetchRegistrations(regSearch, regPage, regChurchFilter, regDayFilter);
+    }
+  }, [activeTab, fetchRegistrations, regSearch, regPage, regChurchFilter, regDayFilter]);
 
   const fetchReport = useCallback(async () => {
     setReportLoading(true);
@@ -327,7 +370,7 @@ export default function ConferenceDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (activeTab === "reportes") fetchReport();
+    if (activeTab === "reportes" || activeTab === "ranking") fetchReport();
   }, [activeTab, fetchReport]);
 
   // ── Sesiones ───────────────────────────────────────────────────────────────
@@ -564,7 +607,7 @@ export default function ConferenceDetailPage() {
         await conferenceService.createRegistration(id, payload);
       }
       setRegDialog(false);
-      fetchRegistrations(regSearch, regPage);
+      fetchRegistrations(regSearch, regPage, regChurchFilter, regDayFilter);
       fetchStats();
     } catch (err) {
       setRegError(err.response?.data?.error || "Error al guardar.");
@@ -577,7 +620,7 @@ export default function ConferenceDetailPage() {
     try {
       await conferenceService.deleteRegistration(id, deletingReg.id);
       setDeletingReg(null);
-      fetchRegistrations(regSearch, regPage);
+      fetchRegistrations(regSearch, regPage, regChurchFilter, regDayFilter);
       fetchStats();
     } catch { /* silent */ }
   };
@@ -636,7 +679,13 @@ export default function ConferenceDetailPage() {
     setBatchError("");
     setBatchProgress({ current: 0, total: 0 });
     try {
-      const data = await conferenceService.getRegistrations(id, { limit: 5000, offset: 0 });
+      const data = await conferenceService.getRegistrations(id, {
+        limit: 5000,
+        offset: 0,
+        search: regSearch || undefined,
+        originChurch: regChurchFilter && regChurchFilter !== 'all' ? regChurchFilter : undefined,
+        dayNumber: regDayFilter && regDayFilter !== 'all' ? regDayFilter : undefined,
+      });
       await runBatchPrint(data.registrations);
     } catch {
       setBatchError('No se pudo cargar la lista completa de asistentes.');
@@ -652,20 +701,397 @@ export default function ConferenceDetailPage() {
   // Debe ir antes de los `return` condicionales de abajo: los hooks no
   // pueden depender de si `conference` ya cargó o no.
   const attendedSet = useMemo(() => {
-    if (!report) return new Set();
-    return new Set(report.attendance.map((a) => `${a.registration_id}:${a.session_id}`));
+    if (!report) return new Map();
+    return new Map(report.attendance.map((a) => [`${a.registration_id}:${a.session_id}`, a.status || "PRESENTE"]));
   }, [report]);
 
   // Columnas que muestra la tabla de asistencia según la pestaña elegida:
-  // todas las sesiones, o solo las de un día.
+  // todas las sesiones, o solo las de un día. Siempre de la más temprana a
+  // la más tardía (izquierda a derecha), sin importar el orden en que se
+  // hayan creado — las sin hora (time_start null) quedan al final.
   const visibleSessions = useMemo(() => {
     if (!report) return [];
-    if (reportFilter.startsWith("day:")) {
-      const dayNumber = Number(reportFilter.slice(4));
-      return report.sessions.filter((s) => s.day_number === dayNumber);
-    }
-    return report.sessions;
+    const bySchedule = (a, b) => {
+      if (a.day_number !== b.day_number) return a.day_number - b.day_number;
+      if (!a.time_start && !b.time_start) return 0;
+      if (!a.time_start) return 1;
+      if (!b.time_start) return -1;
+      return a.time_start.localeCompare(b.time_start);
+    };
+    const sessions = reportFilter.startsWith("day:")
+      ? report.sessions.filter((s) => s.day_number === Number(reportFilter.slice(4)))
+      : report.sessions;
+    return [...sessions].sort(bySchedule);
   }, [report, reportFilter]);
+
+  const filteredReportLabel = useMemo(() => {
+    if (!report) return "Reporte";
+    if (reportFilter === "all") return "Reporte general";
+    const dayNumber = Number(reportFilter.slice(4));
+    const day = report.sessions.find((s) => s.day_number === dayNumber);
+    return day ? `Reporte del día ${dayNumber}` : `Reporte del día ${dayNumber}`;
+  }, [report, reportFilter]);
+
+  const sessionParticipationLeaderboard = useMemo(() => {
+    if (!report || !visibleSessions.length) return [];
+
+    const registrantById = new Map((report.registrants || []).map((r) => [r.id, r]));
+
+    return visibleSessions.map((session) => {
+      const counts = new Map();
+
+      (report.attendance || []).forEach((entry) => {
+        if (entry.session_id !== session.id) return;
+        const registrant = registrantById.get(entry.registration_id);
+        if (!registrant) return;
+        const churchName = (registrant.origin_church || 'Sin especificar').trim() || 'Sin especificar';
+        counts.set(churchName, (counts.get(churchName) || 0) + 1);
+      });
+
+      const churches = [...counts.entries()]
+        .map(([church, count]) => ({ church, count }))
+        .sort((a, b) => b.count - a.count || a.church.localeCompare(b.church))
+        .slice(0, 5);
+
+      return {
+        sessionId: session.id,
+        title: session.title || `Sesión ${session.day_number}`,
+        churches,
+      };
+    });
+  }, [report, visibleSessions]);
+
+  const openFilteredReportWindow = (print = false) => {
+    if (!report || !visibleSessions.length) return;
+
+    const summaryRows = report.byChurch.map((church) => `
+      <tr>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #0f172a;">${escapeHtml(church.church)}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155; text-align: center;">${church.registrants}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155; text-align: center;">${church.checkins}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155; text-align: center;">${church.registrants ? (church.checkins / church.registrants).toFixed(1) : '0.0'}</td>
+      </tr>
+    `).join('');
+
+    const rankingHtml = sessionParticipationLeaderboard.map((session) => `
+      <div style="margin-top: 18px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff;">
+        <div style="padding: 12px 14px; background: linear-gradient(180deg, #f8fafc, #f1f5f9); border-bottom: 1px solid #e2e8f0; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #475569; font-weight:700;">
+          ${escapeHtml(session.title)}
+        </div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:10px 12px; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#475569; border-bottom:1px solid #e2e8f0;">Lugar</th>
+              <th style="text-align:left; padding:10px 12px; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#475569; border-bottom:1px solid #e2e8f0;">Iglesia</th>
+              <th style="text-align:center; padding:10px 12px; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#475569; border-bottom:1px solid #e2e8f0;">Asistencias</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${session.churches.length
+              ? session.churches.map((entry, index) => `
+                  <tr>
+                    <td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; color:#0f172a; font-weight:700;">#${index + 1}</td>
+                    <td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; color:#0f172a;">${escapeHtml(entry.church)}</td>
+                    <td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; text-align:center; color:#334155; font-weight:700;">${entry.count}</td>
+                  </tr>
+                `).join('')
+              : '<tr><td colspan="3" style="padding:12px; color:#64748b;">Sin asistencia registrada</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `).join('');
+
+    const rowsHtml = report.registrants.map((r) => {
+      const attendedCount = visibleSessions.filter((s) => attendedSet.has(`${r.id}:${s.id}`)).length;
+      const cells = visibleSessions.map((s) => {
+        const status = attendedSet.get(`${r.id}:${s.id}`);
+        const cellStyles = {
+          PRESENTE:    { bg: '#ecfdf5', mark: '<span style="color:#15803d; font-weight:700; font-size:16px;">✓</span>' },
+          TARDE:       { bg: '#fffbeb', mark: '<span style="color:#b45309; font-weight:700; font-size:12px;">T</span>' },
+          JUSTIFICADO: { bg: '#eff6ff', mark: '<span style="color:#1d4ed8; font-weight:700; font-size:12px;">J</span>' },
+        };
+        const style = cellStyles[status];
+        const past = isSessionPast(s);
+        return `
+        <td style="border:1px solid #e2e8f0; padding:10px 8px; text-align:center; background:${style ? style.bg : (past ? '#fef2f2' : '#ffffff')};">
+          ${style
+            ? style.mark
+            : (past
+                ? '<span style="color:#dc2626; font-weight:700; font-size:12px;">✕</span>'
+                : '<span style="color:#94a3b8; font-size:12px;">—</span>')}
+        </td>
+      `;
+      }).join('');
+
+      return `
+        <tr>
+          <td style="border:1px solid #e2e8f0; padding:10px 12px; min-width:200px; background:#fff;">
+            <div style="font-weight:700; color:#0f172a;">${escapeHtml(r.full_name || 'Sin nombre')}</div>
+            <div style="font-size:12px; color:#475569; margin-top:3px;">${escapeHtml(r.origin_church || '—')}</div>
+          </td>
+          ${cells}
+          <td style="border:1px solid #e2e8f0; padding:10px 8px; text-align:center; font-weight:700; color:#0f172a; background:#f8fafc;">${attendedCount}/${visibleSessions.length}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const headersHtml = visibleSessions.map((s) => `
+      <th style="border:1px solid #e2e8f0; background:linear-gradient(180deg,#f8fafc,#f1f5f9); padding:10px 8px; min-width:88px; text-align:center;">
+        <div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#64748b;">Día ${s.day_number}</div>
+        <div style="font-size:11px; color:#0f172a; font-weight:700; margin-top:5px; line-height:1.3;">${escapeHtml(s.title || 'Sesión')}</div>
+        ${s.time_start ? `<div style="font-size:10px; color:#64748b; margin-top:4px;">${escapeHtml(formatTime(s.time_start))}</div>` : ''}
+      </th>
+    `).join('');
+
+    const logoHtml = church?.logoUrl
+      ? `<img src="${escapeHtml(church.logoUrl)}" alt="Logo" />`
+      : `<div style="font-size: 18px; font-weight: 700;">${escapeHtml((conference?.name || 'I').charAt(0).toUpperCase())}</div>`;
+
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${escapeHtml(filteredReportLabel)}</title>
+          <style>
+            :root {
+              --bg: #f8fafc;
+              --panel: #ffffff;
+              --ink: #0f172a;
+              --muted: #475569;
+              --line: #e2e8f0;
+              --brand: #1d4ed8;
+              --brand-soft: #dbeafe;
+              --success: #15803d;
+              --success-soft: #ecfdf5;
+            }
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              font-family: "Segoe UI", Arial, sans-serif;
+              background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+              color: var(--ink);
+            }
+            .page {
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 32px 28px 40px;
+            }
+            .header {
+              background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+              color: white;
+              border-radius: 18px;
+              padding: 22px 24px;
+              box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 18px;
+            }
+            .header-brand {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              min-width: 0;
+            }
+            .logo {
+              width: 56px;
+              height: 56px;
+              border-radius: 14px;
+              background: rgba(255,255,255,0.12);
+              border: 1px solid rgba(255,255,255,0.2);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: hidden;
+              flex-shrink: 0;
+            }
+            .logo img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            .eyebrow {
+              font-size: 11px;
+              text-transform: uppercase;
+              letter-spacing: 0.14em;
+              opacity: 0.8;
+              font-weight: 700;
+            }
+            h1 {
+              margin: 8px 0 6px;
+              font-size: 30px;
+              line-height: 1.2;
+            }
+            .meta {
+              font-size: 13px;
+              opacity: 0.9;
+            }
+            .summary {
+              margin-top: 22px;
+              background: var(--panel);
+              border: 1px solid var(--line);
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+            }
+            .summary h2, .table-wrap h2 {
+              margin: 0;
+              font-size: 13px;
+              letter-spacing: 0.12em;
+              text-transform: uppercase;
+              color: #475569;
+              background: #f8fafc;
+              border-bottom: 1px solid var(--line);
+              padding: 12px 16px;
+            }
+            .footer {
+              margin-top: 28px;
+              border-top: 1px solid var(--line);
+              padding-top: 14px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 16px;
+              color: #64748b;
+              font-size: 11px;
+              flex-wrap: wrap;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              vertical-align: top;
+            }
+            .summary-table th, .summary-table td {
+              border-bottom: 1px solid var(--line);
+              padding: 12px 16px;
+            }
+            .summary-table th {
+              text-align: left;
+              color: #475569;
+              font-size: 11px;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              background: #f8fafc;
+            }
+            .table-wrap {
+              margin-top: 22px;
+              background: var(--panel);
+              border: 1px solid var(--line);
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+            }
+            .attendance-table {
+              display: block;
+              overflow-x: auto;
+              white-space: nowrap;
+            }
+            .attendance-table th {
+              font-size: 11px;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              color: #475569;
+              background: #f8fafc;
+            }
+            .label {
+              color: #64748b;
+              font-size: 11px;
+            }
+            @media print {
+              body { background: white; }
+              .page { padding: 0; max-width: none; }
+              .header { border-radius: 0; }
+              .summary, .table-wrap { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <div class="header">
+              <div class="header-brand">
+                <div class="logo">
+                  ${logoHtml}
+                </div>
+                <div>
+                  <div class="eyebrow">Reporte de asistencia</div>
+                  <h1>${escapeHtml(filteredReportLabel)}</h1>
+                  <div class="meta">${escapeHtml(conference?.name || 'Conferencia')} • ${reportFilter === 'all' ? 'Todos los días' : 'Filtro por día'}</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; opacity: 0.85; text-align: right; max-width: 220px;">
+                <div style="font-weight:700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;">Lema</div>
+                <div>${escapeHtml(conference?.theme || 'Sin lema')}</div>
+              </div>
+            </div>
+
+            <div class="summary">
+              <h2>Resumen por iglesia</h2>
+              <table class="summary-table">
+                <thead>
+                  <tr>
+                    <th>Iglesia</th>
+                    <th style="text-align:center;">Inscritos</th>
+                    <th style="text-align:center;">Asistencias</th>
+                    <th style="text-align:center;">Promedio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${summaryRows || '<tr><td colspan="4" style="padding:12px; color:#64748b;">Sin datos</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="summary" style="margin-top: 22px;">
+              <h2>Top iglesias por participación</h2>
+              <div style="padding: 16px; background: #fff;">
+                ${rankingHtml || '<div style="padding: 12px; color:#64748b;">Sin datos</div>'}
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <h2>Asistencia por sesión</h2>
+              <div class="attendance-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="border:1px solid #e2e8f0; background:linear-gradient(180deg,#f8fafc,#f1f5f9); padding:12px 14px; min-width:210px; text-align:left;">Asistente</th>
+                      ${headersHtml}
+                      <th style="border:1px solid #e2e8f0; background:linear-gradient(180deg,#f8fafc,#f1f5f9); padding:12px 10px; min-width:78px; text-align:center;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rowsHtml || '<tr><td colspan="999" style="padding:16px; color:#64748b;">Sin registros</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div>${escapeHtml(conference?.name || 'Conferencia')}</div>
+              <div>${escapeHtml(conference?.location || 'Sin ubicación')}</div>
+              <div>${escapeHtml(reportFilter === 'all' ? 'Reporte general' : filteredReportLabel)}</div>
+              <div>${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const newWindow = window.open('', '_blank', 'width=1200,height=900');
+    if (!newWindow) return;
+    newWindow.document.open();
+    newWindow.document.write(html);
+    newWindow.document.close();
+    if (print) {
+      setTimeout(() => {
+        newWindow.focus();
+        newWindow.print();
+      }, 300);
+    }
+  };
 
   if (loading) return (
     <div className="flex justify-center items-center py-32 text-muted-foreground">
@@ -700,34 +1126,36 @@ export default function ConferenceDetailPage() {
           <ArrowLeft size={16} /> Todas las conferencias
         </button>
 
-        <div className="bg-card rounded-xl border border-border p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="rounded-3xl border border-border bg-gradient-to-br from-card via-card to-blue-500/5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] overflow-hidden">
+          <div className="flex flex-wrap items-start justify-between gap-4 p-5 md:p-6">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <BookOpen size={20} className="text-amber-700 dark:text-amber-400 flex-shrink-0" />
-                <h1 className="text-xl font-bold text-foreground truncate">{conference.name}</h1>
-                <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border flex-shrink-0", confStatus.classes)}>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30">
+                  <BookOpen size={18} />
+                </div>
+                <h1 className="text-2xl md:text-[1.75rem] font-bold tracking-tight text-foreground truncate">{conference.name}</h1>
+                <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border flex-shrink-0 shadow-sm", confStatus.classes)}>
                   <ConfStatusIcon size={11} /> {confStatus.label}
                 </span>
               </div>
               {conference.theme && (
-                <p className="text-muted-foreground italic text-sm mb-1">{conference.theme}</p>
+                <p className="text-sm md:text-base text-muted-foreground italic font-medium">{conference.theme}</p>
               )}
               {conference.theme_verse && (
-                <p className="text-muted-foreground text-xs italic">"{conference.theme_verse}"</p>
+                <p className="mt-1 text-xs md:text-sm text-muted-foreground/80 italic">"{conference.theme_verse}"</p>
               )}
-              <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
+              <div className="flex flex-wrap gap-2 mt-4 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5">
                   <CalendarDays size={12} />
                   {new Date(String(conference.start_date).slice(0,10) + 'T00:00:00').toLocaleDateString('es', { day:'numeric', month:'short', year:'numeric' })}
                   {conference.start_date !== conference.end_date && ` → ${new Date(String(conference.end_date).slice(0,10) + 'T00:00:00').toLocaleDateString('es', { day:'numeric', month:'short', year:'numeric' })}`}
                 </span>
                 {conference.location && (
-                  <span className="flex items-center gap-1"><MapPin size={12} />{conference.location}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><MapPin size={12} />{conference.location}</span>
                 )}
-                <span className="flex items-center gap-1"><CalendarDays size={12} />{days.length} días</span>
-                <span className="flex items-center gap-1"><Users size={12} />{stats?.total || 0} asistentes</span>
-                <span className="flex items-center gap-1"><Church size={12} />{stats?.churches || 0} iglesias</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><CalendarDays size={12} />{days.length} días</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><Users size={12} />{stats?.total || 0} asistentes</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><Church size={12} />{stats?.churches || 0} iglesias</span>
               </div>
             </div>
 
@@ -778,18 +1206,19 @@ export default function ConferenceDetailPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex gap-1 bg-muted/50 p-1 rounded-lg w-fit">
+      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-border bg-muted/50 p-1.5 shadow-inner">
         {[
           { key: "programa",   label: "Programa",   icon: CalendarDays },
           { key: "asistentes", label: "Asistentes", icon: Users },
+          { key: "ranking",    label: "Ranking",    icon: Trophy },
           { key: "reportes",   label: "Reportes",   icon: BarChart3 },
         ].map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
               activeTab === key
-                ? "bg-background text-foreground shadow"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-sm border border-border/80 ring-1 ring-blue-500/15"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/70"
             )}>
             <Icon size={15} /> {label}
           </button>
@@ -932,8 +1361,13 @@ export default function ConferenceDetailPage() {
                             <td className="px-4 py-3 align-top">
                               {!isLocked && (
                                 <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => navigate(`/dashboard/conference/${id}/attendance/${session.id}`)}
+                                    title="Tomar asistencia manual"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                                    <ClipboardCheck size={13} />
+                                  </button>
                                   <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
-                                    title="Escanear asistencia"
+                                    title="Escanear asistencia (QR)"
                                     className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
                                     <ScanLine size={13} />
                                   </button>
@@ -974,14 +1408,58 @@ export default function ConferenceDetailPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" placeholder="Buscar por nombre, iglesia o teléfono…"
                 value={regSearch}
-                onChange={(e) => { setRegSearch(e.target.value); setRegPage(0); fetchRegistrations(e.target.value, 0); }} />
+                onChange={(e) => {
+                  setRegSearch(e.target.value);
+                  setRegPage(0);
+                  fetchRegistrations(e.target.value, 0, regChurchFilter);
+                }} />
               {regSearch && (
-                <button onClick={() => { setRegSearch(""); setRegPage(0); fetchRegistrations("", 0); }}
+                <button onClick={() => {
+                  setRegSearch("");
+                  setRegPage(0);
+                  fetchRegistrations("", 0, regChurchFilter);
+                }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   <X size={14} />
                 </button>
               )}
             </div>
+            <div className="relative min-w-[180px] sm:max-w-[220px]">
+              <select
+                value={regChurchFilter}
+                onChange={(e) => {
+                  setRegChurchFilter(e.target.value);
+                  setRegPage(0);
+                  fetchRegistrations(regSearch, 0, e.target.value, regDayFilter);
+                }}
+                className="w-full appearance-none rounded-md border border-border bg-background px-3 py-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Todas las iglesias</option>
+                {regChurchOptions.map((church) => (
+                  <option key={church} value={church}>{church}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            </div>
+            {days.length > 1 && (
+              <div className="relative min-w-[140px] sm:max-w-[180px]">
+                <select
+                  value={regDayFilter}
+                  onChange={(e) => {
+                    setRegDayFilter(e.target.value);
+                    setRegPage(0);
+                    fetchRegistrations(regSearch, 0, regChurchFilter, e.target.value);
+                  }}
+                  className="w-full appearance-none rounded-md border border-border bg-background px-3 py-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">Todos los días</option>
+                  {days.map((day) => (
+                    <option key={day.id} value={String(day.day_number)}>Día {day.day_number}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            )}
             {!isLocked && (
               <Button onClick={openAddReg} className="flex items-center gap-2 flex-shrink-0">
                 <Plus size={15} /> Registrar Asistente
@@ -1175,6 +1653,117 @@ export default function ConferenceDetailPage() {
       )}
 
       {/* ════════════════════════════════════════
+          TAB: RANKING (top iglesias por participación)
+      ════════════════════════════════════════ */}
+      {activeTab === "ranking" && (
+        <div className="space-y-6">
+          {reportLoading ? (
+            <div className="flex justify-center py-16 text-muted-foreground">
+              <Loader2 size={24} className="animate-spin" />
+            </div>
+          ) : !report || report.registrants.length === 0 ? (
+            <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
+              <Trophy size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="font-medium text-muted-foreground">Sin datos todavía</p>
+              <p className="text-sm mt-1">Cuando haya asistencia, aparecerá el ranking aquí.</p>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-2xl border border-border bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 p-[1px] shadow-lg shadow-blue-900/10">
+                <div className="rounded-2xl bg-card/95 p-5 md:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resumen general</p>
+                      <h2 className="text-2xl font-bold text-foreground mt-1">Top iglesias participantes</h2>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                      <Trophy size={14} /> {report.byChurch.length} iglesias
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {[...report.byChurch]
+                      .sort((a, b) => b.checkins - a.checkins || b.registrants - a.registrants)
+                      .slice(0, 3)
+                      .map((church, index) => (
+                        <div key={church.church} className={cn(
+                          "rounded-xl border p-4",
+                          index === 0 && "border-amber-500/40 bg-amber-500/10",
+                          index === 1 && "border-slate-300 bg-slate-500/5 dark:border-slate-600 dark:bg-slate-500/10",
+                          index === 2 && "border-orange-500/40 bg-orange-500/10"
+                        )}>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background text-xs font-bold text-foreground border border-border">
+                              #{index + 1}
+                            </span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{church.checkins} asist.</span>
+                          </div>
+                          <p className="font-semibold text-foreground text-lg truncate">{church.church}</p>
+                          <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+                            <span>Inscritos</span>
+                            <span className="font-medium text-foreground">{church.registrants}</span>
+                          </div>
+                          <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+                            <span>Promedio</span>
+                            <span className="font-medium text-foreground">{church.registrants ? (church.checkins / church.registrants).toFixed(1) : "0.0"}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                <div className="border-b border-border bg-muted/40 px-4 py-3">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <Trophy size={12} /> Ranking por sesión
+                  </h2>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4">
+                  {sessionParticipationLeaderboard.map((session) => (
+                    <div key={session.sessionId} className="overflow-hidden rounded-2xl border border-border bg-background/60">
+                      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/50 px-3 py-2.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sesión</p>
+                        <span className="text-[10px] font-medium text-muted-foreground">{session.churches.length} iglesias</span>
+                      </div>
+                      <div className="p-3">
+                        <p className="font-semibold text-foreground mb-3 leading-snug">{session.title}</p>
+                        <div className="space-y-2">
+                          {session.churches.length ? session.churches.map((entry, index) => (
+                            <div key={`${session.sessionId}-${entry.church}`} className={cn(
+                              "flex items-center justify-between gap-3 rounded-xl border px-2.5 py-2",
+                              index === 0 && "border-amber-500/40 bg-amber-500/10",
+                              index === 1 && "border-slate-300 bg-slate-500/5 dark:border-slate-600 dark:bg-slate-500/10",
+                              index === 2 && "border-orange-500/40 bg-orange-500/10",
+                              index > 2 && "border-border bg-background/70"
+                            )}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={cn(
+                                  "inline-flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold",
+                                  index === 0 && "bg-amber-500 text-white",
+                                  index === 1 && "bg-slate-500 text-white",
+                                  index === 2 && "bg-orange-500 text-white",
+                                  index > 2 && "bg-muted text-muted-foreground"
+                                )}>#{index + 1}</span>
+                                <span className="truncate text-sm font-medium text-foreground">{entry.church}</span>
+                              </div>
+                              <span className="shrink-0 text-xs font-semibold text-muted-foreground">{entry.count}</span>
+                            </div>
+                          )) : (
+                            <p className="text-sm text-muted-foreground">Sin asistencia registrada</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
           TAB: REPORTES (por iglesia + matriz de asistencia)
       ════════════════════════════════════════ */}
       {activeTab === "reportes" && (
@@ -1191,35 +1780,52 @@ export default function ConferenceDetailPage() {
             </div>
           ) : (
             <>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => openFilteredReportWindow(false)}
+                  className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
+                >
+                  <BarChart3 size={14} /> Ver reporte
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => openFilteredReportWindow(true)}
+                  className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500"
+                >
+                  <FileDown size={14} /> Imprimir reporte
+                </Button>
+              </div>
+
               {/* Resumen por iglesia */}
-              <div>
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <Church size={12} /> Asistencia por iglesia
-                </h2>
-                <div className="bg-card rounded-xl border border-border overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          {["Iglesia", "Inscritos", "Asistencias registradas", "Promedio por persona"].map((h) => (
-                            <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {report.byChurch.map((c) => (
-                          <tr key={c.church} className="border-b border-border last:border-0">
-                            <td className="px-4 py-2.5 font-medium text-foreground">{c.church}</td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{c.registrants}</td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{c.checkins}</td>
-                            <td className="px-4 py-2.5 text-muted-foreground">
-                              {c.registrants ? (c.checkins / c.registrants).toFixed(1) : "0.0"}
-                            </td>
-                          </tr>
+              <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+                <div className="border-b border-border bg-muted/40 px-4 py-3">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <Church size={12} /> Asistencia por iglesia
+                  </h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-background/60">
+                        {["Iglesia", "Inscritos", "Asistencias registradas", "Promedio por persona"].map((h) => (
+                          <th key={h} className="text-left text-[11px] font-semibold text-muted-foreground px-4 py-3 uppercase tracking-[0.12em]">{h}</th>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.byChurch.map((c) => (
+                        <tr key={c.church} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3 font-medium text-foreground">{c.church}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{c.registrants}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{c.checkins}</td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {c.registrants ? (c.checkins / c.registrants).toFixed(1) : "0.0"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -1228,6 +1834,14 @@ export default function ConferenceDetailPage() {
                 <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
                   <BarChart3 size={12} /> Tabla de asistencia
                 </h2>
+
+                <div className="flex flex-wrap items-center gap-3 mb-3 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><Check size={12} className="text-emerald-700 dark:text-emerald-400" /> Presente</span>
+                  <span className="flex items-center gap-1"><Clock size={12} className="text-amber-600 dark:text-amber-400" /> Tarde</span>
+                  <span className="flex items-center gap-1"><ShieldCheck size={12} className="text-blue-700 dark:text-blue-400" /> Justificado</span>
+                  <span className="flex items-center gap-1"><X size={12} className="text-red-600 dark:text-red-400" /> Ausente</span>
+                  <span className="flex items-center gap-1"><Minus size={12} className="text-muted-foreground/40" /> Pendiente</span>
+                </div>
 
                 {/* Pestañas por día — mismo patrón que el Programa: una tabla
                     con todos los días mezclados era difícil de leer con la
@@ -1289,13 +1903,21 @@ export default function ConferenceDetailPage() {
                                 <p className="font-medium text-foreground whitespace-nowrap">{r.full_name}</p>
                                 <p className="text-xs text-muted-foreground whitespace-nowrap">{r.origin_church || "—"}</p>
                               </td>
-                              {visibleSessions.map((s) => (
-                                <td key={s.id} className="text-center px-3 py-2 border-b border-border">
-                                  {attendedSet.has(`${r.id}:${s.id}`)
-                                    ? <Check size={14} className="mx-auto text-emerald-700 dark:text-emerald-400" />
-                                    : <Minus size={12} className="mx-auto text-muted-foreground/40" />}
-                                </td>
-                              ))}
+                              {visibleSessions.map((s) => {
+                                const status = attendedSet.get(`${r.id}:${s.id}`);
+                                return (
+                                  <td key={s.id} className="text-center px-3 py-2 border-b border-border">
+                                    {status === "PRESENTE" && <Check size={14} className="mx-auto text-emerald-700 dark:text-emerald-400" />}
+                                    {status === "TARDE" && <Clock size={13} className="mx-auto text-amber-600 dark:text-amber-400" />}
+                                    {status === "JUSTIFICADO" && <ShieldCheck size={13} className="mx-auto text-blue-700 dark:text-blue-400" />}
+                                    {!status && (
+                                      isSessionPast(s)
+                                        ? <X size={12} className="mx-auto text-red-600 dark:text-red-400" title="Ausente" />
+                                        : <Minus size={12} className="mx-auto text-muted-foreground/40" title="Pendiente" />
+                                    )}
+                                  </td>
+                                );
+                              })}
                               <td className="text-center px-3 py-2 border-b border-border font-semibold text-foreground">
                                 {attendedCount}/{visibleSessions.length}
                               </td>
