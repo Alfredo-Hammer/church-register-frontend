@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Wine, Plus, Search, Edit, Trash2, ChevronRight, CheckCircle,
   Clock, Users, UserCheck, UserPlus, UsersRound, AlertCircle,
-  Check, Minus, FileText, CalendarDays, X,
+  Check, Minus, FileText, CalendarDays, X, ChevronLeft,
 } from "lucide-react";
 import { communionService, membersService } from "@/services/api";
 
@@ -470,6 +470,7 @@ export default function CommunionPage() {
   const [stats, setStats]       = useState({});
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
+  const [pagination, setPagination] = useState({total: 0, limit: 20, offset: 0});
 
   // Detail
   const [detailItem, setDetailItem] = useState(null);
@@ -487,16 +488,27 @@ export default function CommunionPage() {
   const [recordItem, setRecordItem] = useState(null);
   const [recordOpen, setRecordOpen] = useState(false);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [pagination.offset]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, offset: 0}));
+      fetchAll();
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
+      const params = {limit: pagination.limit, offset: pagination.offset};
+      if (search.trim()) params.search = search.trim();
       const [listData, statsData] = await Promise.all([
-        communionService.getAll({ limit: 200 }),
+        communionService.getAll(params),
         communionService.getStats(),
       ]);
       setRecords(listData.communion || []);
+      setPagination((prev) => ({...prev, total: listData.total || 0}));
       setStats(statsData.stats || {});
     } catch (e) {
       console.error(e);
@@ -567,14 +579,14 @@ export default function CommunionPage() {
   const openDetail  = (item) => { setDetailItem(item); setDetailOpen(true); };
   const openRecord  = (item) => { setRecordItem(item); setRecordOpen(true); };
 
-  const filtered    = records.filter((r) =>
-    TYPE_LABEL[r.type]?.toLowerCase().includes(search.toLowerCase()) ||
-    (r.notes || "").toLowerCase().includes(search.toLowerCase()) ||
-    fmtDateShort(r.date).toLowerCase().includes(search.toLowerCase())
-  );
+  // El filtro de búsqueda ya se aplica en el backend (ver fetchAll).
+  const filtered    = records;
   const now         = new Date();
   const upcoming    = filtered.filter((r) => !isPast(r.date));
   const past        = filtered.filter((r) => isPast(r.date));
+  const totalPages  = Math.ceil(pagination.total / pagination.limit);
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const goPage      = (p) => setPagination((prev) => ({...prev, offset: (p - 1) * prev.limit}));
 
   return (
     <div className="space-y-6">
@@ -670,6 +682,33 @@ export default function CommunionPage() {
                 ))}
               </div>
             </section>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
+              <p className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => goPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                  className="bg-secondary border-border text-foreground hover:bg-accent"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={() => goPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  size="sm"
+                  className="bg-secondary border-border text-foreground hover:bg-accent"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )}

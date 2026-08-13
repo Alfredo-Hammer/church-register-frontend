@@ -22,6 +22,8 @@ import {
   X,
   Mail,
   Shield,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {settingsService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
@@ -127,6 +129,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("TODOS");
+  const [pagination, setPagination] = useState({total: 0, limit: 20, offset: 0});
 
   // Modal crear/editar
   const [modalOpen, setModalOpen] = useState(false);
@@ -147,28 +150,38 @@ export default function UsersPage() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await settingsService.getUsers();
+      const params = {limit: pagination.limit, offset: pagination.offset};
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (roleFilter !== "TODOS") params.role = roleFilter;
+      const data = await settingsService.getUsers(params);
       setUsers(data.users || []);
+      setPagination((prev) => ({...prev, total: data.total || 0}));
     } catch {
       notify("Error al cargar usuarios.", "error");
     } finally {
       setLoading(false);
     }
-  }, [notify]);
+  }, [notify, pagination.limit, pagination.offset, searchTerm, roleFilter]);
 
   useEffect(() => {
     if (isAdmin) fetchUsers();
-  }, [isAdmin, fetchUsers]);
+  }, [isAdmin, roleFilter, pagination.offset]);
 
-  // ─── Filtrado ─────────────────────────────────────────────────────────────
-  const filtered = users.filter((u) => {
-    const matchSearch =
-      !searchTerm ||
-      u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchRole = roleFilter === "TODOS" || u.role === roleFilter;
-    return matchSearch && matchRole;
-  });
+  useEffect(() => {
+    if (!isAdmin) return;
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, offset: 0}));
+      fetchUsers();
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // La búsqueda y el filtro de rol ya se aplican en el backend (ver fetchUsers).
+  const filtered = users;
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const goPage = (p) =>
+    setPagination((prev) => ({...prev, offset: (p - 1) * prev.limit}));
 
   // ─── Abrir modales ────────────────────────────────────────────────────────
   const openCreate = () => {
@@ -351,7 +364,10 @@ export default function UsersPage() {
               {["TODOS", ...ROLES].map((r) => (
                 <button
                   key={r}
-                  onClick={() => setRoleFilter(r)}
+                  onClick={() => {
+                    setRoleFilter(r);
+                    setPagination((p) => ({...p, offset: 0}));
+                  }}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     roleFilter === r
                       ? "bg-violet-600 text-white"
@@ -380,7 +396,7 @@ export default function UsersPage() {
               Lista de Usuarios
             </span>
             <span className="text-sm font-normal text-muted-foreground">
-              {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+              {pagination.total} resultado{pagination.total !== 1 ? "s" : ""}
             </span>
           </CardTitle>
         </CardHeader>
@@ -504,6 +520,33 @@ export default function UsersPage() {
                   })}
                 </tbody>
               </table>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => goPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => goPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

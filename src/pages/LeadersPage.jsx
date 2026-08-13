@@ -1035,6 +1035,8 @@ export default function LeadersPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("ACTIVO");
   const [filterArea, setFilterArea] = useState("");
+  const [pagination, setPagination] = useState({total: 0, limit: 20, offset: 0});
+  const [areaOptions, setAreaOptions] = useState([]);
 
   const [detail, setDetail] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -1066,28 +1068,53 @@ export default function LeadersPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = {limit: pagination.limit, offset: pagination.offset};
       if (filterStatus) params.status = filterStatus;
       if (filterArea) params.area = filterArea;
       if (search.trim()) params.search = search.trim();
       const data = await leadersService.getAll(params);
       setLeaders(data.leaders || []);
+      setPagination((prev) => ({...prev, total: data.total || 0}));
       setStats(data.stats || null);
     } catch {
       /* silent */
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterArea, search]);
+  }, [filterStatus, filterArea, search, pagination.limit, pagination.offset]);
 
   useEffect(() => {
     load();
-  }, [filterStatus, filterArea]);
+  }, [filterStatus, filterArea, pagination.offset]);
 
   useEffect(() => {
-    const t = setTimeout(() => load(), 350);
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, offset: 0}));
+      load();
+    }, 350);
     return () => clearTimeout(t);
   }, [search]);
+
+  // Opciones del filtro de área y semillas de posición/área "personalizadas":
+  // se calculan sobre TODOS los líderes de la iglesia, no solo la página
+  // actual — si no, al paginar se "perderían" áreas/posiciones que no
+  // aparecen en la página visible.
+  useEffect(() => {
+    leadersService
+      .getAll({limit: 1000})
+      .then((data) => {
+        const all = data.leaders || [];
+        setAreaOptions([...new Set(all.map((l) => l.area).filter(Boolean))]);
+
+        const BASE_POS = POSITIONS.filter((p) => p !== "Otro");
+        const BASE_AREA = AREAS.filter((a) => a !== "Otro");
+        const fromPos = all.map((l) => l.position).filter((p) => p && !BASE_POS.includes(p));
+        const fromArea = all.map((l) => l.area).filter((a) => a && !BASE_AREA.includes(a));
+        if (fromPos.length) setCustomPositions((prev) => [...new Set([...prev, ...fromPos])]);
+        if (fromArea.length) setCustomAreas((prev) => [...new Set([...prev, ...fromArea])]);
+      })
+      .catch(() => {});
+  }, []);
 
   const openCreate = () => {
     setEditing(null);
@@ -1124,24 +1151,10 @@ export default function LeadersPage() {
 
   const leadingMemberIds = [...new Set(leaders.map((l) => l.memberId))];
 
-  // Seed custom lists with values already in use but not in the predefined arrays
-  useEffect(() => {
-    const BASE_POS = POSITIONS.filter((p) => p !== "Otro");
-    const BASE_AREA = AREAS.filter((a) => a !== "Otro");
-    const fromPos = leaders
-      .map((l) => l.position)
-      .filter((p) => p && !BASE_POS.includes(p));
-    const fromArea = leaders
-      .map((l) => l.area)
-      .filter((a) => a && !BASE_AREA.includes(a));
-    if (fromPos.length)
-      setCustomPositions((prev) => [...new Set([...prev, ...fromPos])]);
-    if (fromArea.length)
-      setCustomAreas((prev) => [...new Set([...prev, ...fromArea])]);
-  }, [leaders]);
-
-  // unique areas from current leaders for the filter dropdown
-  const uniqueAreas = [...new Set(leaders.map((l) => l.area).filter(Boolean))];
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const goPage = (p) =>
+    setPagination((prev) => ({...prev, offset: (p - 1) * prev.limit}));
 
   return (
     <div className="space-y-6">
@@ -1223,7 +1236,10 @@ export default function LeadersPage() {
         </div>
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={(e) => {
+            setFilterStatus(e.target.value);
+            setPagination((p) => ({...p, offset: 0}));
+          }}
           className="h-10 px-3 rounded-md border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-40"
         >
           <option value="">Todos</option>
@@ -1232,11 +1248,14 @@ export default function LeadersPage() {
         </select>
         <select
           value={filterArea}
-          onChange={(e) => setFilterArea(e.target.value)}
+          onChange={(e) => {
+            setFilterArea(e.target.value);
+            setPagination((p) => ({...p, offset: 0}));
+          }}
           className="h-10 px-3 rounded-md border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-48"
         >
           <option value="">Todas las áreas</option>
-          {uniqueAreas.map((a) => (
+          {areaOptions.map((a) => (
             <option key={a} value={a}>
               {a}
             </option>
@@ -1250,7 +1269,7 @@ export default function LeadersPage() {
           <span className="text-sm font-semibold text-foreground">
             Equipo de Liderazgo
             <span className="ml-2 text-muted-foreground font-normal">
-              ({leaders.length})
+              ({pagination.total})
             </span>
           </span>
         </div>
@@ -1447,6 +1466,33 @@ export default function LeadersPage() {
                 ))}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
+                  Página {currentPage} de {totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => goPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                    className="bg-secondary border-border text-foreground hover:bg-accent"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() => goPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    size="sm"
+                    className="bg-secondary border-border text-foreground hover:bg-accent"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

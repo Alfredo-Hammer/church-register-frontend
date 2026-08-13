@@ -265,12 +265,21 @@ export default function MembersPage() {
     fetchMembers();
   }, [statusFilter, ageGroupFilter, pagination.offset]);
 
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, offset: 0}));
+      fetchMembers();
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const fetchMembers = async () => {
     try {
       setLoading(true);
       const params = {limit: pagination.limit, offset: pagination.offset};
       if (statusFilter !== "all") params.status = statusFilter.toUpperCase();
       if (ageGroupFilter !== "all") params.ageGroup = ageGroupFilter;
+      if (searchTerm.trim()) params.search = searchTerm.trim();
       const data = await membersService.getAll(params);
       setMembers(data.members || []);
       setPagination((prev) => ({...prev, total: data.total || 0}));
@@ -498,12 +507,10 @@ export default function MembersPage() {
     }
   };
 
-  const filtered = members.filter((m) => {
-    const name = `${m.first_name} ${m.last_name}`.toLowerCase();
-    const email = (m.email || "").toLowerCase();
-    const q = searchTerm.toLowerCase();
-    return name.includes(q) || email.includes(q);
-  });
+  // El filtro de búsqueda ya se aplica en el backend (ver fetchMembers);
+  // filtrar de nuevo acá solo sería correcto para la página actual, no
+  // para el total de miembros de la iglesia.
+  const filtered = members;
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;

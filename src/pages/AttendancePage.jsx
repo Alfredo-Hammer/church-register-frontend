@@ -24,6 +24,7 @@ import {
   LayoutList,
   LayoutGrid,
   ChevronRight,
+  ChevronLeft,
   MapPin,
   FileText,
   Eye,
@@ -1383,6 +1384,7 @@ export default function AttendancePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState("list"); // "list" | "grid"
+  const [pagination, setPagination] = useState({total: 0, limit: 20, offset: 0});
 
   // Detail modal
   const [detailEvent, setDetailEvent] = useState(null);
@@ -1394,15 +1396,25 @@ export default function AttendancePage() {
 
   useEffect(() => {
     fetchEvents();
-  }, [eventTypeFilter]);
+  }, [eventTypeFilter, pagination.offset]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, offset: 0}));
+      fetchEvents();
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const params = {limit: 200};
+      const params = {limit: pagination.limit, offset: pagination.offset};
       if (eventTypeFilter !== "ALL") params.eventType = eventTypeFilter;
+      if (searchTerm.trim()) params.search = searchTerm.trim();
       const data = await eventsService.getAll(params);
       setEvents(data.events || []);
+      setPagination((prev) => ({...prev, total: data.total || 0}));
     } catch (e) {
       console.error(e);
     } finally {
@@ -1420,12 +1432,15 @@ export default function AttendancePage() {
     setAttendanceOpen(true);
   };
 
-  const filteredEvents = events.filter((e) =>
-    e.title.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // La búsqueda y el filtro de tipo ya se aplican en el backend (ver fetchEvents).
+  const filteredEvents = events;
   const now = new Date();
   const upcomingEvents = filteredEvents.filter((e) => new Date(e.date) >= now);
   const pastEvents = filteredEvents.filter((e) => new Date(e.date) < now);
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const goPage = (p) =>
+    setPagination((prev) => ({...prev, offset: (p - 1) * prev.limit}));
 
   // ─── List row ───────────────────────────────────────────────────────────────
   const ListRow = ({event, past}) => {
@@ -1708,7 +1723,10 @@ export default function AttendancePage() {
             </div>
             <select
               value={eventTypeFilter}
-              onChange={(e) => setEventTypeFilter(e.target.value)}
+              onChange={(e) => {
+                setEventTypeFilter(e.target.value);
+                setPagination((p) => ({...p, offset: 0}));
+              }}
               className="h-10 rounded-md border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-600"
             >
               <option value="ALL">Todos los tipos</option>
@@ -1775,6 +1793,33 @@ export default function AttendancePage() {
                     <SectionGrid events={pastEvents} past={true} />
                   )}
                 </section>
+              )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
+                  <p className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => goPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => goPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}

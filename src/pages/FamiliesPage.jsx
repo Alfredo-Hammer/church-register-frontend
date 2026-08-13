@@ -22,6 +22,8 @@ import {
   CheckCircle,
   X,
   Printer,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {familiesService, membersService, settingsService} from "@/services/api";
 import {buildFamilyMembersPDF} from "@/utils/reportPrint";
@@ -76,13 +78,20 @@ export default function FamiliesPage() {
     fetchFamilies();
   }, [pagination.page]);
 
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, page: 1}));
+      fetchFamilies();
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const fetchFamilies = async () => {
     try {
       setLoading(true);
-      const data = await familiesService.getAll({
-        page: pagination.page,
-        limit: pagination.limit,
-      });
+      const params = {page: pagination.page, limit: pagination.limit};
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      const data = await familiesService.getAll(params);
       setFamilies(data.families || []);
       if (data.pagination) {
         setPagination((prev) => ({
@@ -247,11 +256,8 @@ export default function FamiliesPage() {
     });
   };
 
-  const filteredFamilies = families.filter((family) => {
-    const name = family.family_name.toLowerCase();
-    const search = searchTerm.toLowerCase();
-    return name.includes(search);
-  });
+  // La búsqueda ya se aplica en el backend (ver fetchFamilies).
+  const filteredFamilies = families;
 
   const goToPage = (page) => {
     setPagination((prev) => ({...prev, page}));
@@ -292,106 +298,140 @@ export default function FamiliesPage() {
         </CardContent>
       </Card>
 
-      {/* Families Grid */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="text-muted-foreground mt-4">Cargando familias...</p>
-        </div>
-      ) : filteredFamilies.length === 0 ? (
-        <div className="text-center py-12">
-          <UserPlus className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">No se encontraron familias</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredFamilies.map((family) => (
-            <Card
-              key={family.id}
-              className="bg-gradient-to-br from-card to-background border-border hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20"
-            >
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center justify-between">
-                  <span className="flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-purple-700 dark:text-purple-400" />
-                    {family.family_name}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center text-muted-foreground">
-                    <UserPlus className="h-4 w-4 mr-2 text-purple-700 dark:text-purple-400" />
-                    <span className="text-sm">
-                      {family.member_count || 0} miembro(s)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <Button
+      {/* Families Table */}
+      <Card className="bg-card border-border">
+        <CardHeader className="border-b border-border pb-4">
+          <CardTitle className="text-foreground text-base flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-700 dark:text-purple-400" />
+              Lista de Familias
+            </span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {pagination.total} resultado{pagination.total !== 1 ? "s" : ""}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="text-center py-14">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="text-muted-foreground mt-4 text-sm">
+                Cargando familias...
+              </p>
+            </div>
+          ) : filteredFamilies.length === 0 ? (
+            <div className="text-center py-14 text-muted-foreground">
+              <UserPlus className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>No se encontraron familias</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider w-12">
+                      #
+                    </th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
+                      Familia
+                    </th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
+                      Miembros
+                    </th>
+                    <th className="text-right py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {filteredFamilies.map((family, index) => (
+                    <tr
+                      key={family.id}
+                      className="hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => handleOpenMembersModal(family)}
+                    >
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {(pagination.page - 1) * pagination.limit + index + 1}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-purple-600/10 flex items-center justify-center shrink-0">
+                            <Users className="w-4 h-4 text-purple-700 dark:text-purple-400" />
+                          </div>
+                          <p className="text-foreground text-sm font-medium">
+                            {family.family_name}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground text-sm">
+                        {family.member_count || 0} miembro
+                        {parseInt(family.member_count) !== 1 ? "s" : ""}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div
+                          className="flex items-center justify-end gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => handleOpenMembersModal(family)}
+                            className="w-7 h-7 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 flex items-center justify-center transition-colors"
+                            title="Ver miembros"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditModal(family)}
+                            className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 flex items-center justify-center transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDelete(family.id, family.family_name)
+                            }
+                            className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 flex items-center justify-center transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Página {pagination.page} de {pagination.totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => goToPage(pagination.page - 1)}
+                      disabled={pagination.page === 1}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-600/10 border-purple-600 text-purple-700 dark:text-purple-400 hover:bg-purple-600/20"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
                     >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Ver Miembros
+                      <ChevronLeft className="w-4 h-4" />
                     </Button>
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleOpenEditModal(family)}
-                        className="p-2 text-blue-700 dark:text-blue-400 hover:bg-accent rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDelete(family.id, family.family_name)
-                        }
-                        className="p-2 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <Button
+                      onClick={() => goToPage(pagination.page + 1)}
+                      disabled={pagination.page === pagination.totalPages}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Página {pagination.page} de {pagination.totalPages}
-          </p>
-          <div className="flex space-x-2">
-            <Button
-              onClick={() => goToPage(pagination.page - 1)}
-              disabled={pagination.page === 1}
-              variant="outline"
-              size="sm"
-              className="bg-background border-border text-foreground hover:bg-accent"
-            >
-              Anterior
-            </Button>
-            <Button
-              onClick={() => goToPage(pagination.page + 1)}
-              disabled={pagination.page === pagination.totalPages}
-              variant="outline"
-              size="sm"
-              className="bg-background border-border text-foreground hover:bg-accent"
-            >
-              Siguiente
-            </Button>
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

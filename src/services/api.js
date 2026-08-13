@@ -513,8 +513,8 @@ export const settingsService = {
   },
 
   // Usuarios (ADMIN)
-  getUsers: async () => {
-    const response = await api.get('/settings/users');
+  getUsers: async (params = {}) => {
+    const response = await api.get('/settings/users', {params});
     return response.data;
   },
   createUser: async (data) => {

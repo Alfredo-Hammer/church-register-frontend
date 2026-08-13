@@ -22,6 +22,8 @@ import {
   AlertCircle,
   ChevronDown,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {baptismsService, membersService, settingsService} from "@/services/api";
 import {buildBaptismCertificate} from "@/utils/reportPrint";
@@ -54,6 +56,7 @@ export default function BaptismsPage() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [pagination, setPagination] = useState({total: 0, limit: 20, offset: 0});
 
   // modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -71,26 +74,36 @@ export default function BaptismsPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = {limit: 200};
+      const params = {limit: pagination.limit, offset: pagination.offset};
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
+      if (search.trim()) params.search = search.trim();
 
       const [bRes, sRes] = await Promise.all([
         baptismsService.getAll(params),
         baptismsService.getStats(),
       ]);
       setBaptisms(bRes.baptisms || []);
+      setPagination((prev) => ({...prev, total: bRes.total || 0}));
       setStats(sRes);
     } catch {
       setError("Error al cargar los bautismos. Intente de nuevo.");
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, search, pagination.offset, pagination.limit]);
 
   useEffect(() => {
     fetchAll();
-  }, [fetchAll]);
+  }, [startDate, endDate, pagination.offset]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPagination((prev) => ({...prev, offset: 0}));
+      fetchAll();
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     membersService
@@ -118,16 +131,12 @@ export default function BaptismsPage() {
   const baptizedMemberIds = new Set(baptisms.map((b) => b.member_id));
   const availableMembers = members.filter((m) => !baptizedMemberIds.has(m.id));
 
-  // Filtro local por nombre/ministro/lugar
-  const filtered = baptisms.filter((b) => {
-    if (!search) return true;
-    const name = `${b.first_name || ""} ${b.last_name || ""}`.toLowerCase();
-    return (
-      name.includes(search.toLowerCase()) ||
-      (b.minister || "").toLowerCase().includes(search.toLowerCase()) ||
-      (b.place || "").toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  // El filtro de búsqueda ya se aplica en el backend (ver fetchAll).
+  const filtered = baptisms;
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const goPage = (p) =>
+    setPagination((prev) => ({...prev, offset: (p - 1) * prev.limit}));
 
   // ─── Modal ────────────────────────────────────────────────────────────────
   const openCreate = () => {
@@ -456,6 +465,33 @@ export default function BaptismsPage() {
                   ))}
                 </tbody>
               </table>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => goPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => goPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                      className="bg-secondary border-border text-foreground hover:bg-accent"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
