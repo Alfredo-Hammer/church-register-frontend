@@ -254,7 +254,7 @@ export default function LandingPage() {
             {/* En móvil no cabe junto al toggle y el botón: queda solo el
                 icono, y el nombre lo retoma el titular del hero */}
             <span className="hidden truncate font-bold text-foreground sm:inline">
-              Sistema de Control Eclesiástico
+              CONGREGA
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -510,7 +510,7 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Church className="h-4 w-4" />
-            Sistema de Control Eclesiástico
+            CONGREGA
           </div>
           <div className="flex items-center gap-6">
             <Link to="/login" className="transition-colors hover:text-foreground">
@@ -524,6 +524,8 @@ export default function LandingPage() {
             </Link>
           </div>
           <p>© {new Date().getFullYear()} Todos los derechos reservados.</p>
+          {/* Developed by Alfredo Hammer */}
+          <p className="text-gray-500">Desarrollado por Alfredo Hammer</p>
         </div>
       </footer>
     </div>
