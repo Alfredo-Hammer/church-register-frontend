@@ -252,6 +252,8 @@ export default function ConferenceDetailPage() {
   const [savingReg, setSavingReg]         = useState(false);
   const [regError, setRegError]           = useState("");
   const [deletingReg, setDeletingReg]     = useState(null);
+  const [participatingChurches, setParticipatingChurches] = useState([]);
+  const [regUseOtherChurch, setRegUseOtherChurch]         = useState(false);
 
   // PDF
   const [pdfLoading, setPdfLoading] = useState(null);
@@ -309,6 +311,13 @@ export default function ConferenceDetailPage() {
     } catch { /* silent */ }
   }, []);
 
+  const fetchParticipatingChurches = useCallback(async () => {
+    try {
+      const data = await conferenceService.getParticipatingChurches();
+      setParticipatingChurches(data.churches.filter((c) => c.is_active));
+    } catch { /* silent */ }
+  }, []);
+
   const fetchRegistrations = useCallback(async (
     search = regSearch,
     page = regPage,
@@ -338,6 +347,7 @@ export default function ConferenceDetailPage() {
       await fetchStats();
       await fetchSessionTypes();
       await fetchSpeakers();
+      await fetchParticipatingChurches();
       setLoading(false);
     };
     load();
@@ -352,7 +362,7 @@ export default function ConferenceDetailPage() {
     ).catch(() =>
       setChurch({ name: user?.churchName || '', logoUrl: user?.churchLogo || null })
     );
-  }, [fetchConference, fetchStats, fetchSessionTypes, fetchSpeakers]);
+  }, [fetchConference, fetchStats, fetchSessionTypes, fetchSpeakers, fetchParticipatingChurches]);
 
   useEffect(() => {
     if (activeTab === "asistentes") {
@@ -571,6 +581,7 @@ export default function ConferenceDetailPage() {
     setEditingReg(null);
     setRegForm(EMPTY_REG);
     setRegError("");
+    setRegUseOtherChurch(participatingChurches.length === 0);
     setRegDialog(true);
   };
 
@@ -588,6 +599,11 @@ export default function ConferenceDetailPage() {
       ageGroup:     reg.age_group || "ADULTO",
     });
     setRegError("");
+    // Si la iglesia guardada no está en el catálogo (o no hay catálogo), usar texto libre
+    setRegUseOtherChurch(
+      participatingChurches.length === 0 ||
+      (!!reg.origin_church && !participatingChurches.some((c) => c.name === reg.origin_church))
+    );
     setRegDialog(true);
   };
 
@@ -2210,8 +2226,41 @@ export default function ConferenceDetailPage() {
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                   <Church size={10} className="inline mr-1" />Iglesia
                 </label>
-                <Input placeholder="Iglesia que representa" value={regForm.originChurch}
-                  onChange={(e) => setRegForm(p => ({ ...p, originChurch: e.target.value }))} />
+                {participatingChurches.length > 0 && !regUseOtherChurch ? (
+                  <div className="relative">
+                    <select
+                      value={regForm.originChurch}
+                      onChange={(e) => {
+                        if (e.target.value === "__OTHER__") {
+                          setRegUseOtherChurch(true);
+                          setRegForm(p => ({ ...p, originChurch: "" }));
+                        } else {
+                          setRegForm(p => ({ ...p, originChurch: e.target.value }));
+                        }
+                      }}
+                      className="w-full appearance-none rounded-md border border-border bg-background px-3 py-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="" disabled>Selecciona una iglesia…</option>
+                      {participatingChurches.map((c) => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                      <option value="__OTHER__">Otra (no está en la lista)</option>
+                    </select>
+                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    <Input placeholder="Iglesia que representa" value={regForm.originChurch}
+                      onChange={(e) => setRegForm(p => ({ ...p, originChurch: e.target.value }))} />
+                    {participatingChurches.length > 0 && (
+                      <button type="button"
+                        onClick={() => { setRegUseOtherChurch(false); setRegForm(p => ({ ...p, originChurch: "" })); }}
+                        className="text-xs text-blue-700 dark:text-blue-400 hover:underline mt-1.5">
+                        Elegir de la lista
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
