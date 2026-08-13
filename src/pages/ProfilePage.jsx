@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useCallback, useRef} from "react";
+import {toast} from "sonner";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -9,8 +10,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  CheckCircle,
-  AlertCircle,
   Save,
   Edit2,
   Building2,
@@ -56,29 +55,6 @@ function RoleBadge({role}) {
   );
 }
 
-function Toast({msg, type, onClose}) {
-  useEffect(() => {
-    if (!msg) return;
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [msg, onClose]);
-  if (!msg) return null;
-  const isErr = type === "error";
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border
-      ${isErr ? "bg-red-500/10 dark:bg-red-900/90 border-red-300 dark:border-red-700 text-red-700 dark:text-red-200" : "bg-green-500/10 dark:bg-green-900/90 border-green-300 dark:border-green-700 text-green-700 dark:text-green-200"}`}
-    >
-      {isErr ? (
-        <AlertCircle className="w-5 h-5 shrink-0" />
-      ) : (
-        <CheckCircle className="w-5 h-5 shrink-0" />
-      )}
-      <span className="text-sm font-medium">{msg}</span>
-    </div>
-  );
-}
-
 function PasswordInput({value, onChange, placeholder, name}) {
   const [show, setShow] = useState(false);
   return (
@@ -110,7 +86,6 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({msg: "", type: ""});
 
   const [pwForm, setPwForm] = useState({
     currentPassword: "",
@@ -121,7 +96,8 @@ export default function ProfilePage() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const notify = (msg, type = "success") => setToast({msg, type});
+  const notify = (msg, type = "success") =>
+    type === "error" ? toast.error(msg) : toast.success(msg);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -458,12 +434,6 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
-
-      <Toast
-        msg={toast.msg}
-        type={toast.type}
-        onClose={() => setToast({msg: "", type: ""})}
-      />
     </div>
   );
 }

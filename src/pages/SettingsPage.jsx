@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useCallback} from "react";
+import {toast} from "sonner";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -18,8 +19,6 @@ import {
   Trash2,
   Plus,
   Save,
-  AlertCircle,
-  CheckCircle,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -52,28 +51,6 @@ function RoleBadge({role}) {
     >
       {role}
     </span>
-  );
-}
-
-function Toast({msg, type, onClose}) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [msg, onClose]);
-  if (!msg) return null;
-  const isErr = type === "error";
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border
-      ${isErr ? "bg-red-500/10 dark:bg-red-900/90 border-red-300 dark:border-red-700 text-red-700 dark:text-red-200" : "bg-green-500/10 dark:bg-green-900/90 border-green-300 dark:border-green-700 text-green-700 dark:text-green-200"}`}
-    >
-      {isErr ? (
-        <AlertCircle className="w-5 h-5 shrink-0" />
-      ) : (
-        <CheckCircle className="w-5 h-5 shrink-0" />
-      )}
-      <span className="text-sm font-medium">{msg}</span>
-    </div>
   );
 }
 
@@ -113,10 +90,9 @@ export default function SettingsPage() {
   const isAdmin = user?.role === "ADMIN";
 
   const [activeTab, setActiveTab] = useState("profile");
-  const [toast, setToast] = useState({msg: "", type: ""});
 
-  const notify = (msg, type = "success") => setToast({msg, type});
-  const clearToast = () => setToast({msg: "", type: ""});
+  const notify = (msg, type = "success") =>
+    type === "error" ? toast.error(msg) : toast.success(msg);
 
   // ─── Tab: MI PERFIL ─────────────────────────────────────────────────────
   const [profile, setProfile] = useState(null);
@@ -1139,9 +1115,6 @@ export default function SettingsPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Toast de notificaciones */}
-      <Toast msg={toast.msg} type={toast.type} onClose={clearToast} />
     </div>
   );
 }

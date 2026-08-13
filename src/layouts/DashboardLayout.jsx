@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useRef, useCallback} from "react";
 import {Link, useLocation, useNavigate} from "react-router-dom";
+import {toast} from "sonner";
 import {useAuth} from "@/contexts/AuthContext";
 import {settingsService, searchService} from "@/services/api";
 import {
@@ -36,6 +37,7 @@ import {
   Moon,
 } from "lucide-react";
 import {Button} from "@/components/ui/Button";
+import {ConfirmDialog} from "@/components/ui/ConfirmDialog";
 import {useTheme} from "@/contexts/ThemeContext";
 import {cn} from "@/lib/utils";
 
@@ -334,6 +336,7 @@ export const DashboardLayout = ({children}) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const headerMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -364,9 +367,16 @@ export const DashboardLayout = ({children}) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [headerMenuOpen]);
 
+  const requestLogout = () => {
+    setUserMenuOpen(false);
+    setHeaderMenuOpen(false);
+    setLogoutConfirmOpen(true);
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/");
+    toast.success("Sesión cerrada correctamente");
   };
 
   const initials =
@@ -503,7 +513,7 @@ export const DashboardLayout = ({children}) => {
                     Mi Perfil
                   </Link>
                   <button
-                    onClick={handleLogout}
+                    onClick={requestLogout}
                     className="flex items-center w-full px-4 py-3 text-sm text-muted-foreground hover:bg-accent transition-colors"
                   >
                     <LogOut className="h-4 w-4 mr-3" />
@@ -592,7 +602,7 @@ export const DashboardLayout = ({children}) => {
                       Mi Perfil
                     </Link>
                     <button
-                      onClick={handleLogout}
+                      onClick={requestLogout}
                       className="flex items-center w-full px-4 py-3 text-sm text-muted-foreground hover:bg-accent transition-colors"
                     >
                       <LogOut className="h-4 w-4 mr-3" />
@@ -608,6 +618,16 @@ export const DashboardLayout = ({children}) => {
         {/* Page content */}
         <main className="py-6 px-4 sm:px-6 lg:px-8">{children}</main>
       </div>
+
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        onOpenChange={setLogoutConfirmOpen}
+        title="¿Cerrar sesión?"
+        description="Vas a salir de tu cuenta. Podrás volver a iniciar sesión cuando quieras."
+        confirmLabel="Cerrar sesión"
+        confirmingLabel="Cerrando sesión…"
+        onConfirm={handleLogout}
+      />
     </div>
   );
 };

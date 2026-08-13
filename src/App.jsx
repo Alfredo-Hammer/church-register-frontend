@@ -1,9 +1,11 @@
 import React from "react";
 import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
+import {Toaster} from "sonner";
 import {AuthProvider} from "@/contexts/AuthContext";
 import {ProtectedRoute} from "@/components/ProtectedRoute";
 import {DashboardLayout} from "@/layouts/DashboardLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import {useTheme} from "@/contexts/ThemeContext";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -42,10 +44,13 @@ import ConferenceManualAttendancePage from "@/pages/ConferenceManualAttendancePa
 import AnnouncementsPage from "@/pages/AnnouncementsPage";
 
 function App() {
+  const {theme} = useTheme();
+
   return (
     <ErrorBoundary>
       <AuthProvider>
         <BrowserRouter>
+          <Toaster theme={theme} richColors position="top-right" closeButton />
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
