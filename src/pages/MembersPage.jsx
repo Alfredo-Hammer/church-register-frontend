@@ -400,16 +400,17 @@ export default function MembersPage() {
       return;
     }
     const q = guardianSearch.toLowerCase();
-    setGuardianResults(
-      allMembers
-        .filter((m) =>
-          currentMember && m.id === currentMember.id ? false : true,
-        )
-        .filter((m) =>
-          `${m.first_name} ${m.last_name}`.toLowerCase().includes(q),
-        )
-        .slice(0, 6),
+    const pool = allMembers.filter((m) =>
+      currentMember && m.id === currentMember.id ? false : true,
     );
+    // Al editar, guardianSearch puede llegar con un guardian_name de texto
+    // libre que no matchea a ningún miembro (se escribió a mano en vez de
+    // vincularlo) — filtrar estricto contra ese texto dejaría la lista
+    // vacía y parecería que no hay a quién elegir.
+    const matches = pool.filter((m) =>
+      `${m.first_name} ${m.last_name}`.toLowerCase().includes(q),
+    );
+    setGuardianResults((matches.length > 0 ? matches : pool).slice(0, 6));
   }, [guardianSearch, allMembers, formData.guardianId]);
 
   const selectGuardian = (m) => {

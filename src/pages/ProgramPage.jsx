@@ -409,10 +409,16 @@ export default function ProgramPage() {
 
   // ── Helpers UI ─────────────────────────────────────────────────────────────
 
-  const filteredMembers = activeMembers.filter((m) => {
+  // Al editar, "Quien dirige" puede traer un nombre libre que no matchea a
+  // ningún miembro activo (se escribió a mano, o el miembro ya no está
+  // activo) — filtrar estricto contra ese texto dejaría el desplegable
+  // vacío y parecería roto. Si no hay coincidencias, se muestra la lista
+  // completa en su lugar.
+  const memberMatches = activeMembers.filter((m) => {
     const full = `${m.first_name} ${m.last_name}`.toLowerCase();
     return full.includes(memberSearch.toLowerCase());
   });
+  const filteredMembers = memberMatches.length > 0 ? memberMatches : activeMembers;
 
   const selectMember = (member) => {
     setItemForm({ ...itemForm, responsibleId: member.id });
