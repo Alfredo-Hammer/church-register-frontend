@@ -752,7 +752,7 @@ export default function MembersPage() {
 
       {/* Create / Edit modal */}
       <Dialog open={isModalOpen} onOpenChange={(o) => !o && closeModal()}>
-        <DialogContent className="bg-card border-border max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground text-xl flex items-center gap-3">
               <span className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center">
@@ -1080,57 +1080,63 @@ export default function MembersPage() {
               </div>
             )}
 
-            {/* Email + phone */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">Email</label>
-              <Input
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInput}
-                className="bg-background border-border text-foreground"
-                placeholder="juan@ejemplo.com"
-              />
+            {/* Email + teléfono */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <Input
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInput}
+                  className="bg-background border-border text-foreground"
+                  placeholder="juan@ejemplo.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Teléfono
+                </label>
+                <Input
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInput}
+                  className="bg-background border-border text-foreground"
+                  placeholder="+1 234 567 8900"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">
-                Teléfono
-              </label>
-              <Input
-                name="phone"
-                value={formData.phone}
-                onChange={handleInput}
-                className="bg-background border-border text-foreground"
-                placeholder="+1 234 567 8900"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">
-                Dirección
-              </label>
-              <Input
-                name="address"
-                value={formData.address}
-                onChange={handleInput}
-                className="bg-background border-border text-foreground"
-                placeholder="Calle Principal 123"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">
-                Estado *
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInput}
-                required
-                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
-              >
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
-                <option value="VISITANTE">Visitante</option>
-              </select>
+
+            {/* Dirección + estado */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Dirección
+                </label>
+                <Input
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInput}
+                  className="bg-background border-border text-foreground"
+                  placeholder="Calle Principal 123"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Estado *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInput}
+                  required
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  <option value="ACTIVO">Activo</option>
+                  <option value="INACTIVO">Inactivo</option>
+                  <option value="VISITANTE">Visitante</option>
+                </select>
+              </div>
             </div>
 
             <DialogFooter>
