@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { activitiesService } from '@/services/api';
+import { activitiesService, membersService, groupsService } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog, DialogHeader, DialogContent, DialogFooter } from '@/components/ui/Dialog';
@@ -69,6 +69,9 @@ export default function ActivitiesPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg]     = useState('');
 
+  const [memberNames, setMemberNames] = useState([]);
+  const [groupNames, setGroupNames]   = useState([]);
+
   const loadActivities = async () => {
     setLoading(true);
     try {
@@ -95,6 +98,18 @@ export default function ActivitiesPage() {
   };
 
   useEffect(() => { loadStats(); }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [membersData, groupsData] = await Promise.all([
+          membersService.getAll({ limit: 1000, status: 'ACTIVO' }),
+          groupsService.getAll(),
+        ]);
+        setMemberNames((membersData.members || []).map((m) => `${m.first_name} ${m.last_name}`.trim()));
+        setGroupNames((groupsData.groups || []).map((g) => g.name));
+      } catch { /* silencioso — los campos siguen editables a mano */ }
+    })();
+  }, []);
   useEffect(() => { loadActivities(); }, [page, filterStatus, filterCategory]);
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); loadActivities(); }, 350);
@@ -489,8 +504,12 @@ export default function ActivitiesPage() {
                   value={form.responsible}
                   onChange={(e) => setForm({ ...form, responsible: e.target.value })}
                   placeholder="Persona a cargo"
+                  list="responsible-options"
                   className="bg-background border-border text-foreground"
                 />
+                <datalist id="responsible-options">
+                  {memberNames.map((name) => <option key={name} value={name} />)}
+                </datalist>
               </div>
 
               {/* Organizador (ministerio/grupo) */}
@@ -500,8 +519,12 @@ export default function ActivitiesPage() {
                   value={form.organizer}
                   onChange={(e) => setForm({ ...form, organizer: e.target.value })}
                   placeholder="Ej: Grupo de Jóvenes"
+                  list="organizer-options"
                   className="bg-background border-border text-foreground"
                 />
+                <datalist id="organizer-options">
+                  {groupNames.map((name) => <option key={name} value={name} />)}
+                </datalist>
               </div>
 
               {/* Participantes esperados */}

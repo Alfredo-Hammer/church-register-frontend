@@ -45,9 +45,9 @@ const GROUP_POSITIONS = [
   "Secretario/a",
   "Tesorero/a",
   "Director/a de Alabanza",
-  "Director/a de Oraci\u00f3n",
-  "Coordinador/a de J\u00f3venes",
-  "Coordinador/a de Ni\u00f1os",
+  "Director/a de Oración",
+  "Coordinador/a de Jóvenes",
+  "Coordinador/a de Niños",
   "Vocal",
   "Pastor/a Consejero/a",
   "Otro",
@@ -222,7 +222,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
   };
 
   const handleRemoveMember = async (memberId) => {
-    if (!window.confirm("\u00bfRemover este miembro del grupo?")) return;
+    if (!window.confirm("¿Remover este miembro del grupo?")) return;
     setSaving(true);
     try {
       await groupsService.removeMember(group.id, memberId);
@@ -246,14 +246,14 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
       setLeaderForm({memberId: "", position: ""});
       await reload("leaders");
     } catch (e) {
-      alert(e.response?.data?.error ?? "Error al asignar l\u00edder");
+      alert(e.response?.data?.error ?? "Error al asignar líder");
     } finally {
       setSaving(false);
     }
   };
 
   const handleRemoveLeader = async (leaderId) => {
-    if (!window.confirm("\u00bfRemover este l\u00edder del grupo?")) return;
+    if (!window.confirm("¿Remover este líder del grupo?")) return;
     setSaving(true);
     try {
       await groupsService.removeLeader(group.id, leaderId);
@@ -285,7 +285,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
   };
 
   const handleDeleteActivity = async (id) => {
-    if (!window.confirm("\u00bfEliminar esta actividad?")) return;
+    if (!window.confirm("¿Eliminar esta actividad?")) return;
     setSaving(true);
     try {
       await groupsService.deleteActivity(group.id, id);
@@ -305,14 +305,14 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
       setTxForm({type: "INGRESO", description: "", amount: "", date: ""});
       await reload("finances");
     } catch (e) {
-      alert(e.response?.data?.error ?? "Error al registrar transacci\u00f3n");
+      alert(e.response?.data?.error ?? "Error al registrar transacción");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteTx = async (id) => {
-    if (!window.confirm("\u00bfEliminar esta transacci\u00f3n?")) return;
+    if (!window.confirm("¿Eliminar esta transacción?")) return;
     setSaving(true);
     try {
       await groupsService.deleteTransaction(group.id, id);
@@ -326,7 +326,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
 
   const TABS = [
     {id: "members", label: "Miembros", icon: Users},
-    {id: "leaders", label: "L\u00edderes", icon: Crown},
+    {id: "leaders", label: "Líderes", icon: Crown},
     {id: "activities", label: "Actividades", icon: CalendarDays},
     {id: "finances", label: "Finanzas", icon: Wallet},
   ];
@@ -580,7 +580,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                 <CardContent>
                   {leaders.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      No hay l\u00edderes asignados.
+                      No hay líderes asignados.
                     </p>
                   ) : (
                     <div className="space-y-2">
@@ -638,7 +638,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Input
-                    placeholder="T\u00edtulo *"
+                    placeholder="Título *"
                     value={activityForm.title}
                     onChange={(e) =>
                       setActivityForm((f) => ({...f, title: e.target.value}))
@@ -665,7 +665,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                     className="bg-background border-border text-foreground text-sm"
                   />
                   <textarea
-                    placeholder="Descripci\u00f3n"
+                    placeholder="Descripción"
                     value={activityForm.description}
                     onChange={(e) =>
                       setActivityForm((f) => ({
@@ -1001,7 +1001,7 @@ export default function GroupsPage() {
   const handleDelete = async (group) => {
     if (
       !window.confirm(
-        `\u00bfEliminar el grupo "${group.name}"? Esta acci\u00f3n no se puede deshacer.`,
+        `¿Eliminar el grupo "${group.name}"? Esta acción no se puede deshacer.`,
       )
     )
       return;
@@ -1125,7 +1125,7 @@ export default function GroupsPage() {
             </DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Actualiza la informaci\u00f3n del grupo"
+                ? "Actualiza la información del grupo"
                 : "Crea un nuevo grupo o ministerio"}
             </DialogDescription>
           </DialogHeader>
@@ -1154,12 +1154,12 @@ export default function GroupsPage() {
                 }
                 required
                 className="bg-background border-border text-foreground"
-                placeholder="Ej: J\u00f3venes, Adoraci\u00f3n, Ni\u00f1os"
+                placeholder="Ej: Jóvenes, Adoración, Niños"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">
-                Descripci\u00f3n
+                Descripción
               </label>
               <textarea
                 value={formData.description}
@@ -1168,7 +1168,7 @@ export default function GroupsPage() {
                 }
                 rows={3}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-600"
-                placeholder="Describe el prop\u00f3sito del grupo..."
+                placeholder="Describe el propósito del grupo..."
               />
             </div>
             <DialogFooter>
