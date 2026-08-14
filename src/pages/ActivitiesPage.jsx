@@ -71,6 +71,17 @@ export default function ActivitiesPage() {
 
   const [memberNames, setMemberNames] = useState([]);
   const [groupNames, setGroupNames]   = useState([]);
+  const [responsibleOpen, setResponsibleOpen] = useState(false);
+  const [organizerOpen, setOrganizerOpen]     = useState(false);
+
+  // El valor ya guardado (modo edición) casi nunca coincide con un nombre
+  // de la lista — si se filtrara estricto contra ese texto, el desplegable
+  // se vería vacío. Mostrar la lista completa en ese caso es lo que hace
+  // que "elegir de la lista" funcione igual al crear que al editar.
+  const responsibleMatches = memberNames.filter((n) => n.toLowerCase().includes(form.responsible.toLowerCase()));
+  const responsibleOptions = responsibleMatches.length > 0 ? responsibleMatches : memberNames;
+  const organizerMatches = groupNames.filter((n) => n.toLowerCase().includes(form.organizer.toLowerCase()));
+  const organizerOptions = organizerMatches.length > 0 ? organizerMatches : groupNames;
 
   const loadActivities = async () => {
     setLoading(true);
@@ -498,33 +509,53 @@ export default function ActivitiesPage() {
               </div>
 
               {/* Responsable */}
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-muted-foreground mb-1">Responsable</label>
                 <Input
                   value={form.responsible}
                   onChange={(e) => setForm({ ...form, responsible: e.target.value })}
+                  onFocus={() => setResponsibleOpen(true)}
+                  onBlur={() => setTimeout(() => setResponsibleOpen(false), 150)}
                   placeholder="Persona a cargo"
-                  list="responsible-options"
+                  autoComplete="off"
                   className="bg-background border-border text-foreground"
                 />
-                <datalist id="responsible-options">
-                  {memberNames.map((name) => <option key={name} value={name} />)}
-                </datalist>
+                {responsibleOpen && responsibleOptions.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {responsibleOptions.map((name) => (
+                      <button key={name} type="button"
+                        onMouseDown={() => { setForm((f) => ({ ...f, responsible: name })); setResponsibleOpen(false); }}
+                        className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Organizador (ministerio/grupo) */}
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-muted-foreground mb-1">Ministerio / Grupo organizador</label>
                 <Input
                   value={form.organizer}
                   onChange={(e) => setForm({ ...form, organizer: e.target.value })}
+                  onFocus={() => setOrganizerOpen(true)}
+                  onBlur={() => setTimeout(() => setOrganizerOpen(false), 150)}
                   placeholder="Ej: Grupo de Jóvenes"
-                  list="organizer-options"
+                  autoComplete="off"
                   className="bg-background border-border text-foreground"
                 />
-                <datalist id="organizer-options">
-                  {groupNames.map((name) => <option key={name} value={name} />)}
-                </datalist>
+                {organizerOpen && organizerOptions.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {organizerOptions.map((name) => (
+                      <button key={name} type="button"
+                        onMouseDown={() => { setForm((f) => ({ ...f, organizer: name })); setOrganizerOpen(false); }}
+                        className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Participantes esperados */}
