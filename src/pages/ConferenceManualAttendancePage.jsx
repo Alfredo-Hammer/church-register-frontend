@@ -61,6 +61,8 @@ export default function ConferenceManualAttendancePage() {
   const [togglingId, setTogglingId] = useState(null);
 
   const isLocked = conference && ["FINALIZADO", "CANCELADO"].includes(conference.status);
+  const noAttendance = sessionInfo?.takes_attendance === false;
+  const editingDisabled = isLocked || noAttendance;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,7 +100,7 @@ export default function ConferenceManualAttendancePage() {
   const progressPct = registrations.length ? Math.round((attendedCount / registrations.length) * 100) : 0;
 
   const setAttendance = async (regId, newStatus) => {
-    if (isLocked || togglingId) return;
+    if (editingDisabled || togglingId) return;
     setTogglingId(regId);
     try {
       if (newStatus === null) {
@@ -157,6 +159,11 @@ export default function ConferenceManualAttendancePage() {
         {isLocked && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-xs text-muted-foreground">
             <Lock size={13} className="flex-shrink-0" /> Esta conferencia está finalizada o cancelada — no se puede editar la asistencia.
+          </div>
+        )}
+        {!isLocked && noAttendance && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-xs text-muted-foreground">
+            <Clock size={13} className="flex-shrink-0" /> Esta sesión no requiere control de asistencia.
           </div>
         )}
 
@@ -228,12 +235,12 @@ export default function ConferenceManualAttendancePage() {
                           key={opt.label}
                           type="button"
                           title={opt.label}
-                          disabled={isLocked}
+                          disabled={editingDisabled}
                           onClick={() => setAttendance(r.id, opt.key)}
                           className={cn(
                             "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
                             active ? opt.activeClasses : "text-muted-foreground hover:bg-background hover:text-foreground",
-                            isLocked && "cursor-not-allowed opacity-60"
+                            editingDisabled && "cursor-not-allowed opacity-60"
                           )}>
                           <Icon size={13} strokeWidth={active ? 2.5 : 2} />
                         </button>

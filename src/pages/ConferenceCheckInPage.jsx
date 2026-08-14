@@ -215,13 +215,15 @@ export default function ConferenceCheckInPage() {
   const selectedDay = days.find((d) => d.sessions.some((s) => s.id === sessionId));
   const selectedSession = selectedDay?.sessions.find((s) => s.id === sessionId);
   const sessionPast = isSessionPast(selectedDay, selectedSession);
+  const sessionNoAttendance = selectedSession?.takes_attendance === false;
+  const checkInDisabled = sessionPast || sessionNoAttendance;
 
   // Si la clase termina mientras la cámara sigue abierta (o al cambiar a
-  // una sesión que ya pasó), hay que apagarla — no tiene sentido seguir
-  // escaneando algo que el backend va a rechazar de todos modos.
+  // una sesión que ya pasó o que no lleva asistencia), hay que apagarla —
+  // no tiene sentido seguir escaneando algo que el backend va a rechazar.
   useEffect(() => {
-    if (sessionPast) stopCamera();
-  }, [sessionPast, stopCamera]);
+    if (checkInDisabled) stopCamera();
+  }, [checkInDisabled, stopCamera]);
 
   return (
     <div className="min-h-screen bg-background px-4 py-6 sm:px-6 max-w-2xl mx-auto">
@@ -267,7 +269,14 @@ export default function ConferenceCheckInPage() {
                       "w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between gap-2",
                       s.id === sessionId ? "text-blue-700 dark:text-blue-400 font-semibold" : "text-foreground"
                     )}>
-                    <span className="truncate">{s.title}</span>
+                    <span className="truncate flex items-center gap-1.5">
+                      {s.title}
+                      {s.takes_attendance === false && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0">
+                          Sin asistencia
+                        </span>
+                      )}
+                    </span>
                     {s.time_start && <span className="text-xs text-muted-foreground flex-shrink-0">{formatTime(s.time_start)}</span>}
                   </button>
                 ))}
@@ -282,6 +291,14 @@ export default function ConferenceCheckInPage() {
         <div className="mb-4 rounded-lg border px-4 py-3 flex items-center gap-2.5 text-sm font-semibold bg-muted/50 border-border text-muted-foreground">
           <Clock size={16} className="flex-shrink-0" />
           <span className="flex-1">Esta sesión ya finalizó. No se puede registrar más asistencia aquí.</span>
+        </div>
+      )}
+
+      {/* Sesión marcada como "sin asistencia" (receso, comida, etc.) */}
+      {!sessionPast && sessionNoAttendance && (
+        <div className="mb-4 rounded-lg border px-4 py-3 flex items-center gap-2.5 text-sm font-semibold bg-muted/50 border-border text-muted-foreground">
+          <Clock size={16} className="flex-shrink-0" />
+          <span className="flex-1">Esta sesión no requiere control de asistencia.</span>
         </div>
       )}
 
@@ -330,7 +347,7 @@ export default function ConferenceCheckInPage() {
         <div className="p-3">
           <Button
             onClick={cameraOn ? stopCamera : startCamera}
-            disabled={!sessionId || sessionPast}
+            disabled={!sessionId || checkInDisabled}
             variant={cameraOn ? "outline" : "default"}
             className="w-full flex items-center justify-center gap-2">
             {cameraOn ? <><CameraOff size={15} /> Detener cámara</> : <><Camera size={15} /> Activar cámara</>}
@@ -345,11 +362,11 @@ export default function ConferenceCheckInPage() {
           autoFocus
           placeholder="PIN de 6 dígitos, código del gafete, o un lector"
           value={manualToken}
-          disabled={!sessionId || sessionPast}
+          disabled={!sessionId || checkInDisabled}
           onChange={(e) => setManualToken(e.target.value)}
           className="flex-1"
         />
-        <Button type="submit" disabled={!sessionId || sessionPast || submitting || !manualToken.trim()}>
+        <Button type="submit" disabled={!sessionId || checkInDisabled || submitting || !manualToken.trim()}>
           {submitting ? <Loader2 size={15} className="animate-spin" /> : "Marcar"}
         </Button>
       </form>

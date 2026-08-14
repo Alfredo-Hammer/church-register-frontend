@@ -23,7 +23,7 @@ import { SESSION_TYPE_COLORS, badgeClasses, swatchClasses } from "@/utils/sessio
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const EMPTY_SESSION = { sessionTypeId: null, title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "" };
+const EMPTY_SESSION = { sessionTypeId: null, title: "", timeStart: "", timeEnd: "", speaker: "", scriptureRef: "", notes: "", takesAttendance: true };
 const EMPTY_REG     = { fullName: "", phone: "", originChurch: "", city: "", notes: "", photoUrl: null, birthDate: "", gender: "", ageGroup: "ADULTO" };
 const LIMIT         = 20;
 
@@ -411,6 +411,7 @@ export default function ConferenceDetailPage() {
       speaker:      session.speaker || "",
       scriptureRef: session.scripture_ref || "",
       notes:        session.notes || "",
+      takesAttendance: session.takes_attendance ?? true,
     });
     setSessionError("");
     setShowNewType(false);
@@ -1344,7 +1345,15 @@ export default function ConferenceDetailPage() {
                               <TypeBadge type={session.type} />
                             </td>
                             <td className="px-4 py-3 align-top">
-                              <p className="font-semibold text-foreground">{session.title}</p>
+                              <p className="font-semibold text-foreground flex items-center gap-1.5">
+                                {session.title}
+                                {session.takes_attendance === false && (
+                                  <span title="No requiere control de asistencia"
+                                    className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                    Sin asistencia
+                                  </span>
+                                )}
+                              </p>
                               {(session.speaker || session.scripture_ref) && (
                                 <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
                                   {session.speaker && (
@@ -1377,16 +1386,20 @@ export default function ConferenceDetailPage() {
                             <td className="px-4 py-3 align-top">
                               {!isLocked && (
                                 <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => navigate(`/dashboard/conference/${id}/attendance/${session.id}`)}
-                                    title="Tomar asistencia manual"
-                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
-                                    <ClipboardCheck size={13} />
-                                  </button>
-                                  <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
-                                    title="Escanear asistencia (QR)"
-                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                    <ScanLine size={13} />
-                                  </button>
+                                  {session.takes_attendance !== false && (
+                                    <>
+                                      <button onClick={() => navigate(`/dashboard/conference/${id}/attendance/${session.id}`)}
+                                        title="Tomar asistencia manual"
+                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                                        <ClipboardCheck size={13} />
+                                      </button>
+                                      <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
+                                        title="Escanear asistencia (QR)"
+                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                        <ScanLine size={13} />
+                                      </button>
+                                    </>
+                                  )}
                                   <button onClick={() => openEditSession(session, currentDay.id)}
                                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                                     <Pencil size={13} />
@@ -2076,6 +2089,16 @@ export default function ConferenceDetailPage() {
                   onChange={(e) => setSessionForm(p => ({ ...p, timeEnd: e.target.value }))} />
               </div>
             </div>
+
+            <label className="flex items-start gap-2.5 p-3 rounded-lg border border-border bg-muted/30 cursor-pointer">
+              <input type="checkbox" checked={!sessionForm.takesAttendance}
+                onChange={(e) => setSessionForm(p => ({ ...p, takesAttendance: !e.target.checked }))}
+                className="mt-0.5 rounded border-border cursor-pointer" />
+              <span className="text-xs text-foreground">
+                <span className="font-semibold">Esta sesión no requiere control de asistencia</span>
+                <span className="block text-muted-foreground mt-0.5">Para recesos, comidas u otros momentos donde no se pasa lista. Oculta el check-in por QR/PIN para esta sesión.</span>
+              </span>
+            </label>
 
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
