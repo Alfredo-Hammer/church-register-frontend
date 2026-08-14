@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import {useNavigate, Link} from "react-router-dom";
 import {useAuth} from "@/contexts/AuthContext";
 import {Button} from "@/components/ui/Button";
@@ -20,6 +20,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const {login} = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Sesión cortada a la fuerza (p. ej. cuenta desactivada mientras se
+    // usaba la app): sin esto el redirect a /login no explica nada.
+    const notice = localStorage.getItem("loginNotice");
+    if (notice) {
+      setError(notice);
+      localStorage.removeItem("loginNotice");
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

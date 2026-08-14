@@ -24,9 +24,11 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
+  Power,
 } from "lucide-react";
-import {settingsService} from "@/services/api";
+import {settingsService, membersService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
+import {ConfirmDialog} from "@/components/ui/ConfirmDialog";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const ROLES = ["ADMIN", "PASTOR", "TESORERO", "LIDER"];
@@ -55,6 +57,18 @@ const ROLE_META = {
 };
 
 // ── Componentes pequeños ──────────────────────────────────────────────────────
+function StatusBadge({isActive}) {
+  return isActive ? (
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+      Activo
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-muted text-muted-foreground border-border">
+      Inactivo
+    </span>
+  );
+}
+
 function RoleBadge({role}) {
   const m = ROLE_META[role] || {
     bg: "bg-muted",
@@ -115,9 +129,18 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Sugerencias de miembros activos para autocompletar el nombre completo
+  const [activeMembers, setActiveMembers] = useState([]);
+  const [nameSuggestions, setNameSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   // Modal confirmar eliminar
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Activar/desactivar
+  const [togglingId, setTogglingId] = useState(null);
+  const [toggleTarget, setToggleTarget] = useState(null); // usuario a activar/desactivar (pendiente de confirmar)
 
   const notify = useCallback(
     (msg, type = "ok") => (type === "error" ? toast.error(msg) : toast.success(msg)),
@@ -144,6 +167,14 @@ export default function UsersPage() {
   useEffect(() => {
     if (isAdmin) fetchUsers();
   }, [isAdmin, roleFilter, pagination.offset]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    membersService
+      .getAll({status: "ACTIVO", limit: 500})
+      .then((r) => setActiveMembers(r.members || []))
+      .catch(() => {});
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -181,6 +212,33 @@ export default function UsersPage() {
     setEditingUser(null);
     setForm(EMPTY_FORM);
     setFormError("");
+    setNameSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  // ─── Autocompletar con miembros activos ────────────────────────────────────
+  const handleFullNameChange = (value) => {
+    setForm((f) => ({...f, fullName: value}));
+    if (value.trim().length < 2) {
+      setNameSuggestions([]);
+      return;
+    }
+    const q = value.trim().toLowerCase();
+    setNameSuggestions(
+      activeMembers
+        .filter((m) => `${m.first_name} ${m.last_name}`.toLowerCase().includes(q))
+        .slice(0, 6),
+    );
+  };
+
+  const selectSuggestedMember = (m) => {
+    setForm((f) => ({
+      ...f,
+      fullName: `${m.first_name} ${m.last_name}`,
+      email: !editingUser && !f.email && m.email ? m.email : f.email,
+    }));
+    setNameSuggestions([]);
+    setShowSuggestions(false);
   };
 
   // ─── Guardar ──────────────────────────────────────────────────────────────
@@ -221,6 +279,24 @@ export default function UsersPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // ─── Activar/Desactivar ───────────────────────────────────────────────────
+  const handleToggleActive = async (u) => {
+    setTogglingId(u.id);
+    try {
+      const data = await settingsService.toggleUserActive(u.id);
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === u.id ? {...item, isActive: data.isActive} : item,
+        ),
+      );
+      notify(data.message);
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Error al cambiar el estado del usuario.";
+      notify(msg, "error");
+    } finally {
+      setTogglingId(null);      setToggleTarget(null);    }
   };
 
   // ─── Eliminar ─────────────────────────────────────────────────────────────
@@ -409,6 +485,9 @@ export default function UsersPage() {
                       Rol
                     </th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Registro
                     </th>
                     <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -457,6 +536,9 @@ export default function UsersPage() {
                         <td className="px-6 py-4">
                           <RoleBadge role={u.role} />
                         </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge isActive={u.isActive} />
+                        </td>
                         <td className="px-6 py-4 text-muted-foreground text-sm">
                           {u.createdAt
                             ? new Date(u.createdAt).toLocaleDateString("es", {
@@ -468,6 +550,26 @@ export default function UsersPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => !isSelf && setToggleTarget(u)}
+                              disabled={isSelf || togglingId === u.id}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isSelf
+                                  ? "text-muted-foreground cursor-not-allowed"
+                                  : u.isActive
+                                    ? "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
+                                    : "text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-500/10"
+                              }`}
+                              title={
+                                isSelf
+                                  ? "No puedes desactivar tu propio usuario"
+                                  : u.isActive
+                                    ? "Desactivar cuenta"
+                                    : "Activar cuenta"
+                              }
+                            >
+                              <Power className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => openEdit(u)}
                               className="p-1.5 text-muted-foreground hover:text-violet-700 dark:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
@@ -549,18 +651,46 @@ export default function UsersPage() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 relative">
                 <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Nombre Completo *
                 </label>
                 <Input
                   value={form.fullName}
-                  onChange={(e) =>
-                    setForm((f) => ({...f, fullName: e.target.value}))
-                  }
-                  placeholder="Nombre completo"
+                  onChange={(e) => handleFullNameChange(e.target.value)}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  placeholder="Nombre completo o busca un miembro activo…"
                   className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  autoComplete="off"
                 />
+                {showSuggestions && nameSuggestions.length > 0 && (
+                  <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
+                    {nameSuggestions.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onMouseDown={() => selectSuggestedMember(m)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-accent transition-colors text-left"
+                      >
+                        <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <span className="text-xs font-semibold text-foreground">
+                            {m.first_name?.[0]}
+                            {m.last_name?.[0]}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-foreground font-medium truncate">
+                            {m.first_name} {m.last_name}
+                          </p>
+                          {m.email && (
+                            <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {!editingUser && (
@@ -697,6 +827,25 @@ export default function UsersPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!toggleTarget}
+        onOpenChange={(open) => !open && setToggleTarget(null)}
+        title={
+          toggleTarget?.isActive
+            ? "¿Desactivar usuario?"
+            : "¿Activar usuario?"
+        }
+        description={
+          toggleTarget?.isActive
+            ? `${toggleTarget?.fullName} no podrá iniciar sesión hasta que reactives su cuenta.`
+            : `${toggleTarget?.fullName} podrá volver a iniciar sesión.`
+        }
+        confirmLabel={toggleTarget?.isActive ? "Sí, desactivar" : "Sí, activar"}
+        confirmingLabel={toggleTarget?.isActive ? "Desactivando…" : "Activando…"}
+        variant={toggleTarget?.isActive ? "destructive" : "default"}
+        onConfirm={() => handleToggleActive(toggleTarget)}
+      />
     </div>
   );
 }

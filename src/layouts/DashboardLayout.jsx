@@ -477,15 +477,25 @@ export const DashboardLayout = ({children}) => {
                 className="flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent rounded-lg transition-colors"
               >
                 <div className="flex-1 flex items-center">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-sm font-semibold text-white">
-                      {user?.fullName
-                        ?.split(" ")
-                        .slice(0, 2)
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase() || "U"}
-                    </span>
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center",
+                      user?.photoUrl
+                        ? "bg-background ring-1 ring-border"
+                        : "bg-gradient-to-br from-blue-500 to-blue-700",
+                    )}
+                  >
+                    {user?.photoUrl ? (
+                      <img
+                        src={user.photoUrl}
+                        alt={user.fullName || "Foto de perfil"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-white">
+                        {initials}
+                      </span>
+                    )}
                   </div>
                   <div className="ml-3 text-left min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
@@ -578,7 +588,7 @@ export const DashboardLayout = ({children}) => {
                     )}
                   </div>
                   <span className="text-sm font-semibold text-foreground">
-                    {user?.fullName}
+                    {user?.fullName?.split(" ")[0]}
                   </span>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>

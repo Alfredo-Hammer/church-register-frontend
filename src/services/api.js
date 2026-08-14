@@ -44,6 +44,22 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    // Cuenta desactivada por un admin mientras la sesión seguía abierta: el
+    // JWT no se puede revocar, así que esto es lo que realmente la corta.
+    // El intento de /auth/login con la cuenta ya desactivada NO pasa por
+    // aquí: ese 403 lo debe mostrar el propio formulario de login, no un
+    // reload que se lo lleve antes de que se alcance a leer.
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.code === 'ACCOUNT_DISABLED' &&
+      !isLoginRequest
+    ) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.setItem('loginNotice', 'Tu cuenta ha sido desactivada. Contacta a un administrador.');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
@@ -523,6 +539,10 @@ export const settingsService = {
   },
   updateUser: async (id, data) => {
     const response = await api.put(`/settings/users/${id}`, data);
+    return response.data;
+  },
+  toggleUserActive: async (id) => {
+    const response = await api.patch(`/settings/users/${id}/toggle`);
     return response.data;
   },
   deleteUser: async (id) => {
