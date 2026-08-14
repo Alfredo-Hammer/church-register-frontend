@@ -1,13 +1,6 @@
 import * as React from "react";
 import {AlertTriangle} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./Dialog";
+import {Dialog, DialogContent, DialogFooter} from "./Dialog";
 import {Button} from "./Button";
 
 /**
@@ -44,21 +37,23 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !loading && onOpenChange(o)}>
       <DialogContent
-        className="max-w-sm"
+        className="max-w-[22rem] sm:max-w-[22rem] p-6"
         onClose={() => !loading && onOpenChange(false)}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            {variant === "destructive" && (
-              <span className="w-9 h-9 rounded-lg bg-destructive/15 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-              </span>
+        <div className="flex flex-col items-center gap-3 text-center">
+          {variant === "destructive" && (
+            <span className="w-11 h-11 rounded-full bg-destructive/15 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            </span>
+          )}
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold leading-snug text-foreground">{title}</h2>
+            {description && (
+              <p className="text-sm text-muted-foreground">{description}</p>
             )}
-            {title}
-          </DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
-        </DialogHeader>
-        <DialogFooter>
+          </div>
+        </div>
+        <DialogFooter className="mt-5 grid grid-cols-2 gap-2 sm:space-x-0">
           <Button
             type="button"
             variant="outline"
