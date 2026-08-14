@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, Download, X, Loader2 } from 'lucide-react';
 
 /**
@@ -51,6 +52,7 @@ export default function PrintLayout({ title = 'Vista Previa', subtitle, onClose,
         }
       `}</style>
 
+      {createPortal(
       <div id="print-root" className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col">
 
         {/* Barra de acciones */}
@@ -114,7 +116,9 @@ export default function PrintLayout({ title = 'Vista Previa', subtitle, onClose,
         <div id="print-scroll" className="flex-1 overflow-y-auto py-8 px-4 flex justify-center bg-gray-100">
           {children}
         </div>
-      </div>
+      </div>,
+      document.body
+      )}
     </>
   );
 }
