@@ -3,6 +3,7 @@ import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
 import {Toaster} from "sonner";
 import {AuthProvider} from "@/contexts/AuthContext";
 import {ProtectedRoute} from "@/components/ProtectedRoute";
+import {PlatformProtectedRoute} from "@/components/PlatformProtectedRoute";
 import {DashboardLayout} from "@/layouts/DashboardLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {useTheme} from "@/contexts/ThemeContext";
@@ -42,6 +43,7 @@ import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
 import ConferenceManualAttendancePage from "@/pages/ConferenceManualAttendancePage";
 import AnnouncementsPage from "@/pages/AnnouncementsPage";
+import SuperAdminPage from "@/pages/SuperAdminPage";
 
 function App() {
   const {theme} = useTheme();
@@ -58,6 +60,16 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+            {/* Superadmin de plataforma: mismo login unificado, scope aparte sin DashboardLayout */}
+            <Route
+              path="/super-admin"
+              element={
+                <PlatformProtectedRoute>
+                  <SuperAdminPage />
+                </PlatformProtectedRoute>
+              }
+            />
 
             {/* Protected routes */}
             <Route

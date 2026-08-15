@@ -44,20 +44,21 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-    // Cuenta desactivada por un admin mientras la sesión seguía abierta: el
-    // JWT no se puede revocar, así que esto es lo que realmente la corta.
-    // El intento de /auth/login con la cuenta ya desactivada NO pasa por
-    // aquí: ese 403 lo debe mostrar el propio formulario de login, no un
-    // reload que se lo lleve antes de que se alcance a leer.
+    // Cuenta (o iglesia entera) desactivada mientras la sesión seguía
+    // abierta: el JWT no se puede revocar, así que esto es lo que realmente
+    // la corta. El intento de /auth/login con la cuenta ya desactivada NO
+    // pasa por aquí: ese 403 lo debe mostrar el propio formulario de login,
+    // no un reload que se lo lleve antes de que se alcance a leer.
     const isLoginRequest = error.config?.url?.includes('/auth/login');
-    if (
-      error.response?.status === 403 &&
-      error.response?.data?.code === 'ACCOUNT_DISABLED' &&
-      !isLoginRequest
-    ) {
+    const disabledNotices = {
+      ACCOUNT_DISABLED: 'Tu cuenta ha sido desactivada. Contacta a un administrador.',
+      CHURCH_DISABLED: 'El acceso de tu iglesia ha sido suspendido. Contacta a un administrador.',
+    };
+    const disabledNotice = disabledNotices[error.response?.data?.code];
+    if (error.response?.status === 403 && disabledNotice && !isLoginRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      localStorage.setItem('loginNotice', 'Tu cuenta ha sido desactivada. Contacta a un administrador.');
+      localStorage.setItem('loginNotice', disabledNotice);
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -1011,6 +1012,53 @@ export const announcementsService = {
   },
   delete: async (id) => {
     const response = await api.delete(`/announcements/${id}`);
+    return response.data;
+  },
+};
+
+// ============================================
+// PLATFORM (SUPERADMIN) SERVICE
+// ============================================
+// Instancia aparte: usa su propio token (platformToken) en vez de `token`,
+// para no mezclar la sesión de superadmin con la de un usuario de iglesia.
+const platformApi = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+platformApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('platformToken');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+platformApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('platformToken');
+      localStorage.removeItem('platformAdmin');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const platformService = {
+  getStats: async () => {
+    const response = await platformApi.get('/platform/stats');
+    return response.data;
+  },
+  getChurches: async (params = {}) => {
+    const response = await platformApi.get('/platform/churches', { params });
+    return response.data;
+  },
+  toggleChurchActive: async (id) => {
+    const response = await platformApi.patch(`/platform/churches/${id}/toggle`);
+    return response.data;
+  },
+  impersonateChurch: async (id) => {
+    const response = await platformApi.post(`/platform/churches/${id}/impersonate`);
     return response.data;
   },
 };

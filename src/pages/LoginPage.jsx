@@ -40,7 +40,7 @@ export default function LoginPage() {
       const result = await login(email, password);
 
       if (result.success) {
-        navigate("/dashboard");
+        navigate(result.accountType === "platform" ? "/super-admin" : "/dashboard");
       } else {
         setError(result.error || "Error al iniciar sesión");
         // Sin esto el usuario queda con un mensaje que le dice que verifique

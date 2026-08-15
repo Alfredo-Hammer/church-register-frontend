@@ -50,6 +50,15 @@ export const AuthProvider = ({children}) => {
     try {
       const response = await authService.login(email, password);
 
+      // Mismo formulario para usuarios de iglesia y superadmins de
+      // plataforma: el backend decide qué es la cuenta según el email, no
+      // hay que elegir la pantalla correcta de antemano.
+      if (response.accountType === "platform") {
+        localStorage.setItem("platformToken", response.token);
+        localStorage.setItem("platformAdmin", JSON.stringify(response.admin));
+        return {success: true, accountType: "platform"};
+      }
+
       const u = response.user ?? response;
       const userData = {
         userId: u.id ?? u.userId,
@@ -66,7 +75,7 @@ export const AuthProvider = ({children}) => {
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
 
-      return {success: true};
+      return {success: true, accountType: "user"};
     } catch (error) {
       console.error("Error en login:", error);
       return {
