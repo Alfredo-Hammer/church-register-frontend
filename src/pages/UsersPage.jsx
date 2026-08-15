@@ -26,6 +26,7 @@ import {
   KeyRound,
   Copy,
   Check,
+  Send,
 } from "lucide-react";
 import {settingsService, membersService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
@@ -120,11 +121,15 @@ export default function UsersPage() {
   const [togglingId, setTogglingId] = useState(null);
   const [toggleTarget, setToggleTarget] = useState(null); // usuario a activar/desactivar (pendiente de confirmar)
 
-  // Credenciales temporales de un usuario recién creado, para cuando no se
-  // pudo enviar el correo de bienvenida (SMTP no configurado) — es la única
+  // Credenciales temporales de un usuario recién creado o reenviado, para
+  // cuando no se pudo mandar el correo (SMTP no configurado) — es la única
   // vez que la contraseña generada queda visible.
   const [pendingCredentials, setPendingCredentials] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Reenviar credenciales (genera una contraseña temporal nueva)
+  const [resendingId, setResendingId] = useState(null);
+  const [resendTarget, setResendTarget] = useState(null);
 
   const notify = useCallback(
     (msg, type = "ok") => (type === "error" ? toast.error(msg) : toast.success(msg)),
@@ -288,6 +293,30 @@ export default function UsersPage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  // ─── Reenviar credenciales ────────────────────────────────────────────────
+  const handleResendCredentials = async (u) => {
+    setResendingId(u.id);
+    try {
+      const data = await settingsService.resendUserCredentials(u.id);
+      if (data.emailSent) {
+        notify(`Le reenviamos un correo a ${data.email} con una nueva contraseña temporal.`);
+      } else {
+        setPendingCredentials({
+          fullName: data.fullName,
+          email: data.email,
+          tempPassword: data.tempPassword,
+          resent: true,
+        });
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Error al reenviar las credenciales.";
+      notify(msg, "error");
+    } finally {
+      setResendingId(null);
+      setResendTarget(null);
     }
   };
 
@@ -563,6 +592,14 @@ export default function UsersPage() {
                               <Power className="w-4 h-4" />
                             </button>
                             <button
+                              onClick={() => setResendTarget(u)}
+                              disabled={resendingId === u.id}
+                              className="p-1.5 text-muted-foreground hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors disabled:opacity-40"
+                              title="Reenviar credenciales"
+                            >
+                              <Send className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => openEdit(u)}
                               className="p-1.5 text-muted-foreground hover:text-violet-700 dark:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
                               title="Editar"
@@ -824,6 +861,16 @@ export default function UsersPage() {
         onConfirm={() => handleToggleActive(toggleTarget)}
       />
 
+      <ConfirmDialog
+        open={!!resendTarget}
+        onOpenChange={(open) => !open && setResendTarget(null)}
+        title="¿Reenviar credenciales?"
+        description={`Se genera una contraseña temporal nueva para ${resendTarget?.fullName} y la anterior deja de funcionar. Deberá cambiarla al iniciar sesión.`}
+        confirmLabel="Sí, reenviar"
+        confirmingLabel="Reenviando…"
+        onConfirm={() => handleResendCredentials(resendTarget)}
+      />
+
       {/* ── Modal credenciales temporales (sin SMTP configurado) ────────────── */}
       <Dialog
         open={!!pendingCredentials}
@@ -844,16 +891,16 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <KeyRound className="w-5 h-5 text-amber-700 dark:text-amber-400" />
-              Usuario creado
+              {pendingCredentials?.resent ? "Credenciales reenviadas" : "Usuario creado"}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-3 space-y-4">
             <div className="bg-amber-500/10 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 rounded-lg p-3 text-sm flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
-                No pudimos enviarle el correo de bienvenida (el envío de
-                correo no está configurado). Compartile esta contraseña
-                temporal manualmente — no vas a poder volver a verla.
+                No pudimos enviarle el correo (el envío de correo no está
+                configurado). Compartile esta contraseña temporal
+                manualmente — no vas a poder volver a verla.
               </span>
             </div>
             <div className="space-y-2 text-sm">

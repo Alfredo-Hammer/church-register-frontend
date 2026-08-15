@@ -546,6 +546,10 @@ export const settingsService = {
     const response = await api.patch(`/settings/users/${id}/toggle`);
     return response.data;
   },
+  resendUserCredentials: async (id) => {
+    const response = await api.post(`/settings/users/${id}/resend-credentials`);
+    return response.data;
+  },
   deleteUser: async (id) => {
     const response = await api.delete(`/settings/users/${id}`);
     return response.data;
