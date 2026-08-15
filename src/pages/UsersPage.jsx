@@ -296,7 +296,9 @@ export default function UsersPage() {
       const msg = err?.response?.data?.error || "Error al cambiar el estado del usuario.";
       notify(msg, "error");
     } finally {
-      setTogglingId(null);      setToggleTarget(null);    }
+      setTogglingId(null);
+      setToggleTarget(null);
+    }
   };
 
   // ─── Eliminar ─────────────────────────────────────────────────────────────
