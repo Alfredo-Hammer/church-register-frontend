@@ -17,14 +17,15 @@ import {
   Search,
   ShieldCheck,
   AlertCircle,
-  Eye,
-  EyeOff,
   X,
   Mail,
   Shield,
   ChevronLeft,
   ChevronRight,
   Power,
+  KeyRound,
+  Copy,
+  Check,
 } from "lucide-react";
 import {settingsService, membersService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
@@ -85,31 +86,8 @@ function RoleBadge({role}) {
   );
 }
 
-function PasswordInput({value, onChange, placeholder, name}) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="relative">
-      <Input
-        type={show ? "text" : "password"}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500 pr-10"
-      />
-      <button
-        type="button"
-        onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-      >
-        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-      </button>
-    </div>
-  );
-}
-
 // ── Formulario vacío ──────────────────────────────────────────────────────────
-const EMPTY_FORM = {fullName: "", email: "", password: "", role: "LIDER"};
+const EMPTY_FORM = {fullName: "", email: "", role: "LIDER"};
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function UsersPage() {
@@ -141,6 +119,12 @@ export default function UsersPage() {
   // Activar/desactivar
   const [togglingId, setTogglingId] = useState(null);
   const [toggleTarget, setToggleTarget] = useState(null); // usuario a activar/desactivar (pendiente de confirmar)
+
+  // Credenciales temporales de un usuario recién creado, para cuando no se
+  // pudo enviar el correo de bienvenida (SMTP no configurado) — es la única
+  // vez que la contraseña generada queda visible.
+  const [pendingCredentials, setPendingCredentials] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const notify = useCallback(
     (msg, type = "ok") => (type === "error" ? toast.error(msg) : toast.success(msg)),
@@ -202,7 +186,7 @@ export default function UsersPage() {
 
   const openEdit = (u) => {
     setEditingUser(u);
-    setForm({fullName: u.fullName, email: u.email, password: "", role: u.role});
+    setForm({fullName: u.fullName, email: u.email, role: u.role});
     setFormError("");
     setModalOpen(true);
   };
@@ -249,10 +233,6 @@ export default function UsersPage() {
     if (!form.fullName.trim()) return setFormError("El nombre es obligatorio.");
     if (!editingUser && !form.email.trim())
       return setFormError("El email es obligatorio.");
-    if (!editingUser && !form.password)
-      return setFormError("La contraseña es obligatoria.");
-    if (!editingUser && form.password.length < 6)
-      return setFormError("La contraseña debe tener al menos 6 caracteres.");
 
     setSaving(true);
     try {
@@ -262,16 +242,26 @@ export default function UsersPage() {
           role: form.role,
         });
         notify("Usuario actualizado correctamente.");
+        closeModal();
       } else {
-        await settingsService.createUser({
+        const created = await settingsService.createUser({
           fullName: form.fullName.trim(),
           email: form.email.trim(),
-          password: form.password,
           role: form.role,
         });
-        notify("Usuario creado correctamente.");
+        closeModal();
+        if (created.emailSent) {
+          notify(
+            `Usuario creado. Le enviamos un correo a ${created.email} con sus credenciales temporales.`,
+          );
+        } else {
+          setPendingCredentials({
+            fullName: created.fullName,
+            email: created.email,
+            tempPassword: created.tempPassword,
+          });
+        }
       }
-      closeModal();
       fetchUsers();
     } catch (err) {
       const msg = err?.response?.data?.error || "Error al guardar usuario.";
@@ -696,39 +686,24 @@ export default function UsersPage() {
               </div>
 
               {!editingUser && (
-                <>
-                  <div className="sm:col-span-2">
-                    <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                      Email *
-                    </label>
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) =>
-                        setForm((f) => ({...f, email: e.target.value}))
-                      }
-                      placeholder="correo@ejemplo.com"
-                      className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                      Contraseña *{" "}
-                      <span className="text-muted-foreground font-normal">
-                        (mín. 6 caracteres)
-                      </span>
-                    </label>
-                    <PasswordInput
-                      name="password"
-                      value={form.password}
-                      onChange={(e) =>
-                        setForm((f) => ({...f, password: e.target.value}))
-                      }
-                      placeholder="Contraseña de acceso"
-                    />
-                  </div>
-                </>
+                <div className="sm:col-span-2">
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Email *
+                  </label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm((f) => ({...f, email: e.target.value}))
+                    }
+                    placeholder="correo@ejemplo.com"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                  <p className="text-muted-foreground text-xs mt-1.5">
+                    Le generamos una contraseña temporal y se la enviamos por
+                    correo; deberá cambiarla al iniciar sesión.
+                  </p>
+                </div>
               )}
 
               <div className="sm:col-span-2">
@@ -848,6 +823,89 @@ export default function UsersPage() {
         variant={toggleTarget?.isActive ? "destructive" : "default"}
         onConfirm={() => handleToggleActive(toggleTarget)}
       />
+
+      {/* ── Modal credenciales temporales (sin SMTP configurado) ────────────── */}
+      <Dialog
+        open={!!pendingCredentials}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingCredentials(null);
+            setCopied(false);
+          }
+        }}
+      >
+        <DialogContent
+          onClose={() => {
+            setPendingCredentials(null);
+            setCopied(false);
+          }}
+          className="max-w-md"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+              Usuario creado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-3 space-y-4">
+            <div className="bg-amber-500/10 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 rounded-lg p-3 text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                No pudimos enviarle el correo de bienvenida (el envío de
+                correo no está configurado). Compartile esta contraseña
+                temporal manualmente — no vas a poder volver a verla.
+              </span>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Usuario</span>
+                <span className="text-foreground font-medium">
+                  {pendingCredentials?.fullName} ({pendingCredentials?.email})
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground">
+                  Contraseña temporal
+                </span>
+                <div className="flex items-center gap-2">
+                  <code className="bg-muted px-2.5 py-1 rounded-md text-foreground font-mono text-sm">
+                    {pendingCredentials?.tempPassword}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        pendingCredentials?.tempPassword || "",
+                      );
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                    title="Copiar"
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  setPendingCredentials(null);
+                  setCopied(false);
+                }}
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
+              >
+                Listo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

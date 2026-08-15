@@ -44,6 +44,7 @@ import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
 import ConferenceManualAttendancePage from "@/pages/ConferenceManualAttendancePage";
 import AnnouncementsPage from "@/pages/AnnouncementsPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
+import ForcePasswordChangePage from "@/pages/ForcePasswordChangePage";
 
 function App() {
   const {theme} = useTheme();
@@ -72,6 +73,16 @@ function App() {
             />
 
             {/* Protected routes */}
+            {/* Sin DashboardLayout a propósito: la cuenta tiene contraseña
+                temporal, no debe poder navegar a otra pantalla todavía. */}
+            <Route
+              path="/dashboard/cambiar-password"
+              element={
+                <ProtectedRoute>
+                  <ForcePasswordChangePage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={

@@ -69,6 +69,7 @@ export const AuthProvider = ({children}) => {
         fullName: u.fullName,
         email: u.email,
         photoUrl: u.photoUrl ?? null,
+        mustChangePassword: u.mustChangePassword ?? false,
       };
 
       localStorage.setItem("token", response.token);

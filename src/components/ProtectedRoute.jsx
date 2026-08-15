@@ -1,9 +1,12 @@
 import React from "react";
-import {Navigate} from "react-router-dom";
+import {Navigate, useLocation} from "react-router-dom";
 import {useAuth} from "@/contexts/AuthContext";
+
+const FORCE_PASSWORD_CHANGE_PATH = "/dashboard/cambiar-password";
 
 export const ProtectedRoute = ({children, roles}) => {
   const {isAuthenticated, loading, user} = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -15,6 +18,15 @@ export const ProtectedRoute = ({children, roles}) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Cuenta creada con contraseña temporal: no puede usar el resto del
+  // sistema hasta que la cambie, sin importar el rol.
+  if (
+    user?.mustChangePassword &&
+    location.pathname !== FORCE_PASSWORD_CHANGE_PATH
+  ) {
+    return <Navigate to={FORCE_PASSWORD_CHANGE_PATH} replace />;
   }
 
   // roles es opcional — sin él, la ruta solo exige sesión iniciada, igual

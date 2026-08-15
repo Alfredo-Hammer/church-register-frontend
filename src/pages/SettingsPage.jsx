@@ -4,25 +4,15 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/Dialog";
-import {
   Settings,
   Building2,
   User,
-  Users,
   Lock,
   Edit2,
-  Trash2,
-  Plus,
   Save,
   Eye,
   EyeOff,
   ShieldCheck,
-  ChevronDown,
   ImagePlus,
   Trash,
   Smartphone,
@@ -35,8 +25,6 @@ import {settingsService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const ROLES = ["ADMIN", "PASTOR", "TESORERO", "LIDER"];
-
 const ROLE_BADGE = {
   ADMIN: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30",
   PASTOR: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30",
@@ -81,7 +69,6 @@ function PasswordInput({value, onChange, placeholder, name}) {
 const TABS = [
   {id: "profile", label: "Mi Perfil", icon: User},
   {id: "church", label: "Iglesia", icon: Building2},
-  {id: "users", label: "Usuarios", icon: Users},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -173,11 +160,20 @@ export default function SettingsPage() {
 
   // ─── Tab: IGLESIA ────────────────────────────────────────────────────────
   const [church, setChurch] = useState(null);
-  const [churchForm, setChurchForm] = useState({
+  const EMPTY_CHURCH_FORM = {
     name: "",
+    denomination: "",
+    pastorName: "",
+    foundedYear: "",
+    city: "",
+    country: "",
     address: "",
     phone: "",
-  });
+    email: "",
+    website: "",
+    description: "",
+  };
+  const [churchForm, setChurchForm] = useState(EMPTY_CHURCH_FORM);
   const [churchSaving, setChurchSaving] = useState(false);
   const [churchEditing, setChurchEditing] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -227,8 +223,16 @@ export default function SettingsPage() {
       setChurch(data);
       setChurchForm({
         name: data.name || "",
+        denomination: data.denomination || "",
+        pastorName: data.pastorName || "",
+        foundedYear: data.foundedYear || "",
+        city: data.city || "",
+        country: data.country || "",
         address: data.address || "",
         phone: data.phone || "",
+        email: data.email || "",
+        website: data.website || "",
+        description: data.description || "",
       });
       // Sync logo into auth context so sidebar updates immediately
       if (data.logoUrl !== undefined) updateUser({churchLogo: data.logoUrl || null});
@@ -255,8 +259,16 @@ export default function SettingsPage() {
       setChurch((prev) => ({...prev, ...updated}));
       setChurchForm({
         name: updated.name || "",
+        denomination: updated.denomination || "",
+        pastorName: updated.pastorName || "",
+        foundedYear: updated.foundedYear || "",
+        city: updated.city || "",
+        country: updated.country || "",
         address: updated.address || "",
         phone: updated.phone || "",
+        email: updated.email || "",
+        website: updated.website || "",
+        description: updated.description || "",
       });
       setChurchEditing(false);
       updateUser({churchName: updated.name});
@@ -313,90 +325,6 @@ export default function SettingsPage() {
       notify(e?.response?.data?.error || "Error al eliminar logo.", "error");
     } finally {
       setLogoUploading(false);
-    }
-  };
-
-  // ─── Tab: USUARIOS ───────────────────────────────────────────────────────
-  const [usersData, setUsersData] = useState(null);
-  const [userModal, setUserModal] = useState(false);
-  const [editUserId, setEditUserId] = useState(null);
-  const [userForm, setUserForm] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    role: "LIDER",
-  });
-  const [userSaving, setUserSaving] = useState(false);
-  const [deleteUserModal, setDeleteUserModal] = useState(false);
-  const [deleteUserTarget, setDeleteUserTarget] = useState(null);
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      const data = await settingsService.getUsers();
-      setUsersData(data.users || []);
-    } catch {
-      /* silent */
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === "users" && !usersData) fetchUsers();
-  }, [activeTab, usersData, fetchUsers]);
-
-  const openCreateUser = () => {
-    setEditUserId(null);
-    setUserForm({fullName: "", email: "", password: "", role: "LIDER"});
-    setUserModal(true);
-  };
-
-  const openEditUser = (u) => {
-    setEditUserId(u.id);
-    setUserForm({
-      fullName: u.fullName,
-      email: u.email,
-      password: "",
-      role: u.role,
-    });
-    setUserModal(true);
-  };
-
-  const handleUserSave = async (e) => {
-    e.preventDefault();
-    setUserSaving(true);
-    try {
-      if (editUserId) {
-        await settingsService.updateUser(editUserId, {
-          fullName: userForm.fullName,
-          role: userForm.role,
-        });
-        notify("Usuario actualizado.");
-      } else {
-        await settingsService.createUser(userForm);
-        notify("Usuario creado correctamente.");
-      }
-      setUserModal(false);
-      fetchUsers();
-    } catch (e) {
-      notify(e?.response?.data?.error || "Error al guardar usuario.", "error");
-    } finally {
-      setUserSaving(false);
-    }
-  };
-
-  const confirmDeleteUser = (u) => {
-    setDeleteUserTarget(u);
-    setDeleteUserModal(true);
-  };
-
-  const handleDeleteUser = async () => {
-    try {
-      await settingsService.deleteUser(deleteUserTarget.id);
-      setDeleteUserModal(false);
-      setDeleteUserTarget(null);
-      notify("Usuario eliminado.");
-      fetchUsers();
-    } catch (e) {
-      notify(e?.response?.data?.error || "Error al eliminar usuario.", "error");
     }
   };
 
@@ -713,6 +641,122 @@ export default function SettingsPage() {
                   className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
                 />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Denominación{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    value={churchForm.denomination}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, denomination: e.target.value}))
+                    }
+                    placeholder="Ej. Pentecostal, Bautista…"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Pastor Principal{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    value={churchForm.pastorName}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, pastorName: e.target.value}))
+                    }
+                    placeholder="Nombre del pastor"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Año de fundación{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={churchForm.foundedYear}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, foundedYear: e.target.value}))
+                    }
+                    placeholder="Ej. 1998"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Ciudad{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    value={churchForm.city}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, city: e.target.value}))
+                    }
+                    placeholder="Ciudad"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    País{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    value={churchForm.country}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, country: e.target.value}))
+                    }
+                    placeholder="País"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Teléfono{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    value={churchForm.phone}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, phone: e.target.value}))
+                    }
+                    placeholder="Número de teléfono"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Email{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    type="email"
+                    value={churchForm.email}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, email: e.target.value}))
+                    }
+                    placeholder="contacto@iglesia.com"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                    Sitio web{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <Input
+                    value={churchForm.website}
+                    onChange={(e) =>
+                      setChurchForm((f) => ({...f, website: e.target.value}))
+                    }
+                    placeholder="https://miiglesia.com"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="text-muted-foreground text-sm font-medium block mb-1.5">
                   Dirección{" "}
@@ -729,16 +773,17 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                  Teléfono{" "}
+                  Descripción{" "}
                   <span className="text-muted-foreground font-normal">(opcional)</span>
                 </label>
-                <Input
-                  value={churchForm.phone}
+                <textarea
+                  value={churchForm.description}
                   onChange={(e) =>
-                    setChurchForm((f) => ({...f, phone: e.target.value}))
+                    setChurchForm((f) => ({...f, description: e.target.value}))
                   }
-                  placeholder="Número de teléfono"
-                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                  placeholder="Breve descripción de la iglesia"
+                  rows={3}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
@@ -749,8 +794,16 @@ export default function SettingsPage() {
                     setChurchEditing(false);
                     setChurchForm({
                       name: church.name || "",
+                      denomination: church.denomination || "",
+                      pastorName: church.pastorName || "",
+                      foundedYear: church.foundedYear || "",
+                      city: church.city || "",
+                      country: church.country || "",
                       address: church.address || "",
                       phone: church.phone || "",
+                      email: church.email || "",
+                      website: church.website || "",
+                      description: church.description || "",
                     });
                   }}
                   className="border-border text-muted-foreground hover:text-foreground"
@@ -777,11 +830,19 @@ export default function SettingsPage() {
             <div className="space-y-4">
               {[
                 {label: "Nombre", value: church.name},
+                {label: "Denominación", value: church.denomination || "—"},
+                {label: "Pastor Principal", value: church.pastorName || "—"},
+                {label: "Año de fundación", value: church.foundedYear || "—"},
+                {label: "Ciudad", value: church.city || "—"},
+                {label: "País", value: church.country || "—"},
                 {label: "Dirección", value: church.address || "—"},
                 {label: "Teléfono", value: church.phone || "—"},
+                {label: "Email", value: church.email || "—"},
+                {label: "Sitio web", value: church.website || "—"},
+                {label: "Descripción", value: church.description || "—"},
               ].map(({label, value}) => (
                 <div key={label} className="flex items-start gap-3">
-                  <span className="text-muted-foreground text-sm w-24 shrink-0 pt-0.5">
+                  <span className="text-muted-foreground text-sm w-36 shrink-0 pt-0.5">
                     {label}
                   </span>
                   <span className="text-foreground text-sm font-medium">
@@ -802,118 +863,6 @@ export default function SettingsPage() {
     </div>
   );
 
-  const renderUsers = () => {
-    if (!isAdmin) {
-      return (
-        <div className="text-center py-16 text-muted-foreground">
-          <ShieldCheck className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="text-lg font-medium">Acceso restringido</p>
-          <p className="text-sm mt-1">
-            Solo los administradores pueden gestionar usuarios.
-          </p>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <p className="text-muted-foreground text-sm">
-            {usersData?.length || 0} usuarios registrados
-          </p>
-          <Button
-            onClick={openCreateUser}
-            className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Usuario
-          </Button>
-        </div>
-
-        {!usersData ? (
-          <div className="text-center py-10 text-muted-foreground">
-            Cargando usuarios...
-          </div>
-        ) : (
-          <Card className="bg-card border-border">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border text-left">
-                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-                        Usuario
-                      </th>
-                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-                        Email
-                      </th>
-                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-                        Rol
-                      </th>
-                      <th className="px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-center">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {usersData.map((u) => (
-                      <tr
-                        key={u.id}
-                        className="hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-700 dark:text-violet-400 font-bold text-sm shrink-0">
-                              {u.fullName?.charAt(0)?.toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="text-foreground text-sm font-medium">
-                                {u.fullName}
-                              </p>
-                              {u.id === user?.userId && (
-                                <span className="text-xs text-violet-700 dark:text-violet-400">
-                                  (tú)
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground text-sm">
-                          {u.email}
-                        </td>
-                        <td className="px-4 py-3">
-                          <RoleBadge role={u.role} />
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => openEditUser(u)}
-                              className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center transition-colors"
-                              title="Editar"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => confirmDeleteUser(u)}
-                              disabled={u.id === user?.userId}
-                              className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    );
-  };
-
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -926,7 +875,7 @@ export default function SettingsPage() {
           Configuración
         </h1>
         <p className="text-muted-foreground mt-1">
-          Administra tu perfil, iglesia y usuarios del sistema
+          Administra tu perfil y los datos de tu iglesia
         </p>
       </div>
 
@@ -934,8 +883,6 @@ export default function SettingsPage() {
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => {
           const Icon = t.icon;
-          // Ocultar pestaña de usuarios si no es admin
-          if (t.id === "users" && !isAdmin) return null;
           return (
             <button
               key={t.id}
@@ -953,168 +900,13 @@ export default function SettingsPage() {
         })}
       </div>
 
-      {/* Contenido — usa todo el ancho disponible en las tres pestañas (el
+      {/* Contenido — usa todo el ancho disponible en ambas pestañas (el
           grid de dos columnas dentro de cada una evita que los inputs se
           vean absurdamente anchos en monitores grandes) */}
       <div>
         {activeTab === "profile" && renderProfile()}
         {activeTab === "church" && renderChurch()}
-        {activeTab === "users" && renderUsers()}
       </div>
-
-      {/* Modal crear/editar usuario */}
-      <Dialog
-        open={userModal}
-        onOpenChange={(open) => !open && setUserModal(false)}
-      >
-        <DialogContent className="bg-card border-border max-w-md w-full">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-3 text-xl">
-              <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </span>
-              {editUserId ? "Editar Usuario" : "Nuevo Usuario"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUserSave} className="mt-4 space-y-4">
-            <div>
-              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                Nombre Completo
-              </label>
-              <Input
-                value={userForm.fullName}
-                onChange={(e) =>
-                  setUserForm((f) => ({...f, fullName: e.target.value}))
-                }
-                placeholder="Nombre completo"
-                required
-                className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
-              />
-            </div>
-
-            {!editUserId && (
-              <div>
-                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  value={userForm.email}
-                  onChange={(e) =>
-                    setUserForm((f) => ({...f, email: e.target.value}))
-                  }
-                  placeholder="correo@ejemplo.com"
-                  required
-                  className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
-                />
-              </div>
-            )}
-
-            {!editUserId && (
-              <div>
-                <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                  Contraseña
-                </label>
-                <PasswordInput
-                  name="newUserPass"
-                  value={userForm.password}
-                  onChange={(e) =>
-                    setUserForm((f) => ({...f, password: e.target.value}))
-                  }
-                  placeholder="Mínimo 6 caracteres"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
-                Rol
-              </label>
-              <div className="relative">
-                <select
-                  value={userForm.role}
-                  onChange={(e) =>
-                    setUserForm((f) => ({...f, role: e.target.value}))
-                  }
-                  className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-violet-500 appearance-none"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
-              <p className="text-muted-foreground text-xs mt-1">
-                ADMIN: acceso total · PASTOR: gestión pastoral · TESORERO:
-                finanzas · LIDER: solo lectura
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setUserModal(false)}
-                className="border-border text-muted-foreground hover:text-foreground"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={userSaving}
-                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white min-w-[100px]"
-              >
-                {userSaving
-                  ? "Guardando..."
-                  : editUserId
-                    ? "Guardar cambios"
-                    : "Crear usuario"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal confirmar eliminar usuario */}
-      <Dialog
-        open={deleteUserModal}
-        onOpenChange={(open) => !open && setDeleteUserModal(false)}
-      >
-        <DialogContent className="bg-card border-border max-w-sm w-full">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-3">
-              <span className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
-              </span>
-              Confirmar eliminación
-            </DialogTitle>
-          </DialogHeader>
-          <p className="mt-3 text-muted-foreground text-sm">
-            ¿Eliminar al usuario{" "}
-            <span className="text-foreground font-semibold">
-              {deleteUserTarget?.fullName}
-            </span>
-            ? Esta acción no puede deshacerse.
-          </p>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteUserModal(false)}
-              className="border-border text-muted-foreground hover:text-foreground"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleDeleteUser}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Eliminar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
