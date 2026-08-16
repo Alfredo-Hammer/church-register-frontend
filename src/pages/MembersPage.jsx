@@ -651,6 +651,9 @@ export default function MembersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider w-10">
+                        #
+                      </th>
                       <th className="text-left py-3 px-4 text-muted-foreground font-medium text-xs uppercase tracking-wider">
                         Miembro
                       </th>
@@ -669,7 +672,7 @@ export default function MembersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {filtered.map((member) => {
+                    {filtered.map((member, index) => {
                       const isChildRow = member.age_group === "NIÑO";
                       const guardianLabel = member.guardian_id
                         ? `${member.guardian_first_name || ""} ${member.guardian_last_name || ""}`.trim()
@@ -680,6 +683,9 @@ export default function MembersPage() {
                           className="hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={() => navigate(`/dashboard/members/${member.id}`)}
                         >
+                          <td className="py-3 px-4 text-muted-foreground text-sm">
+                            {pagination.offset + index + 1}
+                          </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               <MemberAvatar member={member} size="md" />
