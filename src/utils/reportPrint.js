@@ -61,19 +61,19 @@ const CSS = `
     body{padding:0}
     @page{margin:1.2cm}
   }
-  /* ── Ficha en blanco (para llenar a mano) ── */
-  .form-section{margin-bottom:20px}
-  .form-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#ea580c;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #fed7aa}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
-  .form-field{display:flex;flex-direction:column;gap:6px}
+  /* ── Ficha en blanco (para llenar a mano) — compacta, cabe en 1 página ── */
+  .form-section{margin-bottom:12px}
+  .form-section-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#ea580c;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #fed7aa}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 20px}
+  .form-field{display:flex;flex-direction:column;gap:3px}
   .form-field.full{grid-column:1/-1}
-  .form-label{font-size:11px;color:#64748b;font-weight:600}
-  .form-line{border-bottom:1px solid #94a3b8;height:20px}
-  .form-box{border:1px solid #cbd5e1;border-radius:6px;min-height:70px}
-  .check-group{display:flex;flex-wrap:wrap;gap:14px;padding-top:2px}
-  .check-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#334155}
-  .check-box{width:13px;height:13px;border:1.5px solid #64748b;border-radius:3px;display:inline-block;flex-shrink:0}
-  .sig-row{display:flex;justify-content:center;gap:60px;margin-top:36px}
+  .form-label{font-size:10.5px;color:#64748b;font-weight:600}
+  .form-line{border-bottom:1px solid #94a3b8;height:15px}
+  .form-box{border:1px solid #cbd5e1;border-radius:6px;min-height:50px}
+  .check-group{display:flex;flex-wrap:wrap;gap:10px;padding-top:1px}
+  .check-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#334155}
+  .check-box{width:11px;height:11px;border:1.5px solid #64748b;border-radius:3px;display:inline-block;flex-shrink:0}
+  .sig-row{display:flex;justify-content:center;gap:60px;margin-top:20px}
   .sig-block{text-align:center;width:220px}
   .sig-blank-line{border-top:1px solid #1e293b;padding-top:6px;font-size:10px;color:#64748b}
 `;
@@ -436,7 +436,8 @@ export function buildBlankMemberForm(church = {}) {
         ${formField("Apellido *")}
         ${formField("Fecha de nacimiento")}
         ${formChecks("Género", ["Masculino", "Femenino"])}
-        ${formField("Documento de identidad (cédula, DNI, pasaporte)", true)}
+        ${formField("Documento de identidad (cédula, DNI, pasaporte)")}
+        ${formField("Miembro desde (fecha, opcional)")}
         ${formChecks("Estado civil", ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Unión libre"], true)}
         ${formField("Ocupación")}
         ${formChecks("Categoría de edad", ["Adulto", "Joven", "Niño"])}
@@ -462,13 +463,6 @@ export function buildBlankMemberForm(church = {}) {
       </div>
     </div>
 
-    <div class="form-section">
-      <div class="form-grid">
-        ${formField("Miembro desde (fecha, opcional)")}
-      </div>
-    </div>
-
-    ${sigRow}
     ${footerFor(church)}
   `);
 }
