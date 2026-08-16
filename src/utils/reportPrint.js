@@ -249,8 +249,37 @@ export function buildMembersReport(stats, church = {}) {
 // ─────────────────────────────────────────────────────────────────────────
 // 3. REPORTE FINANCIERO
 // ─────────────────────────────────────────────────────────────────────────
+const ACCOUNT_LABELS = { CHEQUE: "Cuenta de Cheque", AHORROS: "Cuenta de Ahorros" };
+
+// Saldo actual (histórico, no acotado al período del reporte) de cada
+// cuenta — ver getAccountBalances en financesController.js. Va en su
+// propia sección porque mezcla un rango de tiempo distinto al resto del
+// reporte (que sí respeta startDate/endDate).
+function accountBalancesSection(accountBalances) {
+  if (!accountBalances || (!accountBalances.CHEQUE && !accountBalances.AHORROS)) return "";
+
+  const block = (key) => {
+    const a = accountBalances[key] || {};
+    const bal = a.balance || 0;
+    const net = (a.transfersIn || 0) - (a.transfersOut || 0);
+    return `<div class="section">
+      <h2>${ACCOUNT_LABELS[key]}</h2>
+      <table>
+        <tbody>
+          <tr><td>Saldo actual</td><td style="text-align:right;font-weight:700;color:${bal >= 0 ? "#15803d" : "#dc2626"}">${fmtM(bal)}</td></tr>
+          <tr><td>Ingresos históricos</td><td style="text-align:right;color:#15803d">${fmtM(a.ingresos)}</td></tr>
+          <tr><td>Egresos históricos</td><td style="text-align:right;color:#dc2626">${fmtM(a.egresos)}</td></tr>
+          <tr><td>Transferencias (neto)</td><td style="text-align:right">${net >= 0 ? "+" : "−"}${fmtM(Math.abs(net))}</td></tr>
+        </tbody>
+      </table>
+    </div>`;
+  };
+
+  return `<div class="two-col">${block("CHEQUE")}${block("AHORROS")}</div>`;
+}
+
 export function buildFinancesReport(data, { startDate, endDate } = {}, church = {}) {
-  const { summary, byCategory = [] } = data;
+  const { summary, byCategory = [], accountBalances } = data;
   const ingresos = byCategory.filter((c) => c.category_type === "INGRESO");
   const egresos = byCategory.filter((c) => c.category_type === "EGRESO");
   const balance = summary?.balance || 0;
@@ -290,6 +319,7 @@ export function buildFinancesReport(data, { startDate, endDate } = {}, church = 
       <div class="metric"><div class="metric-lbl">Balance</div><div class="metric-val" style="color:${balance >= 0 ? "#15803d" : "#dc2626"}">${balance >= 0 ? "+" : "−"}${fmtM(Math.abs(balance))}</div><div class="metric-sub">${balance >= 0 ? "Superávit" : "Déficit"}</div></div>
     </div>
 
+    ${accountBalancesSection(accountBalances)}
     ${catSection(ingresos, "#16a34a", "Ingresos por Categoría")}
     ${catSection(egresos, "#dc2626", "Egresos por Categoría")}
     ${footerFor(church)}

@@ -1564,7 +1564,7 @@ export default function FinancesPage() {
   }, []);
 
   const handlePrint = () => {
-    const data = {summary, byCategory: summaryByCategory};
+    const data = {summary, byCategory: summaryByCategory, accountBalances: acctBalances};
     const html = buildFinancesReport(
       data,
       {startDate: txFilters.startDate, endDate: txFilters.endDate},
