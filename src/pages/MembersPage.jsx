@@ -30,8 +30,10 @@ import {
   ShieldAlert,
   UserCheck,
   Check,
+  Printer,
 } from "lucide-react";
-import {membersService} from "@/services/api";
+import {membersService, settingsService} from "@/services/api";
+import {buildBlankMemberForm} from "@/utils/reportPrint";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -260,6 +262,22 @@ export default function MembersPage() {
 
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Datos de la iglesia, para el encabezado de la ficha en blanco
+  const [church, setChurch] = useState({});
+  useEffect(() => {
+    settingsService
+      .getChurch()
+      .then((r) => setChurch(r.church || r || {}))
+      .catch(() => {});
+  }, []);
+
+  const handlePrintBlankForm = () => {
+    const html = buildBlankMemberForm(church);
+    const win = window.open("", "_blank", "width=900,height=720");
+    win.document.write(html);
+    win.document.close();
+  };
 
   useEffect(() => {
     fetchMembers();
@@ -531,12 +549,21 @@ export default function MembersPage() {
             Gestiona los miembros de tu iglesia
           </p>
         </div>
-        <Button
-          onClick={openCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Nuevo Miembro
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handlePrintBlankForm}
+            className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
+          >
+            <Printer className="h-4 w-4" /> Ficha en blanco
+          </Button>
+          <Button
+            onClick={openCreate}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Nuevo Miembro
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

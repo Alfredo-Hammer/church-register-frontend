@@ -61,6 +61,21 @@ const CSS = `
     body{padding:0}
     @page{margin:1.2cm}
   }
+  /* ── Ficha en blanco (para llenar a mano) ── */
+  .form-section{margin-bottom:20px}
+  .form-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#ea580c;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #fed7aa}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+  .form-field{display:flex;flex-direction:column;gap:6px}
+  .form-field.full{grid-column:1/-1}
+  .form-label{font-size:11px;color:#64748b;font-weight:600}
+  .form-line{border-bottom:1px solid #94a3b8;height:20px}
+  .form-box{border:1px solid #cbd5e1;border-radius:6px;min-height:70px}
+  .check-group{display:flex;flex-wrap:wrap;gap:14px;padding-top:2px}
+  .check-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#334155}
+  .check-box{width:13px;height:13px;border:1.5px solid #64748b;border-radius:3px;display:inline-block;flex-shrink:0}
+  .sig-row{display:flex;justify-content:center;gap:60px;margin-top:36px}
+  .sig-block{text-align:center;width:220px}
+  .sig-blank-line{border-top:1px solid #1e293b;padding-top:6px;font-size:10px;color:#64748b}
 `;
 
 // ── Botones flotantes (no se imprimen) ────────────────────────────────────
@@ -378,6 +393,124 @@ export function buildDonationsReport(data, { startDate, endDate } = {}, church =
         </table>
       </div>
     </div>
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 4b. FICHAS EN BLANCO — para que un miembro o visitante llene a mano
+// ─────────────────────────────────────────────────────────────────────────
+// Solo incluyen datos que la propia persona puede autoreportar (identidad,
+// contacto, demografía). Los campos administrativos que decide la iglesia
+// —Estado (activo/inactivo), Etapa de seguimiento, Responsable— quedan
+// fuera a propósito: no tiene sentido que el visitante los complete.
+function formField(label, full = false) {
+  return `<div class="form-field${full ? " full" : ""}">
+    <span class="form-label">${label}</span>
+    <span class="form-line"></span>
+  </div>`;
+}
+
+function formChecks(label, options, full = false) {
+  return `<div class="form-field${full ? " full" : ""}">
+    <span class="form-label">${label}</span>
+    <div class="check-group">
+      ${options.map((o) => `<span class="check-item"><span class="check-box"></span>${o}</span>`).join("")}
+    </div>
+  </div>`;
+}
+
+const sigRow = `<div class="sig-row">
+  <div class="sig-block"><div class="sig-blank-line">Firma</div></div>
+  <div class="sig-block"><div class="sig-blank-line">Fecha</div></div>
+</div>`;
+
+export function buildBlankMemberForm(church = {}) {
+  return doc("Ficha de Registro de Miembro", `
+    ${hdr("Ficha de Registro de Miembro", "Por favor complete sus datos con letra clara", "", church)}
+
+    <div class="form-section">
+      <div class="form-section-title">Datos Personales</div>
+      <div class="form-grid">
+        ${formField("Nombre *")}
+        ${formField("Apellido *")}
+        ${formField("Fecha de nacimiento")}
+        ${formChecks("Género", ["Masculino", "Femenino"])}
+        ${formField("Documento de identidad (cédula, DNI, pasaporte)", true)}
+        ${formChecks("Estado civil", ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Unión libre"], true)}
+        ${formField("Ocupación")}
+        ${formChecks("Categoría de edad", ["Adulto", "Joven", "Niño"])}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Contacto</div>
+      <div class="form-grid">
+        ${formField("Teléfono")}
+        ${formField("Email")}
+        ${formField("Dirección", true)}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Si es menor de edad</div>
+      <div class="form-grid">
+        ${formField("Nombre del Padre / Tutor")}
+        ${formField("Grado escolar")}
+        ${formField("Alergias / Condiciones médicas", true)}
+        ${formField("Contacto de emergencia", true)}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-grid">
+        ${formField("Miembro desde (fecha, opcional)")}
+      </div>
+    </div>
+
+    ${sigRow}
+    ${footerFor(church)}
+  `);
+}
+
+export function buildBlankVisitorForm(church = {}) {
+  return doc("Ficha de Registro de Visitante", `
+    ${hdr("Ficha de Registro de Visitante", "¡Bienvenido/a! Nos alegra que nos visites", "", church)}
+
+    <div class="form-section">
+      <div class="form-section-title">Datos Personales</div>
+      <div class="form-grid">
+        ${formField("Nombre *")}
+        ${formField("Apellido *")}
+        ${formField("Fecha de nacimiento")}
+        ${formChecks("Género", ["Masculino", "Femenino"])}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Contacto</div>
+      <div class="form-grid">
+        ${formField("Teléfono")}
+        ${formField("Email")}
+        ${formField("Dirección", true)}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Su Visita</div>
+      <div class="form-grid">
+        ${formField("Fecha de esta visita *")}
+        ${formChecks("¿Cómo llegó a nosotros?", ["Invitado por alguien", "Redes sociales", "Pasó por aquí", "Búsqueda en internet", "Otro"], true)}
+        ${formField("Invitado por / Referencia", true)}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Comentarios o Peticiones de Oración</div>
+      <div class="form-box"></div>
+    </div>
+
+    ${sigRow}
     ${footerFor(church)}
   `);
 }

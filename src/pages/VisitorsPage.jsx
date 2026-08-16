@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
-import {visitorsService} from "@/services/api";
+import {visitorsService, settingsService} from "@/services/api";
+import {buildBlankVisitorForm} from "@/utils/reportPrint";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
 import {
@@ -34,6 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCheck,
+  Printer,
 } from "lucide-react";
 
 // ── Constantes ───────────────────────────────────────────────────────────────
@@ -671,6 +673,22 @@ export default function VisitorsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Datos de la iglesia, para el encabezado de la ficha en blanco
+  const [church, setChurch] = useState({});
+  useEffect(() => {
+    settingsService
+      .getChurch()
+      .then((r) => setChurch(r.church || r || {}))
+      .catch(() => {});
+  }, []);
+
+  const handlePrintBlankForm = () => {
+    const html = buildBlankVisitorForm(church);
+    const win = window.open("", "_blank", "width=900,height=720");
+    win.document.write(html);
+    win.document.close();
+  };
+
   // ── Carga ─────────────────────────────────────────────────────────────────
 
   const loadVisitors = async () => {
@@ -819,9 +837,18 @@ export default function VisitorsPage() {
             Seguimiento de personas que visitan la iglesia
           </p>
         </div>
-        <Button onClick={openCreate} className="bg-teal-600 hover:bg-teal-700">
-          <Plus className="h-4 w-4 mr-2" /> Registrar Visitante
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handlePrintBlankForm}
+            className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
+          >
+            <Printer className="h-4 w-4" /> Ficha en blanco
+          </Button>
+          <Button onClick={openCreate} className="bg-teal-600 hover:bg-teal-700">
+            <Plus className="h-4 w-4 mr-2" /> Registrar Visitante
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
