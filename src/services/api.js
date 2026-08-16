@@ -407,6 +407,27 @@ export const financesService = {
     const response = await api.delete(`/finances/categories/${id}`);
     return response.data;
   },
+
+  // Cuentas (Cheque/Ahorros) y transferencias
+  getAccountBalances: async () => {
+    const response = await api.get('/finances/account-balances');
+    return response.data;
+  },
+
+  getTransfers: async (params) => {
+    const response = await api.get('/finances/transfers', { params });
+    return response.data;
+  },
+
+  createTransfer: async (data) => {
+    const response = await api.post('/finances/transfers', data);
+    return response.data;
+  },
+
+  deleteTransfer: async (id) => {
+    const response = await api.delete(`/finances/transfers/${id}`);
+    return response.data;
+  },
 };
 
 // ============================================

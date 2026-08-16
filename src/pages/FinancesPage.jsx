@@ -28,6 +28,9 @@ import {
   X,
   BarChart3,
   Printer,
+  Landmark,
+  PiggyBank,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   financesService,
@@ -97,6 +100,33 @@ const DON_TYPES = [
   },
 ];
 const DON_MAP = Object.fromEntries(DON_TYPES.map((t) => [t.value, t]));
+
+// ─── Cuentas ──────────────────────────────────────────────────────────────────
+const ACCOUNTS = [
+  {
+    value: "CHEQUE",
+    label: "Cuenta de Cheque",
+    shortLabel: "Cheque",
+    icon: Landmark,
+    cardBg:
+      "bg-gradient-to-br from-blue-500/10 to-cyan-500/5 dark:from-blue-900/50 dark:to-cyan-950/50 border-blue-300 dark:border-blue-700/50",
+    text: "text-blue-700 dark:text-blue-400",
+    bg: "bg-blue-500/20",
+    border: "border-blue-300 dark:border-blue-700/50",
+  },
+  {
+    value: "AHORROS",
+    label: "Cuenta de Ahorros",
+    shortLabel: "Ahorros",
+    icon: PiggyBank,
+    cardBg:
+      "bg-gradient-to-br from-amber-500/10 to-orange-500/5 dark:from-amber-900/50 dark:to-orange-950/50 border-amber-300 dark:border-amber-700/50",
+    text: "text-amber-700 dark:text-amber-400",
+    bg: "bg-amber-500/20",
+    border: "border-amber-300 dark:border-amber-700/50",
+  },
+];
+const ACCOUNT_MAP = Object.fromEntries(ACCOUNTS.map((a) => [a.value, a]));
 
 // ─── Monthly SVG Chart ────────────────────────────────────────────────────────
 function MonthlyChart({data}) {
@@ -410,13 +440,21 @@ function CategoryModal({open, onClose, category, onSaved}) {
 }
 
 // ─── Transaction Modal ────────────────────────────────────────────────────────
-function TransactionModal({open, onClose, transaction, categories, onSaved}) {
+function TransactionModal({
+  open,
+  onClose,
+  transaction,
+  categories,
+  defaultAccount,
+  onSaved,
+}) {
   const [form, setForm] = useState({
     categoryId: "",
     amount: "",
     date: today(),
     description: "",
     memberId: "",
+    account: "CHEQUE",
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -433,6 +471,7 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
               date: transaction.date.split("T")[0],
               description: transaction.description || "",
               memberId: transaction.member_id || "",
+              account: transaction.account || "CHEQUE",
             }
           : {
               categoryId: "",
@@ -440,12 +479,13 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
               date: today(),
               description: "",
               memberId: "",
+              account: defaultAccount || "CHEQUE",
             },
       );
       setErr("");
       setMemberSearch("");
     }
-  }, [open, transaction]);
+  }, [open, transaction, defaultAccount]);
 
   useEffect(() => {
     if (!open) return;
@@ -477,6 +517,7 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
         date: form.date,
         description: form.description || undefined,
         memberId: form.memberId || undefined,
+        account: form.account,
       };
       if (transaction)
         await financesService.updateTransaction(transaction.id, payload);
@@ -587,6 +628,30 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                 className="bg-background border-border text-foreground focus:border-emerald-500"
               />
             </div>
+            {/* Cuenta */}
+            <div className="sm:col-span-2">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                Cuenta *
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {ACCOUNTS.map((a) => (
+                  <button
+                    key={a.value}
+                    type="button"
+                    onClick={() => setForm((f) => ({...f, account: a.value}))}
+                    className={`py-2.5 px-3 rounded-lg border-2 transition font-medium flex items-center justify-center gap-2 text-sm
+                      ${
+                        form.account === a.value
+                          ? `${a.text} ${a.border} ${a.bg}`
+                          : "bg-muted/50 border-border text-muted-foreground hover:border-muted-foreground/40"
+                      }`}
+                  >
+                    <a.icon className="w-4 h-4" />
+                    {a.shortLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Miembro */}
             <div className="sm:col-span-2">
               <label className="text-muted-foreground text-sm font-medium block mb-1.5">
@@ -682,6 +747,210 @@ function TransactionModal({open, onClose, transaction, categories, onSaved}) {
                 : transaction
                   ? "Guardar cambios"
                   : "Registrar transacción"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Transfer Modal ───────────────────────────────────────────────────────────
+function TransferModal({open, onClose, defaultFromAccount, onSaved}) {
+  const [form, setForm] = useState({
+    fromAccount: "CHEQUE",
+    toAccount: "AHORROS",
+    amount: "",
+    date: today(),
+    description: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      const from = defaultFromAccount || "CHEQUE";
+      const to = ACCOUNTS.find((a) => a.value !== from)?.value || "AHORROS";
+      setForm({
+        fromAccount: from,
+        toAccount: to,
+        amount: "",
+        date: today(),
+        description: "",
+      });
+      setErr("");
+    }
+  }, [open, defaultFromAccount]);
+
+  const swapAccounts = () =>
+    setForm((f) => ({...f, fromAccount: f.toAccount, toAccount: f.fromAccount}));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.amount || parseFloat(form.amount) <= 0)
+      return setErr("El monto debe ser mayor a 0.");
+    if (form.fromAccount === form.toAccount)
+      return setErr("La cuenta de origen y destino deben ser distintas.");
+    setSaving(true);
+    setErr("");
+    try {
+      await financesService.createTransfer({
+        fromAccount: form.fromAccount,
+        toAccount: form.toAccount,
+        amount: parseFloat(form.amount),
+        date: form.date,
+        description: form.description || undefined,
+      });
+      onSaved();
+      onClose();
+    } catch (e) {
+      setErr(e?.response?.data?.error || "Error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="bg-card border-border max-w-md w-full">
+        <DialogHeader>
+          <DialogTitle className="text-foreground flex items-center gap-3">
+            <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+              <ArrowLeftRight className="w-4 h-4 text-white" />
+            </span>
+            Nueva Transferencia
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                Desde
+              </label>
+              <div className="relative">
+                <select
+                  value={form.fromAccount}
+                  onChange={(e) =>
+                    setForm((f) => ({...f, fromAccount: e.target.value}))
+                  }
+                  className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-violet-500 appearance-none"
+                >
+                  {ACCOUNTS.map((a) => (
+                    <option key={a.value} value={a.value}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={swapAccounts}
+              className="p-2 mb-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Invertir cuentas"
+            >
+              <ArrowLeftRight className="w-4 h-4" />
+            </button>
+            <div className="flex-1">
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                Hacia
+              </label>
+              <div className="relative">
+                <select
+                  value={form.toAccount}
+                  onChange={(e) =>
+                    setForm((f) => ({...f, toAccount: e.target.value}))
+                  }
+                  className="w-full px-3 py-2 pr-8 bg-background border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-violet-500 appearance-none"
+                >
+                  {ACCOUNTS.map((a) => (
+                    <option key={a.value} value={a.value}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+          </div>
+          {form.fromAccount === form.toAccount && (
+            <p className="text-amber-700 dark:text-amber-400 text-xs -mt-2">
+              Elegí dos cuentas distintas.
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                Monto *
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">
+                  $
+                </span>
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={form.amount}
+                  onChange={(e) =>
+                    setForm((f) => ({...f, amount: e.target.value}))
+                  }
+                  required
+                  className="pl-7 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-violet-500"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+                Fecha *
+              </label>
+              <Input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm((f) => ({...f, date: e.target.value}))}
+                required
+                className="bg-background border-border text-foreground focus:border-violet-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-muted-foreground text-sm font-medium block mb-1.5">
+              Descripción{" "}
+              <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Motivo de la transferencia..."
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({...f, description: e.target.value}))
+              }
+              className="w-full px-3 py-2 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-md text-sm focus:outline-none focus:border-violet-500 resize-none"
+            />
+          </div>
+          {err && (
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              {err}
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving || form.fromAccount === form.toAccount}
+              className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white min-w-[120px]"
+            >
+              {saving ? "Guardando..." : "Transferir"}
             </Button>
           </div>
         </form>
@@ -1010,6 +1279,268 @@ function ConfirmDialog({open, onClose, onConfirm, message}) {
   );
 }
 
+// ─── Transactions Table (reutilizada por Transacciones y las pestañas de cuenta) ─
+function TransactionsTable({transactions, showAccount, onEdit, onDelete}) {
+  if (transactions.length === 0) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-20" />
+        <p className="text-lg font-medium">No hay transacciones</p>
+      </div>
+    );
+  }
+  const headers = [
+    "Fecha",
+    "Categoría",
+    "Tipo",
+    ...(showAccount ? ["Cuenta"] : []),
+    "Monto",
+    "Miembro",
+    "Descripción",
+    "",
+  ];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-border text-left">
+            {headers.map((h, i) => (
+              <th
+                key={i}
+                className={`px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider ${i === headers.length - 1 ? "text-center" : ""}`}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {transactions.map((t) => (
+            <tr key={t.id} className="hover:bg-muted/50 transition-colors">
+              <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                {fmtDate(t.date)}
+              </td>
+              <td className="px-4 py-3 text-sm text-foreground">
+                {t.category_name}
+              </td>
+              <td className="px-4 py-3">
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium border
+                  ${t.category_type === "INGRESO" ? "bg-emerald-500/10 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-700/50" : "bg-red-500/10 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-700/50"}`}
+                >
+                  {t.category_type}
+                </span>
+              </td>
+              {showAccount && (
+                <td className="px-4 py-3">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium border ${ACCOUNT_MAP[t.account]?.bg || "bg-muted"} ${ACCOUNT_MAP[t.account]?.text || "text-muted-foreground"} ${ACCOUNT_MAP[t.account]?.border || "border-border"}`}
+                  >
+                    {ACCOUNT_MAP[t.account]?.shortLabel || t.account}
+                  </span>
+                </td>
+              )}
+              <td
+                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${t.category_type === "INGRESO" ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}
+              >
+                {t.category_type === "INGRESO" ? "+" : "-"}
+                {$m(t.amount)}
+              </td>
+              <td className="px-4 py-3 text-sm text-muted-foreground">
+                {t.first_name ? (
+                  `${t.first_name} ${t.last_name}`
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="px-4 py-3 text-sm text-muted-foreground max-w-xs truncate">
+                {t.description || (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => onEdit(t)}
+                    className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(t)}
+                    className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Account Tab (Cheque / Ahorros) ─────────────────────────────────────────────
+function AccountTabContent({
+  accountInfo,
+  balance,
+  summary,
+  monthly,
+  transactions,
+  transfers,
+  loading,
+  onEditTransaction,
+  onDeleteTransaction,
+  onDeleteTransfer,
+}) {
+  const Icon = accountInfo.icon;
+  const bal = balance?.balance ?? 0;
+  return (
+    <div className="space-y-4">
+      {/* Saldo actual */}
+      <Card className={accountInfo.cardBg}>
+        <CardContent className="p-5 flex items-center justify-between">
+          <div>
+            <p className={`${accountInfo.text} text-sm font-medium`}>
+              Saldo actual — {accountInfo.label}
+            </p>
+            <p className="text-3xl font-bold text-foreground mt-1">
+              {loading ? "…" : $m(bal)}
+            </p>
+          </div>
+          <div
+            className={`w-14 h-14 ${accountInfo.bg} rounded-xl flex items-center justify-center`}
+          >
+            <Icon className={`w-7 h-7 ${accountInfo.text}`} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumen del período (últimos 6 meses, igual que Resumen general) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <p className="text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+              Ingresos (período)
+            </p>
+            <p className="text-xl font-bold text-foreground mt-1">
+              {$m(summary?.totalIngresos)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <p className="text-red-700 dark:text-red-300 text-xs font-medium">
+              Egresos (período)
+            </p>
+            <p className="text-xl font-bold text-foreground mt-1">
+              {$m(summary?.totalEgresos)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <p className="text-muted-foreground text-xs font-medium">
+              Transferencias (neto)
+            </p>
+            <p className="text-xl font-bold text-foreground mt-1">
+              {$m((balance?.transfersIn || 0) - (balance?.transfersOut || 0))}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Chart */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-foreground flex items-center gap-2 text-base">
+            <BarChart3 className={`w-4 h-4 ${accountInfo.text}`} />
+            Actividad — últimos 6 meses
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MonthlyChart data={monthly} />
+        </CardContent>
+      </Card>
+
+      {/* Transferencias recientes */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-foreground flex items-center gap-2 text-base">
+            <ArrowLeftRight className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Transferencias
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {transfers.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-6">
+              Sin transferencias registradas
+            </p>
+          ) : (
+            <div className="divide-y divide-border">
+              {transfers.map((tr) => {
+                const isIncoming = tr.to_account === accountInfo.value;
+                return (
+                  <div
+                    key={tr.id}
+                    className="flex items-center justify-between px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-foreground text-sm font-medium">
+                        {isIncoming
+                          ? `Desde ${ACCOUNT_MAP[tr.from_account]?.shortLabel || tr.from_account}`
+                          : `Hacia ${ACCOUNT_MAP[tr.to_account]?.shortLabel || tr.to_account}`}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {fmtDate(tr.date)}
+                        {tr.description ? ` · ${tr.description}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-sm font-semibold ${isIncoming ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}
+                      >
+                        {isIncoming ? "+" : "-"}
+                        {$m(tr.amount)}
+                      </span>
+                      <button
+                        onClick={() => onDeleteTransfer(tr)}
+                        className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 flex items-center justify-center"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Transacciones de esta cuenta */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-foreground flex items-center gap-2 text-base">
+            <DollarSign className={`w-4 h-4 ${accountInfo.text}`} />
+            Transacciones de {accountInfo.shortLabel}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <TransactionsTable
+            transactions={transactions}
+            showAccount={false}
+            onEdit={onEditTransaction}
+            onDelete={onDeleteTransaction}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function FinancesPage() {
   const [tab, setTab] = useState("resumen");
@@ -1049,6 +1580,7 @@ export default function FinancesPage() {
   const [txFilters, setTxFilters] = useState({
     type: "",
     categoryId: "",
+    account: "",
     startDate: "",
     endDate: "",
     search: "",
@@ -1077,6 +1609,16 @@ export default function FinancesPage() {
   const [editCat, setEditCat] = useState(null);
   const [delCat, setDelCat] = useState(null);
 
+  // Cuentas (Cheque/Ahorros)
+  const [acctBalances, setAcctBalances] = useState({});
+  const [acctData, setAcctData] = useState({
+    CHEQUE: {summary: null, monthly: [], transactions: [], transfers: []},
+    AHORROS: {summary: null, monthly: [], transactions: [], transfers: []},
+  });
+  const [acctLoading, setAcctLoading] = useState({CHEQUE: false, AHORROS: false});
+  const [transferModal, setTransferModal] = useState(false);
+  const [delTransfer, setDelTransfer] = useState(null);
+
   const [loading, setLoading] = useState(true);
 
   // ─── Load ────────────────────────────────────────────────────────────────
@@ -1099,6 +1641,7 @@ export default function FinancesPage() {
       const params = {limit: 200};
       if (txFilters.type) params.type = txFilters.type;
       if (txFilters.categoryId) params.categoryId = txFilters.categoryId;
+      if (txFilters.account) params.account = txFilters.account;
       if (txFilters.startDate) params.startDate = txFilters.startDate;
       if (txFilters.endDate) params.endDate = txFilters.endDate;
       const r = await financesService.getTransactions(params);
@@ -1107,6 +1650,7 @@ export default function FinancesPage() {
   }, [
     txFilters.type,
     txFilters.categoryId,
+    txFilters.account,
     txFilters.startDate,
     txFilters.endDate,
   ]);
@@ -1129,12 +1673,44 @@ export default function FinancesPage() {
     } catch {}
   }, []);
 
+  const loadAccountBalances = useCallback(async () => {
+    try {
+      const r = await financesService.getAccountBalances();
+      setAcctBalances(r.accounts || {});
+    } catch {}
+  }, []);
+
+  const loadAccountTab = useCallback(async (account) => {
+    setAcctLoading((prev) => ({...prev, [account]: true}));
+    try {
+      const [balancesRes, s, m, txRes, trRes] = await Promise.all([
+        financesService.getAccountBalances(),
+        financesService.getSummary({account}),
+        financesService.getMonthly({months: 6, account}),
+        financesService.getTransactions({account, limit: 200}),
+        financesService.getTransfers({account, limit: 50}),
+      ]);
+      setAcctBalances(balancesRes.accounts || {});
+      setAcctData((prev) => ({
+        ...prev,
+        [account]: {
+          summary: s.summary || s,
+          monthly: m.months || [],
+          transactions: txRes.transactions || [],
+          transfers: trRes.transfers || [],
+        },
+      }));
+    } catch {}
+    setAcctLoading((prev) => ({...prev, [account]: false}));
+  }, []);
+
   useEffect(() => {
     Promise.all([
       loadSummary(),
       loadTransactions(),
       loadDonations(),
       loadCategories(),
+      loadAccountBalances(),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -1144,6 +1720,10 @@ export default function FinancesPage() {
   useEffect(() => {
     loadDonations();
   }, [loadDonations]);
+  useEffect(() => {
+    if (tab === "cheque") loadAccountTab("CHEQUE");
+    else if (tab === "ahorros") loadAccountTab("AHORROS");
+  }, [tab]);
 
   // ─── Filtered lists ──────────────────────────────────────────────────────
   const filteredTx = transactions.filter((t) => {
@@ -1183,7 +1763,20 @@ export default function FinancesPage() {
       await financesService.deleteTransaction(delTx.id);
     } catch {}
     setDelTx(null);
-    await Promise.all([loadTransactions(), loadSummary()]);
+    await Promise.all([loadTransactions(), loadSummary(), loadAccountBalances()]);
+    if (tab === "cheque") loadAccountTab("CHEQUE");
+    else if (tab === "ahorros") loadAccountTab("AHORROS");
+  };
+
+  const handleDelTransfer = async () => {
+    if (!delTransfer) return;
+    try {
+      await financesService.deleteTransfer(delTransfer.id);
+    } catch {}
+    setDelTransfer(null);
+    if (tab === "cheque") loadAccountTab("CHEQUE");
+    else if (tab === "ahorros") loadAccountTab("AHORROS");
+    else loadAccountBalances();
   };
 
   const handleDelDon = async () => {
@@ -1258,10 +1851,13 @@ export default function FinancesPage() {
   // ─── Tabs config ─────────────────────────────────────────────────────────
   const TABS = [
     {id: "resumen", label: "Resumen"},
+    {id: "cheque", label: "Cuenta de Cheque"},
+    {id: "ahorros", label: "Cuenta de Ahorros"},
     {id: "transactions", label: "Transacciones"},
     {id: "donations", label: "Diezmos y Ofrendas"},
     {id: "categories", label: "Categorías"},
   ];
+  const activeAccount = tab === "cheque" ? "CHEQUE" : tab === "ahorros" ? "AHORROS" : null;
 
   return (
     <div className="space-y-6">
@@ -1286,7 +1882,7 @@ export default function FinancesPage() {
           >
             <Printer className="w-4 h-4" /> PDF
           </Button>
-          {tab === "transactions" && (
+          {(tab === "transactions" || activeAccount) && (
             <Button
               onClick={() => {
                 setEditTx(null);
@@ -1296,6 +1892,15 @@ export default function FinancesPage() {
             >
               <Plus className="w-4 h-4 mr-2" />
               Nueva Transacción
+            </Button>
+          )}
+          {activeAccount && (
+            <Button
+              onClick={() => setTransferModal(true)}
+              className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white"
+            >
+              <ArrowLeftRight className="w-4 h-4 mr-2" />
+              Nueva Transferencia
             </Button>
           )}
           {tab === "donations" && (
@@ -1499,6 +2104,25 @@ export default function FinancesPage() {
         </div>
       )}
 
+      {/* ── TAB: CUENTA DE CHEQUE / AHORROS ──────────────────────────────────── */}
+      {activeAccount && (
+        <AccountTabContent
+          accountInfo={ACCOUNT_MAP[activeAccount]}
+          balance={acctBalances[activeAccount]}
+          summary={acctData[activeAccount].summary}
+          monthly={acctData[activeAccount].monthly}
+          transactions={acctData[activeAccount].transactions}
+          transfers={acctData[activeAccount].transfers}
+          loading={acctLoading[activeAccount]}
+          onEditTransaction={(t) => {
+            setEditTx(t);
+            setTxModal(true);
+          }}
+          onDeleteTransaction={setDelTx}
+          onDeleteTransfer={setDelTransfer}
+        />
+      )}
+
       {/* ── TAB: TRANSACCIONES ───────────────────────────────────────────────── */}
       {tab === "transactions" && (
         <div className="space-y-4">
@@ -1546,6 +2170,23 @@ export default function FinancesPage() {
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
+            <div className="relative">
+              <select
+                value={txFilters.account}
+                onChange={(e) =>
+                  setTxFilters((f) => ({...f, account: e.target.value}))
+                }
+                className="px-3 py-2 pr-8 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-emerald-500 appearance-none"
+              >
+                <option value="">Todas las cuentas</option>
+                {ACCOUNTS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
@@ -1572,6 +2213,7 @@ export default function FinancesPage() {
             </div>
             {(txFilters.type ||
               txFilters.categoryId ||
+              txFilters.account ||
               txFilters.startDate ||
               txFilters.endDate ||
               txFilters.search) && (
@@ -1582,6 +2224,7 @@ export default function FinancesPage() {
                   setTxFilters({
                     type: "",
                     categoryId: "",
+                    account: "",
                     startDate: "",
                     endDate: "",
                     search: "",
@@ -1624,97 +2267,15 @@ export default function FinancesPage() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-0">
-              {filteredTx.length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground">
-                  <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p className="text-lg font-medium">No hay transacciones</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border text-left">
-                        {[
-                          "Fecha",
-                          "Categoría",
-                          "Tipo",
-                          "Monto",
-                          "Miembro",
-                          "Descripción",
-                          "",
-                        ].map((h, i) => (
-                          <th
-                            key={i}
-                            className={`px-4 py-3 text-muted-foreground text-xs font-semibold uppercase tracking-wider ${i === 6 ? "text-center" : ""}`}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {filteredTx.map((t) => (
-                        <tr
-                          key={t.id}
-                          className="hover:bg-muted/50 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
-                            {fmtDate(t.date)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-foreground">
-                            {t.category_name}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs font-medium border
-                              ${t.category_type === "INGRESO" ? "bg-emerald-500/10 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-700/50" : "bg-red-500/10 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-700/50"}`}
-                            >
-                              {t.category_type}
-                            </span>
-                          </td>
-                          <td
-                            className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${t.category_type === "INGRESO" ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}
-                          >
-                            {t.category_type === "INGRESO" ? "+" : "-"}
-                            {$m(t.amount)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {t.first_name ? (
-                              `${t.first_name} ${t.last_name}`
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground max-w-xs truncate">
-                            {t.description || (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => {
-                                  setEditTx(t);
-                                  setTxModal(true);
-                                }}
-                                className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300 flex items-center justify-center"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => setDelTx(t)}
-                                className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 hover:text-red-700 dark:text-red-300 flex items-center justify-center"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <TransactionsTable
+                transactions={filteredTx}
+                showAccount
+                onEdit={(t) => {
+                  setEditTx(t);
+                  setTxModal(true);
+                }}
+                onDelete={setDelTx}
+              />
             </CardContent>
           </Card>
         </div>
@@ -2052,8 +2613,19 @@ export default function FinancesPage() {
         }}
         transaction={editTx}
         categories={categories}
+        defaultAccount={activeAccount}
         onSaved={async () => {
-          await Promise.all([loadTransactions(), loadSummary()]);
+          await Promise.all([loadTransactions(), loadSummary(), loadAccountBalances()]);
+          if (activeAccount) loadAccountTab(activeAccount);
+        }}
+      />
+      <TransferModal
+        open={transferModal}
+        onClose={() => setTransferModal(false)}
+        defaultFromAccount={activeAccount}
+        onSaved={() => {
+          if (activeAccount) loadAccountTab(activeAccount);
+          else loadAccountBalances();
         }}
       />
       <DonationModal
@@ -2081,6 +2653,12 @@ export default function FinancesPage() {
         onClose={() => setDelTx(null)}
         onConfirm={handleDelTx}
         message={`¿Eliminar esta transacción de ${$m(delTx?.amount)}? Esta acción no se puede deshacer.`}
+      />
+      <ConfirmDialog
+        open={!!delTransfer}
+        onClose={() => setDelTransfer(null)}
+        onConfirm={handleDelTransfer}
+        message={`¿Eliminar esta transferencia de ${$m(delTransfer?.amount)}? Esta acción no se puede deshacer.`}
       />
       <ConfirmDialog
         open={!!delDon}
