@@ -19,6 +19,8 @@ import {
   Copy,
   RefreshCw,
   Check,
+  Link2,
+  UserPlus,
 } from "lucide-react";
 import {QRCodeSVG} from "qrcode.react";
 import {settingsService} from "@/services/api";
@@ -184,6 +186,7 @@ export default function SettingsPage() {
   const [regeneratingCode, setRegeneratingCode] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(null);
 
   const fetchJoinCode = useCallback(async () => {
     try {
@@ -212,6 +215,24 @@ export default function SettingsPage() {
       await navigator.clipboard.writeText(joinCode);
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      /* silent — algunos navegadores piden permiso/HTTPS para el portapapeles */
+    }
+  };
+
+  const memberRegistrationLink = joinCode
+    ? `${window.location.origin}/registro-miembro/${joinCode}`
+    : "";
+  const visitorRegistrationLink = joinCode
+    ? `${window.location.origin}/registro-visitante/${joinCode}`
+    : "";
+
+  const handleCopyLink = async (kind, url) => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(kind);
+      setTimeout(() => setCopiedLink(null), 2000);
     } catch {
       /* silent — algunos navegadores piden permiso/HTTPS para el portapapeles */
     }
@@ -597,6 +618,66 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Links de auto-registro (miembros y visitantes) */}
+      {isAdmin && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground text-base flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+              Links de Auto-Registro
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              Comparte estos links por WhatsApp, redes o tu página web para que las personas llenen sus propios datos desde el celular. Se registran directo en el sistema, sin necesitar cuenta.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                  Registro de Miembros
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0 flex items-center gap-1.5 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground overflow-x-auto">
+                    <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="whitespace-nowrap">{memberRegistrationLink || "···"}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyLink("member", memberRegistrationLink)}
+                    disabled={!joinCode}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40 shrink-0"
+                  >
+                    {copiedLink === "member" ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copiedLink === "member" ? "Copiado" : "Copiar"}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                  Registro de Visitantes
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0 flex items-center gap-1.5 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground overflow-x-auto">
+                    <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="whitespace-nowrap">{visitorRegistrationLink || "···"}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyLink("visitor", visitorRegistrationLink)}
+                    disabled={!joinCode}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40 shrink-0"
+                  >
+                    {copiedLink === "visitor" ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copiedLink === "visitor" ? "Copiado" : "Copiar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Usan el mismo código de invitación de arriba — si lo regeneras, estos links también cambian.
+            </p>
           </CardContent>
         </Card>
       )}
