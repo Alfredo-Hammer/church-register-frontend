@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router-dom";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Loader2,
   Ban,
+  ImagePlus,
 } from "lucide-react";
 
 // Página pública, sin sesión — la iglesia comparte este link (o su QR) para
@@ -47,12 +48,64 @@ const MARITAL_OPTIONS = [
   {value: "UNION_LIBRE", label: "Unión libre"},
 ];
 
+// Mismo patrón que PhotoUploader en MembersPage.jsx (base64 vía FileReader,
+// límite de 2MB) — duplicado en vez de compartido porque esta página pública
+// no importa nada del árbol autenticado.
+function PhotoUploader({preview, onChange, onRemove}) {
+  const ref = useRef();
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return alert("Solo imágenes.");
+    if (file.size > 2 * 1024 * 1024) return alert("Máximo 2MB.");
+    const reader = new FileReader();
+    reader.onload = (ev) => onChange(ev.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+  return (
+    <div className="flex items-center gap-4">
+      <div
+        onClick={() => ref.current?.click()}
+        className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border hover:border-blue-500 cursor-pointer flex items-center justify-center transition-colors shrink-0"
+      >
+        {preview ? (
+          <img src={preview} alt="preview" className="w-full h-full object-cover" />
+        ) : (
+          <ImagePlus className="w-6 h-6 text-muted-foreground" />
+        )}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          className="text-xs text-blue-700 dark:text-blue-400 hover:text-blue-800 font-medium text-left"
+        >
+          {preview ? "Cambiar foto" : "Subir tu foto (opcional)"}
+        </button>
+        {preview && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-xs text-red-700 dark:text-red-400 hover:text-red-800 font-medium text-left"
+          >
+            Quitar foto
+          </button>
+        )}
+        <p className="text-xs text-muted-foreground">PNG, JPG — máx. 2MB</p>
+      </div>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
+  );
+}
+
 export default function PublicMemberRegistrationPage() {
   const {joinCode} = useParams();
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [church, setChurch] = useState(null);
   const [form, setForm] = useState(emptyForm());
+  const [photo, setPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -106,6 +159,7 @@ export default function PublicMemberRegistrationPage() {
           phone: form.phone.trim() || undefined,
           address: form.address.trim() || undefined,
           memberSince: form.memberSince || undefined,
+          photoBase64: photo || undefined,
         }),
       });
       const body = await res.json();
@@ -173,6 +227,7 @@ export default function PublicMemberRegistrationPage() {
             <button
               onClick={() => {
                 setForm(emptyForm());
+                setPhoto(null);
                 setSuccess(false);
               }}
               className="mt-4 text-sm font-medium text-blue-700 dark:text-blue-400 hover:underline"
@@ -192,6 +247,12 @@ export default function PublicMemberRegistrationPage() {
                   <span className="text-sm">{error}</span>
                 </div>
               )}
+
+              <PhotoUploader
+                preview={photo}
+                onChange={setPhoto}
+                onRemove={() => setPhoto(null)}
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

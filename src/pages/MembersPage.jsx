@@ -239,6 +239,7 @@ export default function MembersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [ageGroupFilter, setAgeGroupFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 20,
@@ -281,7 +282,7 @@ export default function MembersPage() {
 
   useEffect(() => {
     fetchMembers();
-  }, [statusFilter, ageGroupFilter, pagination.offset]);
+  }, [statusFilter, ageGroupFilter, genderFilter, pagination.offset]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -297,6 +298,7 @@ export default function MembersPage() {
       const params = {limit: pagination.limit, offset: pagination.offset};
       if (statusFilter !== "all") params.status = statusFilter.toUpperCase();
       if (ageGroupFilter !== "all") params.ageGroup = ageGroupFilter;
+      if (genderFilter !== "all") params.gender = genderFilter;
       if (searchTerm.trim()) params.search = searchTerm.trim();
       const data = await membersService.getAll(params);
       setMembers(data.members || []);
@@ -569,7 +571,7 @@ export default function MembersPage() {
       {/* Filters */}
       <Card className="bg-card border-border">
         <CardContent className="pt-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -604,6 +606,19 @@ export default function MembersPage() {
               <option value="ADULTO">Adultos</option>
               <option value="JOVEN">Jóvenes (12–17)</option>
               <option value="NIÑO">Niños (0–11)</option>
+            </select>
+            <select
+              value={genderFilter}
+              onChange={(e) => {
+                setGenderFilter(e.target.value);
+                setPagination((p) => ({...p, offset: 0}));
+              }}
+              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
+            >
+              <option value="all">Todos los géneros</option>
+              <option value="MASCULINO">Masculino</option>
+              <option value="FEMENINO">Femenino</option>
+              <option value="OTRO">Otro</option>
             </select>
           </div>
         </CardContent>

@@ -654,6 +654,7 @@ export default function VisitorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStage, setFilterStage] = useState("ALL");
+  const [filterGender, setFilterGender] = useState("ALL");
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const LIMIT = 20;
@@ -696,6 +697,7 @@ export default function VisitorsPage() {
     try {
       const params = {limit: LIMIT, offset: (page - 1) * LIMIT};
       if (filterStage !== "ALL") params.stage = filterStage;
+      if (filterGender !== "ALL") params.gender = filterGender;
       if (search.trim()) params.search = search.trim();
       const data = await visitorsService.getAll(params);
       setVisitors(data.visitors || []);
@@ -721,7 +723,7 @@ export default function VisitorsPage() {
   }, []);
   useEffect(() => {
     loadVisitors();
-  }, [page, filterStage]);
+  }, [page, filterStage, filterGender]);
   useEffect(() => {
     const t = setTimeout(() => {
       setPage(1);
@@ -935,15 +937,29 @@ export default function VisitorsPage() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre o teléfono..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
-        />
+      {/* Search + filtros */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o teléfono..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+        <select
+          value={filterGender}
+          onChange={(e) => {
+            setFilterGender(e.target.value);
+            setPage(1);
+          }}
+          className="h-10 w-full sm:w-48 rounded-md border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal-600"
+        >
+          <option value="ALL">Todos los géneros</option>
+          <option value="MASCULINO">Masculino</option>
+          <option value="FEMENINO">Femenino</option>
+        </select>
       </div>
 
       {/* Table */}
