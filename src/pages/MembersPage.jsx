@@ -31,6 +31,8 @@ import {
   UserCheck,
   Check,
   Printer,
+  ArrowRightLeft,
+  Loader2,
 } from "lucide-react";
 import {membersService, settingsService} from "@/services/api";
 import {buildBlankMemberForm} from "@/utils/reportPrint";
@@ -230,6 +232,160 @@ function PhotoUploader({preview, onChange, onRemove}) {
   );
 }
 
+const TRANSFER_MARITAL_LABELS = {
+  SOLTERO: "Soltero/a",
+  CASADO: "Casado/a",
+  DIVORCIADO: "Divorciado/a",
+  VIUDO: "Viudo/a",
+  UNION_LIBRE: "Unión libre",
+};
+
+function TransferRedeemDialog({open, onClose, onRedeemed}) {
+  const [code, setCode] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [error, setError] = useState("");
+
+  const reset = () => {
+    setCode("");
+    setPreview(null);
+    setError("");
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setSearching(true);
+    setError("");
+    setPreview(null);
+    try {
+      const data = await membersService.previewTransfer(code.trim());
+      setPreview(data.preview);
+    } catch (err) {
+      setError(err.response?.data?.error || "No se pudo verificar el código.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    setRedeeming(true);
+    setError("");
+    try {
+      await membersService.redeemTransfer(code.trim());
+      reset();
+      onRedeemed();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.error || "No se pudo recibir el traslado.");
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { reset(); onClose(); } }}>
+      <DialogContent className="bg-card border-border max-w-lg w-full">
+        <DialogHeader>
+          <DialogTitle className="text-foreground text-xl flex items-center gap-3">
+            <span className="w-9 h-9 rounded-lg bg-cyan-600/20 flex items-center justify-center shrink-0">
+              <ArrowRightLeft className="w-5 h-5 text-cyan-700 dark:text-cyan-400" />
+            </span>
+            Recibir traslado
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Pide el código a la iglesia que está dando de baja al miembro y pégalo aquí.
+          </p>
+
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="XXXX-XXXX"
+              className="bg-background border-border text-foreground font-mono tracking-wider"
+            />
+            <Button type="submit" variant="outline" disabled={searching || !code.trim()}>
+              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Buscar"}
+            </Button>
+          </form>
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0" /> {error}
+            </div>
+          )}
+
+          {preview && (
+            <div className="border border-border rounded-xl p-4 space-y-3 bg-muted/40">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+                  {preview.photoUrl ? (
+                    <img src={preview.photoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserCheck className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">{preview.firstName} {preview.lastName}</p>
+                  <p className="text-xs text-muted-foreground truncate">Viene de {preview.sourceChurchName}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                {preview.email && <p className="text-muted-foreground truncate">{preview.email}</p>}
+                {preview.phone && <p className="text-muted-foreground truncate">{preview.phone}</p>}
+                {preview.documentId && <p className="text-muted-foreground truncate">Doc: {preview.documentId}</p>}
+                {preview.maritalStatus && (
+                  <p className="text-muted-foreground truncate">{TRANSFER_MARITAL_LABELS[preview.maritalStatus] || preview.maritalStatus}</p>
+                )}
+              </div>
+
+              {preview.baptism && (
+                <p className="text-xs text-muted-foreground border-t border-border pt-2">
+                  Bautizado el {new Date(preview.baptism.baptism_date.slice(0, 10) + "T12:00:00").toLocaleDateString("es-ES", {day: "numeric", month: "long", year: "numeric"})}
+                  {preview.baptism.place ? ` en ${preview.baptism.place}` : ""}
+                  {preview.baptism.minister ? ` — ${preview.baptism.minister}` : ""}.
+                </p>
+              )}
+
+              {preview.groups.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 border-t border-border pt-2">
+                  {preview.groups.map((g) => (
+                    <span key={g} className="px-2 py-0.5 rounded-full text-xs bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300">
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {preview.pastorNotes && (
+                <p className="text-xs text-muted-foreground italic border-t border-border pt-2">{preview.pastorNotes}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { reset(); onClose(); }} disabled={redeeming}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={!preview || redeeming}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+          >
+            {redeeming ? "Recibiendo…" : "Confirmar traslado"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function MembersPage() {
   const navigate = useNavigate();
@@ -263,6 +419,9 @@ export default function MembersPage() {
 
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Recibir traslado desde otra iglesia
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
   // Datos de la iglesia, para el encabezado de la ficha en blanco
   const [church, setChurch] = useState({});
@@ -558,6 +717,13 @@ export default function MembersPage() {
             className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
           >
             <Printer className="h-4 w-4" /> Ficha en blanco
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setTransferDialogOpen(true)}
+            className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
+          >
+            <ArrowRightLeft className="h-4 w-4" /> Recibir traslado
           </Button>
           <Button
             onClick={openCreate}
@@ -1251,6 +1417,12 @@ export default function MembersPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <TransferRedeemDialog
+        open={transferDialogOpen}
+        onClose={() => setTransferDialogOpen(false)}
+        onRedeemed={fetchMembers}
+      />
     </div>
   );
 }

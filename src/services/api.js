@@ -149,6 +149,26 @@ export const membersService = {
     const response = await api.delete(`/members/${id}/photo`);
     return response.data;
   },
+
+  generateTransferCode: async (id) => {
+    const response = await api.post(`/members/${id}/transfer-code`);
+    return response.data;
+  },
+
+  cancelTransferCode: async (id) => {
+    const response = await api.delete(`/members/${id}/transfer-code`);
+    return response.data;
+  },
+
+  previewTransfer: async (code) => {
+    const response = await api.get(`/members/transfer/${code}`);
+    return response.data;
+  },
+
+  redeemTransfer: async (code) => {
+    const response = await api.post(`/members/transfer/${code}/redeem`);
+    return response.data;
+  },
 };
 
 // Servicios de familias

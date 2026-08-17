@@ -27,6 +27,9 @@ import {
   Briefcase,
   Heart,
   Loader2,
+  ArrowRightLeft,
+  Copy,
+  Check,
 } from "lucide-react";
 
 // ── Helpers y mini-componentes (mismos que usaba el panel lateral que esta
@@ -226,6 +229,9 @@ export default function MemberDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState("");
   const [notesSaving, setNotesSaving] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferError, setTransferError] = useState("");
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -253,6 +259,52 @@ export default function MemberDetailPage() {
       navigate("/dashboard/members");
     } catch {
       alert("Error al eliminar.");
+    }
+  };
+
+  const handleGenerateTransferCode = async () => {
+    setTransferLoading(true);
+    setTransferError("");
+    try {
+      const data = await membersService.generateTransferCode(id);
+      setMember((prev) => ({
+        ...prev,
+        transfer_code: data.transferCode,
+        transfer_code_expires_at: data.expiresAt,
+      }));
+      setCodeCopied(false);
+    } catch (err) {
+      setTransferError(err.response?.data?.error || "No se pudo generar el código.");
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
+  const handleCancelTransferCode = async () => {
+    setTransferLoading(true);
+    setTransferError("");
+    try {
+      await membersService.cancelTransferCode(id);
+      setMember((prev) => ({
+        ...prev,
+        transfer_code: null,
+        transfer_code_expires_at: null,
+      }));
+    } catch (err) {
+      setTransferError(err.response?.data?.error || "No se pudo cancelar el código.");
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
+  const handleCopyTransferCode = async () => {
+    if (!member.transfer_code) return;
+    try {
+      await navigator.clipboard.writeText(member.transfer_code);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      /* silent — algunos navegadores piden permiso/HTTPS para el portapapeles */
     }
   };
 
@@ -451,6 +503,50 @@ export default function MemberDetailPage() {
             ))}
           </div>
         )}
+      </Section>
+
+      <Section title="Traslado a otra iglesia" icon={<ArrowRightLeft className="w-3.5 h-3.5 text-cyan-700 dark:text-cyan-400" />}>
+        {member.transferred_out_at ? (
+          <p className="text-sm text-muted-foreground">
+            Trasladado a <span className="font-medium text-foreground">{member.transferred_to_church}</span> el {fmtDate(member.transferred_out_at)}.
+          </p>
+        ) : member.transfer_code ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Comparte este código con la iglesia que va a recibir a {member.first_name} — debe canjearlo desde su propio panel de Congrega. Válido hasta el {fmtDate(member.transfer_code_expires_at)}.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-lg font-bold tracking-wider text-foreground bg-background border border-border rounded-lg px-3 py-1.5">
+                {member.transfer_code}
+              </span>
+              <button
+                onClick={handleCopyTransferCode}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors"
+              >
+                {codeCopied ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {codeCopied ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+            <button
+              onClick={handleCancelTransferCode}
+              disabled={transferLoading}
+              className="text-xs text-red-700 dark:text-red-400 hover:underline disabled:opacity-50"
+            >
+              Cancelar código
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            <p className="text-sm text-muted-foreground">
+              Genera un código de un solo uso para que otra iglesia que use Congrega reciba a {member.first_name} con sus datos precargados. Tu registro queda marcado como trasladado recién cuando la otra iglesia lo canjea.
+            </p>
+            <Button variant="outline" onClick={handleGenerateTransferCode} disabled={transferLoading}>
+              <ArrowRightLeft className="w-4 h-4 mr-2" />
+              {transferLoading ? "Generando…" : "Generar código de traslado"}
+            </Button>
+          </div>
+        )}
+        {transferError && <p className="text-xs text-red-700 dark:text-red-400 mt-2">{transferError}</p>}
       </Section>
 
       {printOpen && (
