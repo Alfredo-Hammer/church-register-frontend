@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useCallback} from "react";
+import {useNavigate} from "react-router-dom";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -103,6 +104,7 @@ const emptyForm = () => ({
 
 // ── Componente principal ──────────────────────────────────────────────────
 export default function LettersPage() {
+  const navigate = useNavigate();
   const [letters, setLetters] = useState([]);
   const [stats, setStats] = useState(null);
   const [members, setMembers] = useState([]);
@@ -627,7 +629,7 @@ export default function LettersPage() {
 
             {/* Iglesia destino (solo TRANSFERENCIA) */}
             {form.letterType === "TRANSFERENCIA" && (
-              <div>
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-muted-foreground mb-1.5">
                   Iglesia de destino
                 </label>
@@ -638,6 +640,17 @@ export default function LettersPage() {
                   placeholder="Nombre de la congregación receptora"
                   className="bg-background border-border text-foreground"
                 />
+                <p className="text-xs text-muted-foreground bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-3 py-2">
+                  ¿La iglesia destino también usa Congrega? Prueba el{" "}
+                  <button
+                    type="button"
+                    onClick={() => { closeModal(); navigate("/dashboard/members"); }}
+                    className="text-cyan-700 dark:text-cyan-400 font-medium hover:underline"
+                  >
+                    traslado digital
+                  </button>{" "}
+                  desde la ficha del miembro — copia los datos automáticamente, sin que el otro pastor tenga que escribirlos de nuevo.
+                </p>
               </div>
             )}
 

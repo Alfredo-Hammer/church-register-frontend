@@ -544,6 +544,17 @@ export default function MemberDetailPage() {
               <ArrowRightLeft className="w-4 h-4 mr-2" />
               {transferLoading ? "Generando…" : "Generar código de traslado"}
             </Button>
+            <p className="text-xs text-muted-foreground">
+              ¿La otra iglesia no usa Congrega?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard/letters")}
+                className="text-indigo-700 dark:text-indigo-400 font-medium hover:underline"
+              >
+                Genera una Carta de Transferencia
+              </button>{" "}
+              en su lugar.
+            </p>
           </div>
         )}
         {transferError && <p className="text-xs text-red-700 dark:text-red-400 mt-2">{transferError}</p>}
