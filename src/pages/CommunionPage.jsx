@@ -31,7 +31,20 @@ const fmtDateShort = (d) =>
   });
 const fmtTime = (t) => t ? t.slice(0, 5) : null;
 
-const isPast = (date) => new Date(date.slice(0, 10) + "T23:59:59") < new Date();
+// Disponible para registrar participantes desde 30 min antes de la hora
+// programada (para ir anotando gente a medida que llega), no recién a
+// medianoche del día del evento. Sin hora programada, disponible desde el
+// inicio del día.
+const ATTENDANCE_LEAD_MINUTES = 30;
+const isPast = (date, time) => {
+  const datePart = date.slice(0, 10);
+  if (time) {
+    const scheduled = new Date(`${datePart}T${time.slice(0, 5)}:00`);
+    scheduled.setMinutes(scheduled.getMinutes() - ATTENDANCE_LEAD_MINUTES);
+    return scheduled <= new Date();
+  }
+  return new Date(`${datePart}T00:00:00`) <= new Date();
+};
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
@@ -39,7 +52,7 @@ function DetailModal({ communion, open, onClose, onEdit, onDelete, onRecord }) {
   const members  = parseInt(communion.participant_count) || 0;
   const guests   = parseInt(communion.guest_count)       || 0;
   const total    = parseInt(communion.total_count)       || members + guests;
-  const past     = isPast(communion.date);
+  const past     = isPast(communion.date, communion.time);
   const tc       = TYPE_COLOR[communion.type] || TYPE_COLOR.REGULAR;
 
   return (
@@ -388,7 +401,7 @@ function CommunionRow({ communion: c, onDetail, onEdit, onDelete, onRecord }) {
   const members = parseInt(c.participant_count) || 0;
   const guests  = parseInt(c.guest_count)       || 0;
   const total   = parseInt(c.total_count)       || members + guests;
-  const past    = isPast(c.date);
+  const past    = isPast(c.date, c.time);
   const tc      = TYPE_COLOR[c.type] || TYPE_COLOR.REGULAR;
 
   return (
@@ -582,8 +595,8 @@ export default function CommunionPage() {
   // El filtro de búsqueda ya se aplica en el backend (ver fetchAll).
   const filtered    = records;
   const now         = new Date();
-  const upcoming    = filtered.filter((r) => !isPast(r.date));
-  const past        = filtered.filter((r) => isPast(r.date));
+  const upcoming    = filtered.filter((r) => !isPast(r.date, r.time));
+  const past        = filtered.filter((r) => isPast(r.date, r.time));
   const totalPages  = Math.ceil(pagination.total / pagination.limit);
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
   const goPage      = (p) => setPagination((prev) => ({...prev, offset: (p - 1) * prev.limit}));

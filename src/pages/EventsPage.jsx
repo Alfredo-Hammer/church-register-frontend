@@ -78,11 +78,18 @@ const fmtDateShort = (d) =>
 const fmtTime = (d) =>
   new Date(d).toLocaleTimeString("es-ES", {hour: "2-digit", minute: "2-digit"});
 
+// Asistencia disponible desde 30 min antes de la hora programada del evento
+// (para ir registrando gente a medida que llega), no recién al llegar la
+// hora exacta. Mismo margen que Santa Cena / AttendancePage.jsx.
+const ATTENDANCE_LEAD_MINUTES = 30;
+const isAttendanceAvailable = (date) =>
+  new Date(date).getTime() - ATTENDANCE_LEAD_MINUTES * 60000 <= Date.now();
+
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function DetailModal({event, open, onClose, onEdit, onDelete}) {
   if (!event) return null;
   const tc = TYPE_COLOR[event.event_type] || TYPE_COLOR.CULTO;
-  const isPast = new Date(event.date) < new Date();
+  const isPast = isAttendanceAvailable(event.date);
   const members = parseInt(event.attendance_count) || 0;
   const guests = parseInt(event.guest_count) || 0;
   const total = parseInt(event.total_count) || members + guests;
@@ -461,7 +468,7 @@ function AttendanceModal({event, open, onClose, onSaved}) {
     }
   };
 
-  const isPast = event ? new Date(event.date) < new Date() : false;
+  const isPast = event ? isAttendanceAvailable(event.date) : false;
   const filtered = allMembers.filter((m) =>
     `${m.first_name} ${m.last_name}`
       .toLowerCase()
@@ -1037,9 +1044,8 @@ export default function EventsPage() {
       e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (e.description || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const now = new Date();
-  const upcomingEvents = filteredEvents.filter((e) => new Date(e.date) >= now);
-  const pastEvents = filteredEvents.filter((e) => new Date(e.date) < now);
+  const upcomingEvents = filteredEvents.filter((e) => !isAttendanceAvailable(e.date));
+  const pastEvents = filteredEvents.filter((e) => isAttendanceAvailable(e.date));
 
   // Summary stats
   const totalEvents = allItems.length;
