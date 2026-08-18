@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import {groupsService, membersService, settingsService} from "@/services/api";
 import {buildGroupMembersPDF} from "@/utils/reportPrint";
+import {cn} from "@/lib/utils";
 
 // helpers
 
@@ -168,43 +169,52 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     win.document.close();
   };
 
-  const reload = useCallback(
-    async (tab) => {
-      setLoading(true);
-      try {
-        if (tab === "members") {
-          const [gd, am] = await Promise.all([
-            groupsService.getById(group.id),
-            membersService.getAll({limit: 1000}),
-          ]);
-          setGroupMembers(gd.members ?? []);
-          setAvailableMembers(am.members ?? []);
-        } else if (tab === "leaders") {
-          const [ld, am] = await Promise.all([
-            groupsService.getLeaders(group.id),
-            membersService.getAll({limit: 1000}),
-          ]);
-          setLeaders(ld.leaders ?? []);
-          setAvailableMembers(am.members ?? []);
-        } else if (tab === "activities") {
-          const d = await groupsService.getActivities(group.id);
-          setActivities(d.activities ?? []);
-        } else if (tab === "finances") {
-          const d = await groupsService.getFinances(group.id);
-          setFinances(d);
-        }
-      } catch {
-        /* ignore */
-      } finally {
-        setLoading(false);
-      }
-    },
-    [group.id],
-  );
+  // Todo el detalle (miembros, líderes, actividades, finanzas) se carga de
+  // una sola vez al entrar al grupo, no por pestaña: el header muestra
+  // estadísticas en vivo (líderes, actividades, balance) sin importar cuál
+  // pestaña esté activa, y cambiar de pestaña es solo un cambio visual.
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [gd, am, ld, ad, fd] = await Promise.all([
+        groupsService.getById(group.id),
+        membersService.getAll({limit: 1000}),
+        groupsService.getLeaders(group.id),
+        groupsService.getActivities(group.id),
+        groupsService.getFinances(group.id),
+      ]);
+      setGroupMembers(gd.members ?? []);
+      setAvailableMembers(am.members ?? []);
+      setLeaders(ld.leaders ?? []);
+      setActivities(ad.activities ?? []);
+      setFinances(fd);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [group.id]);
 
   useEffect(() => {
-    reload(activeTab);
-  }, [activeTab, reload]);
+    loadAll();
+  }, [loadAll]);
+
+  const reloadMembers = async () => {
+    const gd = await groupsService.getById(group.id);
+    setGroupMembers(gd.members ?? []);
+  };
+  const reloadLeaders = async () => {
+    const ld = await groupsService.getLeaders(group.id);
+    setLeaders(ld.leaders ?? []);
+  };
+  const reloadActivities = async () => {
+    const ad = await groupsService.getActivities(group.id);
+    setActivities(ad.activities ?? []);
+  };
+  const reloadFinances = async () => {
+    const fd = await groupsService.getFinances(group.id);
+    setFinances(fd);
+  };
 
   const handleAddMember = async () => {
     if (!selectedMember) return;
@@ -212,7 +222,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     try {
       await groupsService.addMember(group.id, selectedMember);
       setSelectedMember("");
-      await reload("members");
+      await reloadMembers();
       onGroupUpdated();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error al agregar miembro");
@@ -226,7 +236,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     setSaving(true);
     try {
       await groupsService.removeMember(group.id, memberId);
-      await reload("members");
+      await reloadMembers();
       onGroupUpdated();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error");
@@ -244,7 +254,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
         position: leaderForm.position,
       });
       setLeaderForm({memberId: "", position: ""});
-      await reload("leaders");
+      await reloadLeaders();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error al asignar líder");
     } finally {
@@ -257,7 +267,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     setSaving(true);
     try {
       await groupsService.removeLeader(group.id, leaderId);
-      await reload("leaders");
+      await reloadLeaders();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error");
     } finally {
@@ -276,7 +286,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
         activityDate: "",
         location: "",
       });
-      await reload("activities");
+      await reloadActivities();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error al crear actividad");
     } finally {
@@ -289,7 +299,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     setSaving(true);
     try {
       await groupsService.deleteActivity(group.id, id);
-      await reload("activities");
+      await reloadActivities();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error");
     } finally {
@@ -303,7 +313,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     try {
       await groupsService.addTransaction(group.id, txForm);
       setTxForm({type: "INGRESO", description: "", amount: "", date: ""});
-      await reload("finances");
+      await reloadFinances();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error al registrar transacción");
     } finally {
@@ -316,7 +326,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     setSaving(true);
     try {
       await groupsService.deleteTransaction(group.id, id);
-      await reload("finances");
+      await reloadFinances();
     } catch (e) {
       alert(e.response?.data?.error ?? "Error");
     } finally {
@@ -339,85 +349,102 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
         .includes(memberSearch.toLowerCase()),
   );
 
+  const balance = finances.summary?.balance ?? 0;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Volver a Grupos</span>
-        </button>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handlePrintMembers}
-            disabled={groupMembers.length === 0}
-            className="border-border text-muted-foreground hover:bg-accent h-8 text-xs px-3 gap-1.5"
-          >
-            <Printer className="w-3.5 h-3.5" /> PDF
-          </Button>
-          <Button
-            onClick={() => onEdit(group)}
-            variant="outline"
-            className="border-border text-muted-foreground hover:bg-accent h-8 text-xs px-3"
-          >
-            <Edit className="w-3.5 h-3.5 mr-1.5" />
-            Editar
-          </Button>
-          <Button
-            onClick={() => onDelete(group)}
-            variant="outline"
-            className="border-red-800/60 text-red-700 dark:text-red-400 hover:bg-red-500/10 dark:bg-red-900/20 h-8 text-xs px-3"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            Eliminar
-          </Button>
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Volver a Grupos
+      </button>
+
+      <div className="rounded-3xl border border-border bg-gradient-to-br from-card via-card to-cyan-500/5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] overflow-hidden">
+        <div className="flex flex-wrap items-start justify-between gap-4 p-5 md:p-6">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 shrink-0">
+                <UsersRound size={19} />
+              </div>
+              <h1 className="text-2xl md:text-[1.75rem] font-bold tracking-tight text-foreground truncate">
+                {group.name}
+              </h1>
+            </div>
+            {group.description && (
+              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                {group.description}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2 mt-4 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5">
+                <Users size={12} /> {groupMembers.length} miembro{groupMembers.length === 1 ? "" : "s"}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5">
+                <Crown size={12} /> {leaders.length} líder{leaders.length === 1 ? "" : "es"}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5">
+                <CalendarDays size={12} /> {activities.length} actividad{activities.length === 1 ? "" : "es"}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-semibold",
+                  balance >= 0
+                    ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400"
+                    : "border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-400",
+                )}
+              >
+                <Wallet size={12} /> {fmtCurrency(balance)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={handlePrintMembers}
+              disabled={groupMembers.length === 0}
+              className="border-border text-muted-foreground hover:bg-accent h-8 text-xs px-3 gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" /> PDF
+            </Button>
+            <Button
+              onClick={() => onEdit(group)}
+              variant="outline"
+              className="border-border text-muted-foreground hover:bg-accent h-8 text-xs px-3 gap-1.5"
+            >
+              <Edit className="w-3.5 h-3.5" /> Editar
+            </Button>
+            <Button
+              onClick={() => onDelete(group)}
+              variant="outline"
+              className="border-red-800/60 text-red-700 dark:text-red-400 hover:bg-red-500/10 dark:bg-red-900/20 h-8 text-xs px-3 gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Eliminar
+            </Button>
+          </div>
         </div>
       </div>
 
-      <Card className="bg-card border-border">
-        <CardContent className="pt-5 pb-5">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-              <UsersRound className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {group.member_count ?? 0} miembro(s)
-              </p>
-              {group.description && (
-                <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-                  {group.description}
-                </p>
+      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-border bg-muted/50 p-1.5 shadow-inner">
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                activeTab === t.id
+                  ? "bg-background text-foreground shadow-sm border border-border/80 ring-1 ring-cyan-500/15"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/70",
               )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="border-b border-border">
-        <div className="flex gap-1">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  activeTab === t.id
-                    ? "border-cyan-500 text-cyan-700 dark:text-cyan-400"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
+            >
+              <Icon className="w-4 h-4" /> {t.label}
+            </button>
+          );
+        })}
       </div>
 
       <div>
@@ -432,7 +459,8 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
             <div>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <UserPlus className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     Agregar miembro
                   </CardTitle>
                 </CardHeader>
@@ -469,21 +497,25 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
             <div className="lg:col-span-2">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     Miembros del grupo ({groupMembers.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {groupMembers.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No hay miembros en este grupo.
-                    </p>
+                    <div className="text-center py-10">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                      <p className="text-sm text-muted-foreground">
+                        No hay miembros en este grupo.
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {groupMembers.map((m) => (
                         <div
                           key={m.id}
-                          className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5"
+                          className="flex items-center justify-between bg-muted/40 border border-transparent hover:border-cyan-500/30 hover:bg-muted/60 rounded-xl px-3 py-2.5 transition-colors"
                         >
                           <div className="flex items-center gap-2.5">
                             <MemberAvatar
@@ -503,7 +535,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                           </div>
                           <button
                             onClick={() => handleRemoveMember(m.id)}
-                            className="p-1.5 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
+                            className="p-1.5 text-red-700 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                           >
                             <UserMinus className="w-3.5 h-3.5" />
                           </button>
@@ -522,7 +554,8 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
             <div>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <BadgeCheck className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     Asignar cargo
                   </CardTitle>
                 </CardHeader>
@@ -573,21 +606,25 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
             <div className="lg:col-span-2">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     Directiva ({leaders.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {leaders.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No hay líderes asignados.
-                    </p>
+                    <div className="text-center py-10">
+                      <Crown className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                      <p className="text-sm text-muted-foreground">
+                        No hay líderes asignados.
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {leaders.map((l) => (
                         <div
                           key={l.id}
-                          className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-3"
+                          className="flex items-center justify-between bg-muted/40 border border-transparent hover:border-cyan-500/30 hover:bg-muted/60 rounded-xl px-3 py-3 transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             <MemberAvatar
@@ -632,7 +669,8 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
             <div>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     Nueva actividad
                   </CardTitle>
                 </CardHeader>
@@ -694,15 +732,19 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
             <div className="lg:col-span-2">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     Actividades ({activities.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {activities.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No hay actividades registradas.
-                    </p>
+                    <div className="text-center py-10">
+                      <CalendarDays className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                      <p className="text-sm text-muted-foreground">
+                        No hay actividades registradas.
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {activities.map((a) => (
@@ -749,40 +791,79 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
 
         {!loading && activeTab === "finances" && (
           <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center">
-                <ArrowUpCircle className="w-5 h-5 text-green-700 dark:text-green-400 mx-auto mb-1.5" />
-                <p className="text-xs text-muted-foreground">Ingresos</p>
-                <p className="text-lg font-bold text-green-700 dark:text-green-400">
-                  {fmtCurrency(finances.summary?.totalIncome)}
-                </p>
-              </div>
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
-                <ArrowDownCircle className="w-5 h-5 text-red-700 dark:text-red-400 mx-auto mb-1.5" />
-                <p className="text-xs text-muted-foreground">Egresos</p>
-                <p className="text-lg font-bold text-red-700 dark:text-red-400">
-                  {fmtCurrency(finances.summary?.totalExpense)}
-                </p>
-              </div>
-              <div
-                className={`rounded-xl p-4 text-center border ${(finances.summary?.balance ?? 0) >= 0 ? "bg-cyan-500/10 border-cyan-500/20" : "bg-orange-500/10 border-orange-500/20"}`}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 dark:from-emerald-900/40 dark:to-emerald-950/40 border-emerald-300 dark:border-emerald-700/50">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-emerald-700 dark:text-emerald-300 text-sm font-medium">Ingresos</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">
+                      {fmtCurrency(finances.summary?.totalIncome)}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center shrink-0">
+                    <ArrowUpCircle className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 dark:from-red-900/40 dark:to-red-950/40 border-red-300 dark:border-red-700/50">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-red-700 dark:text-red-300 text-sm font-medium">Egresos</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">
+                      {fmtCurrency(finances.summary?.totalExpense)}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center shrink-0">
+                    <ArrowDownCircle className="w-6 h-6 text-red-700 dark:text-red-400" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card
+                className={cn(
+                  "border",
+                  balance >= 0
+                    ? "bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 dark:from-cyan-900/40 dark:to-cyan-950/40 border-cyan-300 dark:border-cyan-700/50"
+                    : "bg-gradient-to-br from-orange-500/10 to-orange-500/5 dark:from-orange-900/40 dark:to-orange-950/40 border-orange-300 dark:border-orange-700/50",
+                )}
               >
-                <TrendingUp
-                  className={`w-5 h-5 mx-auto mb-1.5 ${(finances.summary?.balance ?? 0) >= 0 ? "text-cyan-700 dark:text-cyan-400" : "text-orange-700 dark:text-orange-400"}`}
-                />
-                <p className="text-xs text-muted-foreground">Balance</p>
-                <p
-                  className={`text-lg font-bold ${(finances.summary?.balance ?? 0) >= 0 ? "text-cyan-700 dark:text-cyan-400" : "text-orange-700 dark:text-orange-400"}`}
-                >
-                  {fmtCurrency(finances.summary?.balance)}
-                </p>
-              </div>
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p
+                      className={cn(
+                        "text-sm font-medium",
+                        balance >= 0
+                          ? "text-cyan-700 dark:text-cyan-300"
+                          : "text-orange-700 dark:text-orange-300",
+                      )}
+                    >
+                      Balance
+                    </p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{fmtCurrency(balance)}</p>
+                  </div>
+                  <div
+                    className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                      balance >= 0 ? "bg-cyan-500/20" : "bg-orange-500/20",
+                    )}
+                  >
+                    <TrendingUp
+                      className={cn(
+                        "w-6 h-6",
+                        balance >= 0
+                          ? "text-cyan-700 dark:text-cyan-400"
+                          : "text-orange-700 dark:text-orange-400",
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div>
                 <Card className="bg-card border-border">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-foreground">
+                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                       Registrar movimiento
                     </CardTitle>
                   </CardHeader>
@@ -792,17 +873,27 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                         onClick={() =>
                           setTxForm((f) => ({...f, type: "INGRESO"}))
                         }
-                        className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${txForm.type === "INGRESO" ? "bg-green-500/20 border-green-500/40 text-green-700 dark:text-green-400" : "border-border text-muted-foreground hover:text-foreground"}`}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-colors",
+                          txForm.type === "INGRESO"
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+                            : "border-border text-muted-foreground hover:text-foreground",
+                        )}
                       >
-                        ↑ Ingreso
+                        <ArrowUpCircle className="w-3.5 h-3.5" /> Ingreso
                       </button>
                       <button
                         onClick={() =>
                           setTxForm((f) => ({...f, type: "EGRESO"}))
                         }
-                        className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${txForm.type === "EGRESO" ? "bg-red-500/20 border-red-500/40 text-red-700 dark:text-red-400" : "border-border text-muted-foreground hover:text-foreground"}`}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold border transition-colors",
+                          txForm.type === "EGRESO"
+                            ? "bg-red-500/20 border-red-500/40 text-red-700 dark:text-red-400"
+                            : "border-border text-muted-foreground hover:text-foreground",
+                        )}
                       >
-                        ↓ Egreso
+                        <ArrowDownCircle className="w-3.5 h-3.5" /> Egreso
                       </button>
                     </div>
                     <Input
@@ -851,30 +942,41 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
               <div className="lg:col-span-2">
                 <Card className="bg-card border-border">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-foreground">
+                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                       Movimientos ({finances.transactions?.length ?? 0})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {(finances.transactions?.length ?? 0) === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No hay movimientos registrados.
-                      </p>
+                      <div className="text-center py-10">
+                        <Wallet className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                        <p className="text-sm text-muted-foreground">
+                          No hay movimientos registrados.
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         {finances.transactions.map((t) => (
                           <div
                             key={t.id}
-                            className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2.5"
+                            className="flex items-center justify-between bg-muted/40 border border-transparent hover:border-cyan-500/30 hover:bg-muted/60 rounded-xl px-3 py-2.5 transition-colors"
                           >
-                            <div className="flex items-center gap-2.5">
-                              {t.type === "INGRESO" ? (
-                                <ArrowUpCircle className="w-4 h-4 text-green-700 dark:text-green-400 shrink-0" />
-                              ) : (
-                                <ArrowDownCircle className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" />
-                              )}
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={cn(
+                                  "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                                  t.type === "INGRESO" ? "bg-emerald-500/15" : "bg-red-500/15",
+                                )}
+                              >
+                                {t.type === "INGRESO" ? (
+                                  <ArrowUpCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+                                ) : (
+                                  <ArrowDownCircle className="w-4 h-4 text-red-700 dark:text-red-400" />
+                                )}
+                              </div>
                               <div>
-                                <p className="text-sm text-foreground">
+                                <p className="text-sm text-foreground font-medium">
                                   {t.description}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
@@ -884,14 +986,19 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
                             </div>
                             <div className="flex items-center gap-2">
                               <span
-                                className={`text-sm font-semibold ${t.type === "INGRESO" ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}
+                                className={cn(
+                                  "text-sm font-semibold",
+                                  t.type === "INGRESO"
+                                    ? "text-emerald-700 dark:text-emerald-400"
+                                    : "text-red-700 dark:text-red-400",
+                                )}
                               >
                                 {t.type === "INGRESO" ? "+" : "-"}
                                 {fmtCurrency(t.amount)}
                               </span>
                               <button
                                 onClick={() => handleDeleteTx(t.id)}
-                                className="p-1 text-red-700 dark:text-red-400 hover:bg-accent rounded-lg transition-colors"
+                                className="p-1 text-red-700 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                               >
                                 <X className="w-3 h-3" />
                               </button>
