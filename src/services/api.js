@@ -887,6 +887,32 @@ export const lettersService = {
 };
 
 // ============================================
+// NORMAS INTERNAS (REGLAMENTO)
+// ============================================
+export const internalRegulationsService = {
+  get: async () => {
+    const response = await api.get('/internal-regulations');
+    return response.data;
+  },
+  save: async (data) => {
+    const response = await api.put('/internal-regulations', data);
+    return response.data;
+  },
+  getPdf: async () => {
+    const response = await api.get('/internal-regulations/pdf');
+    return response.data;
+  },
+  uploadPdf: async (pdfBase64, filename) => {
+    const response = await api.put('/internal-regulations/pdf', {pdfBase64, filename});
+    return response.data;
+  },
+  deletePdf: async () => {
+    const response = await api.delete('/internal-regulations/pdf');
+    return response.data;
+  },
+};
+
+// ============================================
 // CONFERENCE SERVICE
 // ============================================
 export const conferenceService = {

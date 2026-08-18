@@ -1612,3 +1612,159 @@ export function buildReferenceLetter(letter, church = {}) {
 
   return html;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// NORMAS INTERNAS (reglamento interno) — documento formal multi-página,
+// distinto de los reportes de una página: cabecera institucional, secciones
+// numeradas, caja destacada opcional, tabla opcional y firmas al cierre.
+// Estilo propio en vez del CSS compartido de reportes (igual criterio que
+// buildReferenceLetter) porque la maquetación no tiene nada que ver con
+// tarjetas de métricas ni gráficos de barra.
+// ─────────────────────────────────────────────────────────────────────────
+const REG_CSS = `
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Georgia','Segoe UI',serif;color:#1e293b;background:#fff;padding:0;font-size:12.5px;line-height:1.6}
+  .reg-wrap{max-width:800px;margin:0 auto;padding:32px}
+  .reg-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:16px;border-bottom:4px solid #1e3a5f;margin-bottom:20px}
+  .reg-header-text{flex:1}
+  .reg-church-name{font-family:'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:800;color:#1e3a5f;letter-spacing:.02em}
+  .reg-title{font-size:14px;font-weight:600;color:#334155;margin-top:4px}
+  .reg-subtitle{font-size:11.5px;font-style:italic;color:#64748b;margin-top:2px}
+  .reg-logo img{height:52px;max-width:130px;object-fit:contain;display:block}
+  .reg-cross{width:44px;height:44px;border-radius:50%;background:#f1f5f9;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:19px;color:#94a3b8}
+  .reg-preamble{background:#f8fafc;border-left:4px solid #1e3a5f;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:22px;font-style:italic;color:#475569;font-size:11.5px;line-height:1.7}
+  .reg-preamble p+p{margin-top:8px}
+  .reg-section{margin-bottom:20px;break-inside:avoid-page}
+  .reg-heading{font-family:'Segoe UI',Arial,sans-serif;font-size:12.5px;font-weight:800;color:#fff;background:#1e3a5f;padding:7px 12px;border-radius:5px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px}
+  .reg-intro{color:#334155;margin-bottom:10px}
+  .reg-item{display:flex;gap:8px;margin-bottom:9px;align-items:baseline}
+  .reg-item-label{font-weight:700;color:#1e3a5f;flex-shrink:0}
+  .reg-item-body{color:#334155}
+  .reg-item-body strong{color:#0f172a}
+  .reg-callout{background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:12px 16px;margin:10px 0;font-size:12px;color:#713f12}
+  .reg-callout strong{color:#422006}
+  .reg-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px}
+  .reg-table th{background:#1e3a5f;color:#fff;text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+  .reg-table td{padding:7px 10px;border-bottom:1px solid #e2e8f0;color:#334155;vertical-align:top}
+  .reg-table tr:nth-child(even) td{background:#f8fafc}
+  .reg-meta{text-align:center;font-size:11px;color:#64748b;margin:24px 0 16px}
+  .reg-sig-row{display:flex;justify-content:center;gap:60px;margin-top:28px;flex-wrap:wrap}
+  .reg-sig-block{text-align:center;width:230px}
+  .reg-sig-line{border-top:1px solid #1e293b;padding-top:6px;font-size:10.5px;color:#475569}
+  .reg-footer{margin-top:28px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9.5px;color:#94a3b8;text-align:center;font-family:'Segoe UI',Arial,sans-serif}
+  .actions{position:fixed;bottom:20px;right:20px;display:flex;gap:8px;z-index:100}
+  .btn-print{background:#1e3a5f;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(30,58,95,.45);font-family:'Segoe UI',Arial,sans-serif}
+  .btn-close{background:#e2e8f0;color:#334155;border:none;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Segoe UI',Arial,sans-serif}
+  @media print{
+    .actions{display:none!important}
+    .reg-wrap{padding:0}
+    .reg-section{break-inside:avoid}
+    @page{margin:1.5cm}
+  }
+`;
+
+// "párrafo1\n\npárrafo2" → <p>párrafo1</p><p>párrafo2</p>, con \n simple
+// dentro de un párrafo como <br> — mismo formato libre que ya usa el campo
+// de notas del pastor (MemberDetailPage) y custom_body de Cartas.
+function regParagraphs(text) {
+  if (!text) return "";
+  return text
+    .split(/\n{2,}/)
+    .map((p) => `<p>${p.trim().replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+const regFmtDate = (d) => {
+  if (!d) return null;
+  return new Date(d.slice(0, 10) + "T12:00:00").toLocaleDateString("es-ES", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+};
+
+export function buildInternalRegulations(regulations = {}, church = {}) {
+  const {
+    title = "Reglamento Interno", subtitle, preamble,
+    sections = [], signatories = [], effective_date,
+  } = regulations;
+
+  const churchName = church.name || "Iglesia Cristiana";
+  const logoHtml = church.logoUrl
+    ? `<div class="reg-logo"><img src="${church.logoUrl}" alt="Logo"></div>`
+    : `<div class="reg-cross">✝</div>`;
+
+  const preambleHtml = preamble
+    ? `<div class="reg-preamble">${regParagraphs(preamble)}</div>`
+    : "";
+
+  const sectionsHtml = sections.map((s) => {
+    const introHtml = s.intro ? `<div class="reg-intro">${regParagraphs(s.intro)}</div>` : "";
+
+    const itemsHtml = (s.items || []).length
+      ? (s.items || []).map((it) => `
+        <div class="reg-item">
+          ${it.label ? `<span class="reg-item-label">${it.label}.</span>` : ""}
+          <span class="reg-item-body">${it.title ? `<strong>${it.title}:</strong> ` : ""}${it.body || ""}</span>
+        </div>`).join("")
+      : "";
+
+    const calloutHtml = s.callout?.body
+      ? `<div class="reg-callout">${s.callout.title ? `<strong>${s.callout.title}:</strong> ` : ""}${s.callout.body}</div>`
+      : "";
+
+    const tableHtml = s.table?.rows?.length
+      ? `<table class="reg-table">
+          <thead><tr>${(s.table.columns || []).map((c) => `<th>${c}</th>`).join("")}</tr></thead>
+          <tbody>${s.table.rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody>
+        </table>`
+      : "";
+
+    return `<div class="reg-section">
+      ${s.heading ? `<div class="reg-heading">${s.heading}</div>` : ""}
+      ${introHtml}${itemsHtml}${calloutHtml}${tableHtml}
+    </div>`;
+  }).join("");
+
+  const effectiveLabel = regFmtDate(effective_date);
+
+  const sigHtml = signatories.length
+    ? `<div class="reg-sig-row">${signatories.map((label) => `
+        <div class="reg-sig-block">
+          <div class="reg-sig-line">${label}<br>${churchName}</div>
+        </div>`).join("")}</div>`
+    : "";
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${title} — ${churchName}</title>
+<style>${REG_CSS}</style></head><body>
+
+<div class="reg-wrap">
+
+  <div class="reg-header">
+    <div class="reg-header-text">
+      <div class="reg-church-name">${churchName}</div>
+      <div class="reg-title">${title}</div>
+      ${subtitle ? `<div class="reg-subtitle">${subtitle}</div>` : ""}
+    </div>
+    ${logoHtml}
+  </div>
+
+  ${preambleHtml}
+
+  ${sectionsHtml}
+
+  ${effectiveLabel ? `<p class="reg-meta">Vigente desde el ${effectiveLabel}</p>` : ""}
+
+  ${sigHtml}
+
+  <div class="reg-footer">${churchName} · ${title} · Sistema de Control Eclesiástico</div>
+
+</div>
+
+<div class="actions">
+  <button class="btn-print" onclick="window.print()">🖨&nbsp; Imprimir / Guardar PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+</div>
+</body></html>`;
+
+  return html;
+}

@@ -40,6 +40,7 @@ import CommunionPage from "@/pages/CommunionPage";
 import PrayerPage from "@/pages/PrayerPage";
 import ProfilePage from "@/pages/ProfilePage";
 import LettersPage from "@/pages/LettersPage";
+import InternalRegulationsPage from "@/pages/InternalRegulationsPage";
 import ConferencePage from "@/pages/ConferencePage";
 import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
@@ -255,6 +256,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <LettersPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/normas-internas"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <InternalRegulationsPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
