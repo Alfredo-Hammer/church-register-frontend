@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {membersService, visitorsService} from "@/services/api";
+import {cn} from "@/lib/utils";
 import {
   Cake,
   ChevronLeft,
@@ -9,6 +10,7 @@ import {
   Mail,
   Users,
   UserPlus,
+  CalendarHeart,
 } from "lucide-react";
 
 const MONTH_NAMES = [
@@ -51,25 +53,33 @@ function BirthdayCard({person}) {
 
   return (
     <div
-      className={`flex items-center gap-4 p-4 rounded-xl border transition-colors ${
+      className={cn(
+        "flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200",
         isToday
-          ? "bg-amber-500/10 border-amber-500/40"
-          : "bg-card border-border hover:border-muted-foreground/30"
-      }`}
+          ? "bg-gradient-to-r from-amber-500/10 to-rose-500/10 border-amber-500/40 shadow-sm"
+          : "bg-card border-border hover:border-pink-500/30 hover:shadow-md hover:shadow-pink-500/5",
+      )}
     >
-      <div className="flex flex-col items-center justify-center w-11 shrink-0">
-        <span className="text-xl font-bold text-foreground leading-none">{day}</span>
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center w-12 h-12 rounded-xl shrink-0 font-bold",
+          isToday
+            ? "bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-md shadow-amber-500/30"
+            : "bg-muted/60 border border-border text-foreground",
+        )}
+      >
+        <span className="text-lg leading-none">{day}</span>
       </div>
 
       {isMember && person.photo_url ? (
         <img
           src={person.photo_url}
           alt={person.first_name}
-          className="w-11 h-11 rounded-full object-cover shrink-0"
+          className="w-12 h-12 rounded-full object-cover shrink-0 ring-2 ring-background shadow"
         />
       ) : (
         <div
-          className={`w-11 h-11 rounded-full shrink-0 flex items-center justify-center bg-gradient-to-br ${grad} text-white font-bold text-sm shadow`}
+          className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-gradient-to-br ${grad} text-white font-bold text-sm shadow ring-2 ring-background`}
         >
           {initials}
         </div>
@@ -101,7 +111,7 @@ function BirthdayCard({person}) {
         </p>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {person.phone && (
           <a
             href={`tel:${person.phone}`}
@@ -182,83 +192,107 @@ export default function BirthdaysPage() {
     setMonth((m) => ((m - 1 + delta + 12) % 12) + 1);
   };
 
+  const restOfMonth = filtered.filter((p) => !(isCurrentMonth && todayBirthdays.includes(p)));
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
-            <Cake className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Cumpleaños</h1>
-            <p className="text-sm text-muted-foreground">
-              {loading
-                ? "Cargando…"
-                : `${filtered.length} cumpleaño${filtered.length !== 1 ? "s" : ""} en ${MONTH_NAMES[month - 1]}`}
+      <div className="rounded-3xl border border-border bg-gradient-to-br from-card via-card to-pink-500/5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] overflow-hidden">
+        <div className="flex flex-wrap items-start justify-between gap-4 p-5 md:p-6">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/30 shrink-0">
+                <Cake size={19} />
+              </div>
+              <h1 className="text-2xl md:text-[1.75rem] font-bold tracking-tight text-foreground">
+                Cumpleaños
+              </h1>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
+              Celebra a los miembros y visitantes de tu iglesia cada mes.
             </p>
+            <div className="flex flex-wrap gap-2 mt-4 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5">
+                <CalendarHeart size={12} />
+                {loading
+                  ? "Cargando…"
+                  : `${filtered.length} cumpleaño${filtered.length !== 1 ? "s" : ""} en ${MONTH_NAMES[month - 1]}`}
+              </span>
+              {isCurrentMonth && todayBirthdays.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 font-semibold text-amber-700 dark:text-amber-400">
+                  <PartyPopper size={12} /> {todayBirthdays.length} hoy
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Navegador de mes */}
-        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-          <button
-            onClick={() => goMonth(-1)}
-            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-sm font-semibold text-foreground w-28 text-center">
-            {MONTH_NAMES[month - 1]}
-          </span>
-          <button
-            onClick={() => goMonth(1)}
-            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          {!isCurrentMonth && (
+          {/* Navegador de mes */}
+          <div className="flex items-center gap-1 bg-background/80 border border-border rounded-xl p-1 shrink-0">
             <button
-              onClick={() => setMonth(TODAY.getMonth() + 1)}
-              className="ml-1 px-2.5 h-8 rounded-md text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              onClick={() => goMonth(-1)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
-              Hoy
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          )}
+            <span className="text-sm font-semibold text-foreground w-28 text-center">
+              {MONTH_NAMES[month - 1]}
+            </span>
+            <button
+              onClick={() => goMonth(1)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {!isCurrentMonth && (
+              <button
+                onClick={() => setMonth(TODAY.getMonth() + 1)}
+                className="ml-1 px-2.5 h-8 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              >
+                Hoy
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Filtro */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-border bg-muted/50 p-1.5 shadow-inner w-fit">
         {[
-          {id: "all", label: "Todos"},
-          {id: "member", label: "Miembros"},
-          {id: "visitor", label: "Visitantes"},
-        ].map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-              filter === f.id
-                ? "bg-gradient-to-r from-pink-500 to-rose-600 border-transparent text-white"
-                : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+          {id: "all", label: "Todos", icon: CalendarHeart},
+          {id: "member", label: "Miembros", icon: Users},
+          {id: "visitor", label: "Visitantes", icon: UserPlus},
+        ].map((f) => {
+          const Icon = f.icon;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                filter === f.id
+                  ? "bg-background text-foreground shadow-sm border border-border/80 ring-1 ring-pink-500/15"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/70",
+              )}
+            >
+              <Icon className="w-4 h-4" /> {f.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Destacado de hoy */}
       {isCurrentMonth && todayBirthdays.length > 0 && (
-        <div className="rounded-2xl bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/30 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <PartyPopper className="w-5 h-5 text-amber-600" />
-            <h2 className="font-bold text-foreground">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-pink-500/15 border border-amber-500/30 p-5 md:p-6">
+          <PartyPopper className="absolute -right-4 -top-4 w-28 h-28 text-amber-500/10 rotate-12 pointer-events-none" />
+          <div className="relative flex items-center gap-2.5 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-md shadow-amber-500/30 shrink-0">
+              <PartyPopper className="w-4 h-4" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">
               ¡Hoy cumple{todayBirthdays.length === 1 ? "" : "n"} años!
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-3">
             {todayBirthdays.map((p) => (
               <BirthdayCard key={`${p.kind}-${p.id}`} person={p} />
             ))}
@@ -270,23 +304,26 @@ export default function BirthdaysPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-card border border-border rounded-xl animate-pulse" />
+            <div key={i} className="h-20 bg-card border border-border rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-card border border-border rounded-xl">
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-card border border-border rounded-2xl">
           <Cake className="w-10 h-10 mb-3 opacity-20" />
           <p className="text-sm font-medium">Sin cumpleaños registrados en {MONTH_NAMES[month - 1]}.</p>
         </div>
-      ) : (
+      ) : restOfMonth.length > 0 ? (
         <div className="space-y-3">
-          {filtered
-            .filter((p) => !(isCurrentMonth && todayBirthdays.includes(p)))
-            .map((p) => (
-              <BirthdayCard key={`${p.kind}-${p.id}`} person={p} />
-            ))}
+          {isCurrentMonth && todayBirthdays.length > 0 && (
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
+              Resto del mes
+            </p>
+          )}
+          {restOfMonth.map((p) => (
+            <BirthdayCard key={`${p.kind}-${p.id}`} person={p} />
+          ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
