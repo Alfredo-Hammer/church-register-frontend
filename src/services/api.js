@@ -945,6 +945,22 @@ export const inventoryService = {
     const response = await api.delete(`/inventory/${id}/photo`);
     return response.data;
   },
+  getCategories: async () => {
+    const response = await api.get('/inventory/categories');
+    return response.data;
+  },
+  createCategory: async (name) => {
+    const response = await api.post('/inventory/categories', { name });
+    return response.data;
+  },
+  updateCategory: async (id, name) => {
+    const response = await api.put(`/inventory/categories/${id}`, { name });
+    return response.data;
+  },
+  deleteCategory: async (id) => {
+    const response = await api.delete(`/inventory/categories/${id}`);
+    return response.data;
+  },
 };
 
 // ============================================

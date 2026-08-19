@@ -1768,3 +1768,62 @@ export function buildInternalRegulations(regulations = {}, church = {}) {
 
   return html;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// INVENTARIO — listado (reusado tanto para el reporte completo/filtrado
+// como para un solo ítem desde su página de detalle, pasando un array de 1)
+// ─────────────────────────────────────────────────────────────────────────
+const INV_CONDITION_LABEL = {
+  BUENO: "Bueno", REGULAR: "Regular", MALO: "Malo", DANADO: "Dañado",
+};
+
+export function buildInventoryReport(items = [], church = {}, opts = {}) {
+  const title = opts.title || "Reporte de Inventario";
+  const totalItems = items.length;
+  const totalUnits = items.reduce((s, it) => s + Number(it.quantity || 0), 0);
+  const totalValue = items.reduce((s, it) => s + Number(it.value || 0) * Number(it.quantity || 0), 0);
+  const lowStockItems = items.filter((it) => it.min_stock != null && it.quantity <= it.min_stock);
+
+  const rows = items.length === 0
+    ? `<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:14px">Sin ítems registrados</td></tr>`
+    : items.map((it, i) => {
+        const isLow = it.min_stock != null && it.quantity <= it.min_stock;
+        return `<tr>
+          <td style="text-align:center;color:#94a3b8;width:30px">${i + 1}</td>
+          <td style="color:#64748b;font-family:monospace;font-size:11px">${it.code || "—"}</td>
+          <td style="font-weight:500">${it.name}${isLow ? ' <span style="color:#b45309;font-size:10px">⚠ stock bajo</span>' : ""}</td>
+          <td style="color:#64748b">${it.category_name || "Sin categoría"}</td>
+          <td style="text-align:center">${it.quantity} ${it.unit || ""}</td>
+          <td style="color:#64748b">${it.location || "—"}</td>
+          <td style="text-align:center">${INV_CONDITION_LABEL[it.condition] || it.condition}</td>
+          <td style="text-align:right">${it.value != null ? fmtM(it.value) : "—"}</td>
+        </tr>`;
+      }).join("");
+
+  const notesBlock = items.length === 1 && items[0].notes
+    ? `<div class="section"><h2>Notas</h2><p style="color:#334155;white-space:pre-line">${items[0].notes}</p></div>`
+    : "";
+
+  return doc(title, `
+    ${hdr(title, items.length === 1 ? "Ficha de ítem" : "Listado de equipo y suministros", "", church)}
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">Total ítems</div><div class="metric-val">${totalItems}</div></div>
+      <div class="metric"><div class="metric-lbl">Unidades</div><div class="metric-val">${totalUnits}</div></div>
+      <div class="metric"><div class="metric-lbl">Valor estimado</div><div class="metric-val">${fmtM(totalValue)}</div></div>
+    </div>
+    ${lowStockItems.length > 0 ? `<p style="color:#b45309;font-size:11px;margin:-10px 0 16px">⚠ ${lowStockItems.length} ítem(s) con stock bajo</p>` : ""}
+    <div class="section">
+      <h2>Listado</h2>
+      <table>
+        <thead><tr>
+          <th style="text-align:center;width:30px">#</th><th>Código</th><th>Nombre</th><th>Categoría</th>
+          <th style="text-align:center">Cantidad</th><th>Ubicación</th>
+          <th style="text-align:center">Estado</th><th style="text-align:right">Valor</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${notesBlock}
+    ${footerFor(church)}
+  `);
+}
