@@ -41,6 +41,7 @@ import PrayerPage from "@/pages/PrayerPage";
 import ProfilePage from "@/pages/ProfilePage";
 import LettersPage from "@/pages/LettersPage";
 import InternalRegulationsPage from "@/pages/InternalRegulationsPage";
+import InventoryPage from "@/pages/InventoryPage";
 import ConferencePage from "@/pages/ConferencePage";
 import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
@@ -266,6 +267,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <InternalRegulationsPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/inventory"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <InventoryPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
