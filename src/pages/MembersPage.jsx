@@ -1031,13 +1031,15 @@ export default function MembersPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Fecha de Nacimiento
+                  Fecha de Nacimiento *
                 </label>
                 <Input
                   name="birthDate"
                   type="date"
                   value={formData.birthDate}
                   onChange={handleInput}
+                  required
+                  max={new Date().toISOString().slice(0, 10)}
                   className="bg-background border-border text-foreground"
                 />
                 {formData.birthDate && (

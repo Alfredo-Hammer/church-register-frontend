@@ -6,6 +6,7 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Input} from "@/components/ui/Input";
 import {Button} from "@/components/ui/Button";
 import {ConfirmDialog} from "@/components/ui/ConfirmDialog";
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from "@/components/ui/Dialog";
 import {
   BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -27,6 +28,8 @@ import {
   Landmark,
   CheckCircle2,
   XCircle,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 const monthLabel = (yyyyMm) => {
@@ -82,6 +85,11 @@ export default function SuperAdminPage() {
   const [toggleTarget, setToggleTarget] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
   const [accessingId, setAccessingId] = useState(null);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const fetchChurches = useCallback(async () => {
     setLoading(true);
@@ -146,6 +154,39 @@ export default function SuperAdminPage() {
     } finally {
       setTogglingId(null);
       setToggleTarget(null);
+    }
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+    setDeleteError("");
+  };
+
+  const handleDeleteChurch = async () => {
+    if (!deleteTarget) return;
+    setDeletingId(deleteTarget.id);
+    setDeleteError("");
+    try {
+      const data = await platformService.deleteChurch(deleteTarget.id, deleteConfirmText);
+      setChurches((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      setPagination((prev) => ({...prev, total: Math.max(0, prev.total - 1)}));
+      setStats((prev) =>
+        prev
+          ? {
+              ...prev,
+              totalChurches: Math.max(0, prev.totalChurches - 1),
+              activeChurches: deleteTarget.isActive ? Math.max(0, prev.activeChurches - 1) : prev.activeChurches,
+              suspendedChurches: !deleteTarget.isActive ? Math.max(0, prev.suspendedChurches - 1) : prev.suspendedChurches,
+            }
+          : prev,
+      );
+      toast.success(data.message);
+      closeDeleteDialog();
+    } catch (err) {
+      setDeleteError(err?.response?.data?.error || "No se pudo eliminar la iglesia.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -483,6 +524,16 @@ export default function SuperAdminPage() {
                             >
                               <Power className="w-4 h-4" />
                             </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget(c);
+                              }}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                              title="Eliminar iglesia permanentemente"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -596,6 +647,60 @@ export default function SuperAdminPage() {
         variant={toggleTarget?.isActive ? "destructive" : "default"}
         onConfirm={() => handleToggleActive(toggleTarget)}
       />
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && closeDeleteDialog()}>
+        <DialogContent className="max-w-md" onClose={closeDeleteDialog}>
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <span className="w-9 h-9 rounded-full bg-destructive/15 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+              </span>
+              <DialogTitle>Eliminar iglesia permanentemente</DialogTitle>
+            </div>
+            <DialogDescription className="pt-1">
+              Esto borra <strong>todos</strong> los datos de "{deleteTarget?.name}" — miembros,
+              finanzas, eventos, usuarios, todo. No se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">
+              Escribe <strong className="text-foreground">{deleteTarget?.name}</strong> para confirmar:
+            </label>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={deleteTarget?.name}
+              className="bg-background border-border text-foreground"
+              autoFocus
+            />
+            {deleteError && (
+              <p className="text-sm text-destructive">{deleteError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={!!deletingId}
+              className="border-border text-muted-foreground hover:text-foreground"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteChurch}
+              disabled={
+                !!deletingId ||
+                deleteConfirmText.trim().toLowerCase() !== (deleteTarget?.name || "").trim().toLowerCase()
+              }
+            >
+              {deletingId ? "Eliminando…" : "Eliminar definitivamente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

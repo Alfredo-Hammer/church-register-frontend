@@ -31,6 +31,8 @@ import {
   Landmark,
   PiggyBank,
   ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   financesService,
@@ -1280,6 +1282,40 @@ function ConfirmDialog({open, onClose, onConfirm, message}) {
 }
 
 // ─── Transactions Table (reutilizada por Transacciones y las pestañas de cuenta) ─
+function Pager({pagination, onChange}) {
+  const {limit, offset, total} = pagination;
+  const totalPages = Math.ceil(total / limit);
+  const currentPage = Math.floor(offset / limit) + 1;
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+      <p className="text-sm text-muted-foreground">
+        Página {currentPage} de {totalPages} · {total} en total
+      </p>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => onChange(Math.max(0, offset - limit))}
+          disabled={currentPage === 1}
+          variant="outline"
+          size="sm"
+          className="bg-secondary border-border text-foreground hover:bg-accent"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <Button
+          onClick={() => onChange(offset + limit)}
+          disabled={currentPage === totalPages}
+          variant="outline"
+          size="sm"
+          className="bg-secondary border-border text-foreground hover:bg-accent"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function TransactionsTable({transactions, showAccount, onEdit, onDelete}) {
   if (transactions.length === 0) {
     return (
@@ -1394,6 +1430,8 @@ function AccountTabContent({
   onEditTransaction,
   onDeleteTransaction,
   onDeleteTransfer,
+  txPagination,
+  onTxPageChange,
 }) {
   const Icon = accountInfo.icon;
   const bal = balance?.balance ?? 0;
@@ -1535,6 +1573,7 @@ function AccountTabContent({
             onEdit={onEditTransaction}
             onDelete={onDeleteTransaction}
           />
+          <Pager pagination={txPagination} onChange={onTxPageChange} />
         </CardContent>
       </Card>
     </div>
@@ -1577,6 +1616,7 @@ export default function FinancesPage() {
 
   // Transactions
   const [transactions, setTransactions] = useState([]);
+  const [txPagination, setTxPagination] = useState({limit: 50, offset: 0, total: 0});
   const [txFilters, setTxFilters] = useState({
     type: "",
     categoryId: "",
@@ -1585,12 +1625,14 @@ export default function FinancesPage() {
     endDate: "",
     search: "",
   });
+  const [txSummary, setTxSummary] = useState({totalIngresos: 0, totalEgresos: 0});
   const [txModal, setTxModal] = useState(false);
   const [editTx, setEditTx] = useState(null);
   const [delTx, setDelTx] = useState(null);
 
   // Donations
   const [donations, setDonations] = useState([]);
+  const [donPagination, setDonPagination] = useState({limit: 50, offset: 0, total: 0});
   const [donFilters, setDonFilters] = useState({
     type: "",
     startDate: "",
@@ -1615,6 +1657,10 @@ export default function FinancesPage() {
     CHEQUE: {summary: null, monthly: [], transactions: [], transfers: []},
     AHORROS: {summary: null, monthly: [], transactions: [], transfers: []},
   });
+  const [acctTxPagination, setAcctTxPagination] = useState({
+    CHEQUE: {limit: 25, offset: 0, total: 0},
+    AHORROS: {limit: 25, offset: 0, total: 0},
+  });
   const [acctLoading, setAcctLoading] = useState({CHEQUE: false, AHORROS: false});
   const [transferModal, setTransferModal] = useState(false);
   const [delTransfer, setDelTransfer] = useState(null);
@@ -1636,16 +1682,27 @@ export default function FinancesPage() {
     } catch {}
   }, []);
 
+  const txQueryFilters = () => {
+    const params = {};
+    if (txFilters.type) params.type = txFilters.type;
+    if (txFilters.categoryId) params.categoryId = txFilters.categoryId;
+    if (txFilters.account) params.account = txFilters.account;
+    if (txFilters.startDate) params.startDate = txFilters.startDate;
+    if (txFilters.endDate) params.endDate = txFilters.endDate;
+    if (txFilters.search) params.search = txFilters.search;
+    return params;
+  };
+
   const loadTransactions = useCallback(async () => {
     try {
-      const params = {limit: 200};
-      if (txFilters.type) params.type = txFilters.type;
-      if (txFilters.categoryId) params.categoryId = txFilters.categoryId;
-      if (txFilters.account) params.account = txFilters.account;
-      if (txFilters.startDate) params.startDate = txFilters.startDate;
-      if (txFilters.endDate) params.endDate = txFilters.endDate;
-      const r = await financesService.getTransactions(params);
+      const params = {...txQueryFilters(), limit: txPagination.limit, offset: txPagination.offset};
+      const [r, s] = await Promise.all([
+        financesService.getTransactions(params),
+        financesService.getSummary(txQueryFilters()),
+      ]);
       setTransactions(r.transactions || []);
+      setTxPagination((p) => ({...p, total: r.total ?? 0}));
+      setTxSummary(s.summary || s);
     } catch {}
   }, [
     txFilters.type,
@@ -1653,18 +1710,35 @@ export default function FinancesPage() {
     txFilters.account,
     txFilters.startDate,
     txFilters.endDate,
+    txFilters.search,
+    txPagination.limit,
+    txPagination.offset,
   ]);
+
+  const donQueryFilters = () => {
+    const params = {};
+    if (donFilters.type) params.type = donFilters.type;
+    if (donFilters.startDate) params.startDate = donFilters.startDate;
+    if (donFilters.endDate) params.endDate = donFilters.endDate;
+    if (donFilters.search) params.search = donFilters.search;
+    return params;
+  };
 
   const loadDonations = useCallback(async () => {
     try {
-      const params = {limit: 200};
-      if (donFilters.type) params.type = donFilters.type;
-      if (donFilters.startDate) params.startDate = donFilters.startDate;
-      if (donFilters.endDate) params.endDate = donFilters.endDate;
+      const params = {...donQueryFilters(), limit: donPagination.limit, offset: donPagination.offset};
       const r = await donationsService.getAll(params);
       setDonations(r.donations || []);
+      setDonPagination((p) => ({...p, total: r.total ?? 0}));
     } catch {}
-  }, [donFilters.type, donFilters.startDate, donFilters.endDate]);
+  }, [
+    donFilters.type,
+    donFilters.startDate,
+    donFilters.endDate,
+    donFilters.search,
+    donPagination.limit,
+    donPagination.offset,
+  ]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -1680,6 +1754,10 @@ export default function FinancesPage() {
     } catch {}
   }, []);
 
+  const ACCT_TX_LIMIT = 25;
+
+  // Carga completa de la pestaña (saldo, resumen, gráfico, transferencias y
+  // la primera página de transacciones) — se usa al entrar a la pestaña.
   const loadAccountTab = useCallback(async (account) => {
     setAcctLoading((prev) => ({...prev, [account]: true}));
     try {
@@ -1687,7 +1765,7 @@ export default function FinancesPage() {
         financesService.getAccountBalances(),
         financesService.getSummary({account}),
         financesService.getMonthly({months: 6, account}),
-        financesService.getTransactions({account, limit: 200}),
+        financesService.getTransactions({account, limit: ACCT_TX_LIMIT, offset: 0}),
         financesService.getTransfers({account, limit: 50}),
       ]);
       setAcctBalances(balancesRes.accounts || {});
@@ -1699,6 +1777,28 @@ export default function FinancesPage() {
           transactions: txRes.transactions || [],
           transfers: trRes.transfers || [],
         },
+      }));
+      setAcctTxPagination((prev) => ({
+        ...prev,
+        [account]: {limit: ACCT_TX_LIMIT, offset: 0, total: txRes.total ?? 0},
+      }));
+    } catch {}
+    setAcctLoading((prev) => ({...prev, [account]: false}));
+  }, []);
+
+  // Solo re-pagina las transacciones de la cuenta, sin repetir el resto de
+  // las consultas (saldo, resumen, gráfico, transferencias) en cada click.
+  const loadAccountTransactionsPage = useCallback(async (account, offset) => {
+    setAcctLoading((prev) => ({...prev, [account]: true}));
+    try {
+      const txRes = await financesService.getTransactions({account, limit: ACCT_TX_LIMIT, offset});
+      setAcctData((prev) => ({
+        ...prev,
+        [account]: {...prev[account], transactions: txRes.transactions || []},
+      }));
+      setAcctTxPagination((prev) => ({
+        ...prev,
+        [account]: {limit: ACCT_TX_LIMIT, offset, total: txRes.total ?? 0},
       }));
     } catch {}
     setAcctLoading((prev) => ({...prev, [account]: false}));
@@ -1714,40 +1814,37 @@ export default function FinancesPage() {
     ]).finally(() => setLoading(false));
   }, []);
 
+  // Debounce corto: evita disparar una petición por cada tecla al buscar,
+  // sin sentirse lento para los demás filtros (fecha, tipo, categoría) o al
+  // cambiar de página.
   useEffect(() => {
-    loadTransactions();
+    const t = setTimeout(() => loadTransactions(), 300);
+    return () => clearTimeout(t);
   }, [loadTransactions]);
   useEffect(() => {
-    loadDonations();
+    const t = setTimeout(() => loadDonations(), 300);
+    return () => clearTimeout(t);
   }, [loadDonations]);
   useEffect(() => {
     if (tab === "cheque") loadAccountTab("CHEQUE");
     else if (tab === "ahorros") loadAccountTab("AHORROS");
   }, [tab]);
 
-  // ─── Filtered lists ──────────────────────────────────────────────────────
-  const filteredTx = transactions.filter((t) => {
-    if (txFilters.search) {
-      const s = txFilters.search.toLowerCase();
-      if (
-        !(t.description && t.description.toLowerCase().includes(s)) &&
-        !t.category_name.toLowerCase().includes(s) &&
-        !(t.first_name && t.first_name.toLowerCase().includes(s)) &&
-        !(t.last_name && t.last_name.toLowerCase().includes(s))
-      )
-        return false;
-    }
-    return true;
-  });
-
-  const filteredDon = donations.filter((d) => {
-    if (!donFilters.search) return true;
-    const s = donFilters.search.toLowerCase();
-    const name = d.is_anonymous
-      ? "anónimo"
-      : `${d.first_name || ""} ${d.last_name || ""}`.toLowerCase();
-    return name.includes(s) || (d.description || "").toLowerCase().includes(s);
-  });
+  // Cambiar cualquier filtro (menos la página en sí) vuelve a la primera
+  // página — si no, se podría quedar en un offset que ya no tiene datos.
+  useEffect(() => {
+    setTxPagination((p) => (p.offset === 0 ? p : {...p, offset: 0}));
+  }, [
+    txFilters.type,
+    txFilters.categoryId,
+    txFilters.account,
+    txFilters.startDate,
+    txFilters.endDate,
+    txFilters.search,
+  ]);
+  useEffect(() => {
+    setDonPagination((p) => (p.offset === 0 ? p : {...p, offset: 0}));
+  }, [donFilters.type, donFilters.startDate, donFilters.endDate, donFilters.search]);
 
   const filteredCats = categories.filter((c) => {
     if (catTypeFilter && c.type !== catTypeFilter) return false;
@@ -1798,41 +1895,58 @@ export default function FinancesPage() {
   };
 
   // ─── CSV Export ──────────────────────────────────────────────────────────
-  const exportTxCSV = () =>
-    exportCSV(
-      filteredTx,
-      [
-        {label: "Fecha", get: (r) => fmtDate(r.date)},
-        {label: "Categoría", get: (r) => r.category_name},
-        {label: "Tipo", get: (r) => r.category_type},
-        {label: "Monto", get: (r) => r.amount},
-        {
-          label: "Miembro",
-          get: (r) => (r.first_name ? `${r.first_name} ${r.last_name}` : ""),
-        },
-        {label: "Descripción", get: (r) => r.description || ""},
-      ],
-      "transacciones.csv",
-    );
+  // Exporta TODO lo que cumple el filtro actual, no solo la página visible en
+  // pantalla — por eso pide su propia página grande en vez de reusar `transactions`.
+  const [exportingTx, setExportingTx] = useState(false);
+  const [exportingDon, setExportingDon] = useState(false);
 
-  const exportDonCSV = () =>
-    exportCSV(
-      filteredDon,
-      [
-        {label: "Fecha", get: (r) => fmtDate(r.date)},
-        {
-          label: "Donante",
-          get: (r) =>
-            r.is_anonymous
-              ? "Anónimo"
-              : `${r.first_name || ""} ${r.last_name || ""}`,
-        },
-        {label: "Tipo", get: (r) => r.type},
-        {label: "Monto", get: (r) => r.amount},
-        {label: "Descripción", get: (r) => r.description || ""},
-      ],
-      "donaciones.csv",
-    );
+  const exportTxCSV = async () => {
+    setExportingTx(true);
+    try {
+      const r = await financesService.getTransactions({...txQueryFilters(), limit: 5000, offset: 0});
+      exportCSV(
+        r.transactions || [],
+        [
+          {label: "Fecha", get: (row) => fmtDate(row.date)},
+          {label: "Categoría", get: (row) => row.category_name},
+          {label: "Tipo", get: (row) => row.category_type},
+          {label: "Monto", get: (row) => row.amount},
+          {
+            label: "Miembro",
+            get: (row) => (row.first_name ? `${row.first_name} ${row.last_name}` : ""),
+          },
+          {label: "Descripción", get: (row) => row.description || ""},
+        ],
+        "transacciones.csv",
+      );
+    } catch {}
+    setExportingTx(false);
+  };
+
+  const exportDonCSV = async () => {
+    setExportingDon(true);
+    try {
+      const r = await donationsService.getAll({...donQueryFilters(), limit: 5000, offset: 0});
+      exportCSV(
+        r.donations || [],
+        [
+          {label: "Fecha", get: (row) => fmtDate(row.date)},
+          {
+            label: "Donante",
+            get: (row) =>
+              row.is_anonymous
+                ? "Anónimo"
+                : `${row.first_name || ""} ${row.last_name || ""}`,
+          },
+          {label: "Tipo", get: (row) => row.type},
+          {label: "Monto", get: (row) => row.amount},
+          {label: "Descripción", get: (row) => row.description || ""},
+        ],
+        "donaciones.csv",
+      );
+    } catch {}
+    setExportingDon(false);
+  };
 
   // ─── Summary helpers ─────────────────────────────────────────────────────
   const getTypeSummary = (type) =>
@@ -2120,6 +2234,8 @@ export default function FinancesPage() {
           }}
           onDeleteTransaction={setDelTx}
           onDeleteTransfer={setDelTransfer}
+          txPagination={acctTxPagination[activeAccount]}
+          onTxPageChange={(offset) => loadAccountTransactionsPage(activeAccount, offset)}
         />
       )}
 
@@ -2236,31 +2352,23 @@ export default function FinancesPage() {
               </Button>
             )}
             <div className="ml-auto flex items-center gap-3">
-              {/* Totals */}
+              {/* Totals — vienen del resumen filtrado del servidor, no de la
+                  página cargada, para que sean correctos con paginación */}
               <span className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
-                +
-                {$m(
-                  filteredTx
-                    .filter((t) => t.category_type === "INGRESO")
-                    .reduce((s, t) => s + Number(t.amount), 0),
-                )}
+                +{$m(txSummary.totalIngresos)}
               </span>
               <span className="text-sm text-red-700 dark:text-red-400 font-medium">
-                -
-                {$m(
-                  filteredTx
-                    .filter((t) => t.category_type === "EGRESO")
-                    .reduce((s, t) => s + Number(t.amount), 0),
-                )}
+                -{$m(txSummary.totalEgresos)}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={exportTxCSV}
+                disabled={exportingTx}
                 className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
               >
                 <Download className="w-4 h-4" />
-                CSV
+                {exportingTx ? "Exportando…" : "CSV"}
               </Button>
             </div>
           </div>
@@ -2268,13 +2376,17 @@ export default function FinancesPage() {
           <Card className="bg-card border-border">
             <CardContent className="p-0">
               <TransactionsTable
-                transactions={filteredTx}
+                transactions={transactions}
                 showAccount
                 onEdit={(t) => {
                   setEditTx(t);
                   setTxModal(true);
                 }}
                 onDelete={setDelTx}
+              />
+              <Pager
+                pagination={txPagination}
+                onChange={(offset) => setTxPagination((p) => ({...p, offset}))}
               />
             </CardContent>
           </Card>
@@ -2385,17 +2497,18 @@ export default function FinancesPage() {
                 variant="outline"
                 size="sm"
                 onClick={exportDonCSV}
+                disabled={exportingDon}
                 className="border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 gap-2"
               >
                 <Download className="w-4 h-4" />
-                CSV
+                {exportingDon ? "Exportando…" : "CSV"}
               </Button>
             </div>
           </div>
 
           <Card className="bg-card border-border">
             <CardContent className="p-0">
-              {filteredDon.length === 0 ? (
+              {donations.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
                   <Heart className="w-12 h-12 mx-auto mb-3 opacity-20" />
                   <p className="text-lg font-medium">
@@ -2425,7 +2538,7 @@ export default function FinancesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {filteredDon.map((d) => {
+                      {donations.map((d) => {
                         const typeInfo = DON_MAP[d.type] || {
                           label: d.type,
                           color:
@@ -2500,6 +2613,10 @@ export default function FinancesPage() {
                   </table>
                 </div>
               )}
+              <Pager
+                pagination={donPagination}
+                onChange={(offset) => setDonPagination((p) => ({...p, offset}))}
+              />
             </CardContent>
           </Card>
         </div>

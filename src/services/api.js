@@ -1132,6 +1132,10 @@ export const platformService = {
     const response = await platformApi.post(`/platform/churches/${id}/impersonate`);
     return response.data;
   },
+  deleteChurch: async (id, confirmName) => {
+    const response = await platformApi.delete(`/platform/churches/${id}`, { data: { confirmName } });
+    return response.data;
+  },
 };
 
 export default api;
