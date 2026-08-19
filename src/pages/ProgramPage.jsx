@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { programsService, membersService, settingsService } from '@/services/api';
-import { PrintLayout, PrintPage, PrintHeader, PrintFooter } from '@/components/print';
-import { exportProgramPdf } from '@/utils/pdf';
+import { buildProgramBooklet } from '@/utils/reportPrint';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog, DialogHeader, DialogContent, DialogFooter } from '@/components/ui/Dialog';
@@ -187,7 +186,6 @@ export default function ProgramPage() {
   const [pendingTemplate, setPendingTemplate] = useState(null); // items to add after create
 
   // Print
-  const [showPrint, setShowPrint]   = useState(false);
   const [churchData, setChurchData] = useState(null);
 
   // Drag & drop items
@@ -398,13 +396,18 @@ export default function ProgramPage() {
   // ── Print ──────────────────────────────────────────────────────────────────
 
   const openPrint = async () => {
-    if (!churchData) {
+    let church = churchData;
+    if (!church) {
       try {
         const data = await settingsService.getChurch();
-        setChurchData(data.church || data);
-      } catch { /* usa datos vacíos */ }
+        church = data.church || data;
+        setChurchData(church);
+      } catch { church = {}; }
     }
-    setShowPrint(true);
+    const html = buildProgramBooklet(selectedProgram.program, selectedProgram.items, church);
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
   };
 
   // ── Helpers UI ─────────────────────────────────────────────────────────────
@@ -718,16 +721,6 @@ export default function ProgramPage() {
         </div>
       )}
 
-      {/* ── Vista Previa / Imprimir ────────────────────────────────────────── */}
-      {showPrint && selectedProgram && (
-        <PrintPreview
-          program={selectedProgram.program}
-          items={selectedProgram.items}
-          church={churchData}
-          onClose={() => setShowPrint(false)}
-        />
-      )}
-
       {/* ── Modal: crear / editar programa ─────────────────────────────────── */}
       <Dialog open={programModal} onClose={() => setProgramModal(false)}>
         <DialogHeader onClose={() => setProgramModal(false)}>
@@ -1004,159 +997,6 @@ export default function ProgramPage() {
         </DialogFooter>
       </Dialog>
     </div>
-  );
-}
-
-// ── Sub-componente: Vista Previa de Impresión ─────────────────────────────────
-
-const to12h = (time24) => {
-  if (!time24) return null;
-  const [h, m] = time24.split(':').map(Number);
-  const period = h >= 12 ? 'pm' : 'am';
-  const h12 = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
-};
-
-function PrintPreview({ program, items, church, onClose }) {
-  const times = calcItemTimes(program.start_time, items);
-  const totalMins = items.reduce((acc, i) => acc + (i.duration_minutes || 0), 0);
-
-  const endTime = (() => {
-    if (!program.start_time || !totalMins) return null;
-    const [h, m] = program.start_time.slice(0, 5).split(':').map(Number);
-    const end = h * 60 + m + totalMins;
-    const endH = Math.floor(end / 60);
-    const endM = end % 60;
-    return to12h(`${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`);
-  })();
-
-  const dateLabel = new Date(program.date.slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
-
-  const documentMeta = [
-    dateLabel,
-    program.start_time ? to12h(program.start_time.slice(0, 5)) : null,
-  ].filter(Boolean).join(' · ');
-
-  const filename = `programa-${program.title.toLowerCase().replace(/\s+/g, '-')}-${program.date.slice(0, 10)}`;
-
-  return (
-    <PrintLayout
-      title="Vista Previa"
-      subtitle={program.title}
-      onClose={onClose}
-      onExportPdf={(onStart, onEnd) => exportProgramPdf(filename, onStart, onEnd)}
-    >
-      <PrintPage>
-        <PrintHeader
-          church={church}
-          documentTitle={program.title}
-          documentMeta={documentMeta}
-          documentNote={program.notes}
-        />
-
-        {/* Título de sección */}
-        <div style={{ padding: '8px 28px 6px', borderBottom: '1.5px solid #e5e7eb' }}>
-          <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#6b7280', margin: 0, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>
-            Orden del Servicio
-          </p>
-        </div>
-
-        {/* Items */}
-        <div>
-          {items.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#9ca3af', padding: '24px', fontSize: 13, fontFamily: 'Arial, sans-serif' }}>
-              Este programa no tiene items registrados.
-            </p>
-          ) : (
-            items.map((item, idx) => {
-              const typeInfo = ITEM_TYPES.find((t) => t.value === item.item_type) || ITEM_TYPES[ITEM_TYPES.length - 1];
-              const time     = times[idx];
-              const leader   = item.responsible_id
-                ? `${item.member_first_name || ''} ${item.member_last_name || ''}`.trim()
-                : item.responsible_name;
-              const isEven   = idx % 2 === 0;
-
-              return (
-                <div key={item.id} style={{
-                  display: 'flex', gap: 10, padding: '7px 28px',
-                  background: isEven ? '#f9fafb' : 'white',
-                  borderBottom: '1px solid #f3f4f6',
-                  alignItems: 'center',
-                }}>
-                  {/* Número simple */}
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, color: '#a5b4fc',
-                    flexShrink: 0, fontFamily: 'Arial, sans-serif', width: 16, textAlign: 'right',
-                  }}>
-                    {idx + 1}.
-                  </span>
-
-                  {/* Contenido */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Arial, sans-serif' }}>
-                        {typeInfo.label}
-                      </span>
-                      {item.duration_minutes && (
-                        <span style={{ fontSize: 9, background: '#f3f4f6', color: '#6b7280', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace', border: '1px solid #e5e7eb' }}>
-                          {minutesToDuration(item.duration_minutes)}
-                        </span>
-                      )}
-                      {leader && (
-                        <span style={{ fontSize: 9, color: '#9ca3af', fontFamily: 'Arial, sans-serif' }}>
-                          · {item.responsible_id ? '✓ ' : ''}{leader}
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ fontSize: 13, fontWeight: 600, margin: '2px 0 0', color: '#111827', lineHeight: 1.3 }}>
-                      {item.title}
-                    </p>
-                    {item.notes && (
-                      <p style={{ fontSize: 10, color: '#9ca3af', margin: '1px 0 0', fontStyle: 'italic', fontFamily: 'Arial, sans-serif' }}>
-                        {item.notes}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Hora en 12h */}
-                  {time && (
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', fontFamily: 'monospace' }}>
-                        {to12h(time)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Resumen de tiempos */}
-        {(totalMins > 0 || endTime) && (
-          <div style={{
-            padding: '8px 28px', background: '#f5f3ff',
-            borderTop: '1.5px solid #e0e7ff',
-            display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6,
-          }}>
-            {totalMins > 0 && (
-              <span style={{ fontSize: 11, color: '#4b5563', fontFamily: 'Arial, sans-serif' }}>
-                <strong>Duración total:</strong> {minutesToDuration(totalMins)}
-              </span>
-            )}
-            {endTime && (
-              <span style={{ fontSize: 11, color: '#4f46e5', fontWeight: 700, fontFamily: 'Arial, sans-serif' }}>
-                Fin estimado: {endTime} hrs
-              </span>
-            )}
-          </div>
-        )}
-
-        <PrintFooter church={church} generatedLabel="Programa de Culto" />
-      </PrintPage>
-    </PrintLayout>
   );
 }
 

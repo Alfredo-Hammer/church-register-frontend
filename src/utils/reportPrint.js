@@ -1827,3 +1827,290 @@ export function buildInventoryReport(items = [], church = {}, opts = {}) {
     ${footerFor(church)}
   `);
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// PROGRAMA — librillo real: hojas tamaño carta EN HORIZONTAL (11in × 8.5in),
+// cada una con dos páginas de media carta (5.5in × 8.5in) una junto a otra,
+// ya en el orden de imposición correcto para que al imprimir a doble cara y
+// doblar la hoja por la mitad, las páginas queden en orden de lectura
+// (portada, interior, contraportada) sin que el usuario tenga que
+// reordenar nada. No reutiliza el CSS/doc() genérico del resto del
+// archivo: ese está pensado para un reporte tipo carta, no para un
+// folleto que la congregación recibe en mano.
+//
+// Imposición: para un total de N páginas (múltiplo de 4 — se rellena con
+// páginas en blanco si hace falta), la hoja s (1..N/4) lleva por fuera las
+// páginas [N-2(s-1), 2(s-1)+1] y por dentro [2(s-1)+2, N-2(s-1)-1]. Es la
+// fórmula estándar de imposición "a caballo" (saddle-stitch) — para N=4 da
+// [4,1] por fuera y [2,3] por dentro, que es la cuadernillo de una sola
+// hoja de toda la vida. Si el programa no cabe en una sola hoja (más de
+// ~8 ítems), se generan varias hojas: se imprimen todas, cada una se dobla
+// por separado y se anidan en orden (hoja 1 por fuera, hoja 2 adentro,
+// etc.) — no se pueden doblar juntas de una vez.
+//
+// El volteo a doble cara correcto (borde corto vs. borde largo) depende de
+// cada impresora/driver — no hay forma de saberlo desde CSS. Se dejó la
+// recomendación más común en la nota de armado, con aviso de que puede
+// variar.
+// ─────────────────────────────────────────────────────────────────────────
+export function buildProgramBooklet(program = {}, items = [], church = {}) {
+  const DAYS_LONG = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  const to12h = (time24) => {
+    if (!time24) return null;
+    const [h, m] = time24.slice(0, 5).split(':').map(Number);
+    const period = h >= 12 ? 'p. m.' : 'a. m.';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+  };
+
+  const minutesToDuration = (mins) => {
+    if (!mins) return null;
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m ? `${h}h ${m}min` : `${h}h`;
+  };
+
+  const calcItemTimes = (startTime, list) => {
+    if (!startTime) return list.map(() => null);
+    const [h, m] = startTime.slice(0, 5).split(':').map(Number);
+    let total = h * 60 + m;
+    return list.map((it) => {
+      const t = `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+      total += it.duration_minutes || 0;
+      return t;
+    });
+  };
+
+  const times = calcItemTimes(program.start_time, items);
+  const totalMins = items.reduce((s, i) => s + (i.duration_minutes || 0), 0);
+  const endTime = (() => {
+    if (!program.start_time || !totalMins) return null;
+    const [h, m] = program.start_time.slice(0, 5).split(':').map(Number);
+    const end = h * 60 + m + totalMins;
+    return to12h(`${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`);
+  })();
+
+  let dateLabel = '';
+  if (program.date) {
+    const d = new Date(program.date.slice(0, 10) + 'T12:00:00');
+    dateLabel = `${DAYS_LONG[d.getDay()]} ${d.getDate()} de ${MONTHS_LONG[d.getMonth()]} de ${d.getFullYear()}`;
+    dateLabel = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
+  }
+
+  const ITEM_TYPE_LABEL = {
+    BIENVENIDA: 'Bienvenida', ALABANZA: 'Alabanza', ORACION: 'Oración',
+    LECTURA_BIBLICA: 'Lectura Bíblica', MENSAJE: 'Mensaje', OFRENDAS: 'Ofrendas',
+    ANUNCIOS: 'Anuncios', COMUNION: 'Santa Cena', ESPECIAL: 'Especial', OTRO: '',
+  };
+
+  const churchName = church.name || 'Iglesia';
+  const logoHtml = church.logoUrl
+    ? `<img class="bk-logo" src="${church.logoUrl}" alt="Logo">`
+    : `<div class="bk-cross">✝</div>`;
+  const contactLine = [church.address, church.phone, church.website].filter(Boolean).join(' · ');
+
+  const itemHtml = (it, idx) => {
+    const typeLabel = ITEM_TYPE_LABEL[it.item_type] || '';
+    const leader = it.responsible_id
+      ? `${it.member_first_name || ''} ${it.member_last_name || ''}`.trim()
+      : it.responsible_name;
+    const time = times[idx];
+    return `
+        <div class="bk-item">
+          <div class="bk-item-num">${idx + 1}</div>
+          <div class="bk-item-body">
+            <div class="bk-item-top">
+              ${typeLabel ? `<span class="bk-item-type">${typeLabel}</span>` : '<span></span>'}
+              ${time ? `<span class="bk-item-time">${to12h(time)}</span>` : ''}
+            </div>
+            <p class="bk-item-title">${it.title}</p>
+            ${leader ? `<p class="bk-item-leader">${leader}</p>` : ''}
+            ${it.notes ? `<p class="bk-item-notes">${it.notes}</p>` : ''}
+          </div>
+        </div>`;
+  };
+
+  // ── Paginación interior: cuántas páginas de media carta hacen falta para
+  // los ítems, a razón de ~8 por página (estimado conservador con la
+  // tipografía/márgenes de este diseño). Luego se completa hasta el
+  // múltiplo de 4 más cercano — cada hoja física aporta 4 páginas, así
+  // que el total tiene que ser múltiplo de 4 para que la imposición cierre.
+  const ITEMS_PER_PAGE = 8;
+  const interiorPageCount = items.length === 0 ? 1 : Math.ceil(items.length / ITEMS_PER_PAGE);
+  const interiorChunks = [];
+  for (let i = 0; i < interiorPageCount; i++) {
+    interiorChunks.push(items.slice(i * ITEMS_PER_PAGE, (i + 1) * ITEMS_PER_PAGE));
+  }
+  const rawTotal = 2 + interiorPageCount; // portada + interior + contraportada
+  const totalPages = Math.ceil(rawTotal / 4) * 4;
+  const numSheets = totalPages / 4;
+  const isMultiSheet = numSheets > 1;
+
+  const creatorLine = program.created_by_name
+    ? `Generado por Sistema Congrega — Creado por: ${program.created_by_name}`
+    : 'Generado por Sistema Congrega';
+
+  // Páginas que no son la portada llevan una decoración distinta: una
+  // raya arriba y abajo con el número de página, en vez del marco de
+  // doble línea (ese queda exclusivo de la portada).
+  const wrapPlain = (pageNum, innerHtml, extraClass = '') => `
+    <div class="bk-plain-page ${extraClass}">
+      <p class="bk-folio">${pageNum}</p>
+      <div class="bk-folio-rule"></div>
+      <div class="bk-page-body">${innerHtml}</div>
+      <div class="bk-folio-rule"></div>
+      <p class="bk-folio">${pageNum}</p>
+    </div>`;
+
+  // ── Contenido de cada página lógica, por número (1 = portada, totalPages
+  // = contraportada, en medio = ítems repartidos en interiorChunks, y
+  // cualquier sobrante hasta completar el múltiplo de 4 queda en blanco).
+  const pageContent = (pageNum) => {
+    if (pageNum === 1) {
+      return `<div class="bk-cover-frame">
+        ${logoHtml}
+        <p class="bk-church-name">${churchName}</p>
+        <div class="bk-rule"></div>
+        <h1 class="bk-title">${program.title || 'Programa'}</h1>
+        ${dateLabel ? `<p class="bk-date">${dateLabel}</p>` : ''}
+        ${program.start_time ? `<p class="bk-time">${to12h(program.start_time)} hrs</p>` : ''}
+        ${totalMins > 0 ? `<p class="bk-duration">Duración aproximada: ${minutesToDuration(totalMins)}</p>` : ''}
+        ${program.notes ? `<p class="bk-cover-note">${program.notes}</p>` : ''}
+        <p class="bk-cover-footer">${creatorLine}</p>
+      </div>`;
+    }
+    if (pageNum === totalPages) {
+      const inner = `<div class="bk-back">
+        ${(totalMins > 0 || endTime) ? `<p class="bk-summary">
+          ${totalMins > 0 ? `<strong>Duración estimada:</strong> ${minutesToDuration(totalMins)}` : ''}
+          ${endTime ? `${totalMins > 0 ? ' &nbsp;·&nbsp; ' : ''}<strong>Fin estimado:</strong> ${endTime}` : ''}
+        </p>` : ''}
+        <div class="bk-rule"></div>
+        <p class="bk-church-name-back">${churchName}</p>
+        ${contactLine ? `<p class="bk-contact">${contactLine}</p>` : ''}
+        <p class="bk-thanks">Gracias por acompañarnos hoy</p>
+      </div>`;
+      return wrapPlain(pageNum, inner, 'bk-plain-center');
+    }
+    const chunkIdx = pageNum - 2; // páginas 2..(2+interiorPageCount-1)
+    if (chunkIdx >= 0 && chunkIdx < interiorChunks.length) {
+      const chunk = interiorChunks[chunkIdx];
+      const startNum = chunkIdx * ITEMS_PER_PAGE;
+      const body = chunk.length === 0
+        ? `<p class="bk-empty">Este programa aún no tiene elementos.</p>`
+        : chunk.map((it, i) => itemHtml(it, startNum + i)).join('');
+      const inner = `${chunkIdx === 0 ? `<p class="bk-section-title">Orden del Culto</p>` : ''}${body}`;
+      return wrapPlain(pageNum, inner);
+    }
+    return wrapPlain(pageNum, ''); // página de relleno en blanco
+  };
+
+  // ── Imposición: para cada hoja s (1..numSheets), lado exterior lleva
+  // [totalPages-2(s-1), 2(s-1)+1] y el interior [2(s-1)+2, totalPages-2(s-1)-1]
+  // — fórmula estándar de cuadernillo/saddle-stitch (N=4 da [4,1] y [2,3]).
+  let sheetsHtml = '';
+  for (let s = 1; s <= numSheets; s++) {
+    const outerLeft = totalPages - 2 * (s - 1);
+    const outerRight = 2 * (s - 1) + 1;
+    const innerLeft = 2 * (s - 1) + 2;
+    const innerRight = totalPages - 2 * (s - 1) - 1;
+    const isLastSide = s === numSheets;
+    sheetsHtml += `
+    <div class="bk-sheet">
+      <div class="bk-panel">${pageContent(outerLeft)}</div>
+      <div class="bk-panel">${pageContent(outerRight)}</div>
+    </div>
+    <div class="bk-sheet"${isLastSide ? ' style="page-break-after:auto"' : ''}>
+      <div class="bk-panel">${pageContent(innerLeft)}</div>
+      <div class="bk-panel">${pageContent(innerRight)}</div>
+    </div>`;
+  }
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${program.title || 'Programa'} — Librillo</title>
+<style>
+  @page { size: 11in 8.5in; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1f2430; font-size: 12px; line-height: 1.5; }
+
+  .bk-sheet { display: flex; width: 11in; height: 8.5in; page-break-after: always; }
+
+  .bk-panel { width: 5.5in; height: 8.5in; padding: 0.32in; box-sizing: border-box; }
+
+  /* Portada: única página con el marco de doble línea */
+  .bk-cover-frame {
+    width: 100%; height: 100%; box-sizing: border-box; position: relative;
+    border: 1.5px solid #c9b98a; outline: 0.75px solid #c9b98a; outline-offset: 5px;
+    padding: 0.3in 0.34in; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; gap: 4px;
+  }
+  .bk-logo { max-height: 80px; max-width: 70%; object-fit: contain; margin: 0 auto 8px; }
+  .bk-cross { font-size: 42px; color: #94a3b8; margin-bottom: 8px; }
+  .bk-church-name { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #6b7280; }
+  .bk-rule { width: 56px; height: 1px; background: #cbd5e1; margin: 16px auto; }
+  .bk-title { font-size: 23px; font-weight: 700; color: #111827; line-height: 1.25; padding: 0 6px; }
+  .bk-date { font-size: 12.5px; color: #4b5563; margin-top: 13px; }
+  .bk-time { font-size: 11.5px; color: #6b7280; margin-top: 2px; }
+  .bk-duration { font-size: 11px; color: #9c8b5e; font-weight: 600; margin-top: 6px; }
+  .bk-cover-note { font-size: 10.5px; color: #6b7280; font-style: italic; margin-top: 18px; max-width: 85%; margin-left: auto; margin-right: auto; }
+  .bk-cover-footer { position: absolute; bottom: 0.28in; left: 0; right: 0; text-align: center; font-size: 8.5px; color: #b3a984; font-family: Arial, sans-serif; letter-spacing: 0.3px; }
+
+  /* Todas las demás páginas: raya + número arriba y abajo, sin marco */
+  .bk-plain-page { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0.3in 0.34in; }
+  .bk-folio { text-align: center; font-size: 9px; letter-spacing: 2px; color: #b3a984; font-family: Arial, sans-serif; }
+  .bk-folio-rule { height: 1px; background: #e3ddc9; margin: 4px 0 10px; }
+  .bk-folio-rule:last-of-type { margin: 10px 0 4px; }
+  .bk-page-body { flex: 1; min-height: 0; }
+  .bk-plain-center .bk-page-body { display: flex; }
+  .bk-back { width: 100%; align-items: center; justify-content: center; text-align: center; gap: 4px; display: flex; flex-direction: column; }
+
+  .bk-section-title { font-size: 9.5px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #9ca3af; text-align: center; margin-bottom: 12px; }
+  .bk-item { display: flex; gap: 9px; padding: 7px 0; border-bottom: 1px solid #eef0f3; page-break-inside: avoid; break-inside: avoid; }
+  .bk-item:last-child { border-bottom: none; }
+  .bk-item-num { font-size: 10px; font-weight: 700; color: #c3c9d4; width: 15px; text-align: right; flex-shrink: 0; padding-top: 1px; }
+  .bk-item-body { flex: 1; min-width: 0; }
+  .bk-item-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .bk-item-type { font-size: 8px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #9c8b5e; }
+  .bk-item-time { font-size: 9.5px; color: #9ca3af; font-family: 'Courier New', monospace; flex-shrink: 0; }
+  .bk-item-title { font-size: 12px; font-weight: 600; color: #111827; margin-top: 1px; }
+  .bk-item-leader { font-size: 10px; color: #6b7280; margin-top: 1px; }
+  .bk-item-leader::before { content: "— "; }
+  .bk-item-notes { font-size: 9.5px; color: #9ca3af; font-style: italic; margin-top: 2px; }
+  .bk-empty { text-align: center; color: #9ca3af; padding: 26px 0; font-size: 11px; }
+
+  .bk-summary { font-size: 11.5px; color: #4b5563; margin-bottom: 16px; }
+  .bk-summary strong { color: #111827; }
+  .bk-church-name-back { font-size: 13px; font-weight: 700; color: #111827; }
+  .bk-contact { font-size: 9.5px; color: #6b7280; margin-top: 4px; }
+  .bk-thanks { font-size: 10.5px; color: #6b7280; font-style: italic; margin-top: 18px; }
+
+  .no-print { display: none; }
+  @media screen {
+    body { background: #e5e7eb; padding: 24px 0; }
+    .bk-sheet { background: #fff; margin: 0 auto 20px; box-shadow: 0 4px 18px rgba(0,0,0,.12); }
+    .no-print { display: block; text-align: center; max-width: 11in; margin: 0 auto 16px; font-size: 12px; color: #4b5563; font-family: Arial, sans-serif; line-height: 1.6; }
+  }
+  .actions { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 8px; z-index: 100; }
+  .btn-print { background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(79,70,229,.4); font-family: Arial, sans-serif; }
+  .btn-close { background: #e2e8f0; color: #334155; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: Arial, sans-serif; }
+  @media print { .actions, .no-print { display: none !important; } }
+</style></head><body>
+
+  <p class="no-print">
+    Hojas tamaño carta en horizontal — cada una trae dos páginas de media carta ya en el orden correcto para doblar.
+    Imprime a doble cara (recomendado: volteo por el borde corto — si el orden sale invertido, prueba con borde largo,
+    varía según la impresora) y dobla cada hoja por la mitad.
+    ${isMultiSheet ? `Este programa usa ${numSheets} hojas: imprímelas todas, dobla cada una por separado y encájalas en orden (hoja 1 por fuera, hoja 2 adentro, y así sucesivamente) para armar el librillo completo.` : 'Al doblarla ya tienes el librillo completo.'}
+  </p>
+
+  ${sheetsHtml}
+
+  <div class="actions">
+    <button class="btn-print" onclick="window.print()">🖨&nbsp; Imprimir / Guardar PDF</button>
+    <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  </div>
+</body></html>`;
+}
