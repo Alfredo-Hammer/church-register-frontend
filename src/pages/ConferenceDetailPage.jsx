@@ -1332,12 +1332,15 @@ export default function ConferenceDetailPage() {
                       {currentDay.sessions.map((session) => (
                         <div key={session.id}
                           className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-muted/40 transition-colors">
-                          {/* Hora (+ tipo, solo en móvil) */}
-                          <div className="flex items-center gap-2 sm:w-24 sm:shrink-0">
-                            <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">
-                              {session.time_start ? formatTime(session.time_start) : "—"}
-                              {session.time_end && <span className="opacity-60"> – {formatTime(session.time_end)}</span>}
-                            </span>
+                          {/* Hora (+ tipo, solo en móvil). Inicio y fin en
+                              líneas separadas — en una sola línea "11:00 AM –
+                              12:00 PM" no cabía en una columna angosta y se
+                              montaba encima de la píldora de tipo. */}
+                          <div className="flex items-center gap-2 sm:w-20 sm:shrink-0">
+                            <div className="text-xs font-medium text-muted-foreground tabular-nums leading-tight whitespace-nowrap">
+                              <div>{session.time_start ? formatTime(session.time_start) : "—"}</div>
+                              {session.time_end && <div className="opacity-60">– {formatTime(session.time_end)}</div>}
+                            </div>
                             <span className="sm:hidden"><TypeBadge type={session.type} /></span>
                           </div>
 

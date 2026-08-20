@@ -150,16 +150,21 @@ export default function InventoryDetailPage() {
 
       <div className="rounded-3xl border border-border bg-card shadow-[0_18px_45px_rgba(15,23,42,0.08)] overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-5">
-          {/* Imagen grande */}
-          <div className="md:col-span-2 bg-gradient-to-br from-indigo-500/10 via-card to-violet-500/10 p-6 flex items-center justify-center border-b md:border-b-0 md:border-r border-border">
+          {/* Imagen grande — el panel ocupa toda la altura de la fila del
+              grid (que la marca la columna de datos, a su derecha) en vez de
+              forzarse a un cuadrado propio; object-contain solo evita el
+              recorte, ya no deja tanto espacio muerto porque la caja que
+              rellena es la real, no una impuesta. min-h-* es el respaldo en
+              móvil, donde al ser una sola columna no hay fila que igualar. */}
+          <div className="md:col-span-2 min-h-[320px] md:min-h-0 bg-gradient-to-br from-indigo-500/10 via-card to-violet-500/10 p-6 flex items-center justify-center border-b md:border-b-0 md:border-r border-border">
             {item.photo_url ? (
               <img
                 src={item.photo_url}
                 alt={item.name}
-                className="w-full aspect-square object-cover rounded-2xl shadow-lg ring-1 ring-border"
+                className="w-full h-full object-contain rounded-2xl shadow-lg ring-1 ring-border bg-background/40"
               />
             ) : (
-              <div className="w-full aspect-square rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
+              <div className="w-full h-full rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
                 <Boxes className="w-20 h-20 text-white/90" />
               </div>
             )}
