@@ -1933,17 +1933,65 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
         </div>`;
   };
 
-  // ── Paginación interior: cuántas páginas de media carta hacen falta para
-  // los ítems, a razón de ~8 por página (estimado conservador con la
-  // tipografía/márgenes de este diseño). Luego se completa hasta el
-  // múltiplo de 4 más cercano — cada hoja física aporta 4 páginas, así
-  // que el total tiene que ser múltiplo de 4 para que la imposición cierre.
-  const ITEMS_PER_PAGE = 8;
-  const interiorPageCount = items.length === 0 ? 1 : Math.ceil(items.length / ITEMS_PER_PAGE);
+  // ── Paginación interior: por ALTURA estimada de cada ítem, no por conteo
+  // fijo — un conteo fijo (probado antes con 8/página) se quedaba corto
+  // cuando la mayoría de los ítems no tenían responsable/notas (dejaba
+  // media página vacía) y sobraban hojas completas en blanco al completar
+  // el múltiplo de 4. Un primer intento de estimado por altura (0.34/0.15/0.14in)
+  // resultó CORTO — un programa real de 13 ítems (con líder la mayoría)
+  // desbordó la caja ~220px. Recalibrado midiendo scrollHeight real contra
+  // bodyBoxHeight en el navegador: para .bk-item con line-height:1.5,
+  // título 12px + renglón tipo/hora ~9.5px + padding 14px + borde 1px dan
+  // ~0.50in base; cada renglón extra (líder ~10px, notas ~9.5px) agrega
+  // ~0.17in. El presupuesto de página (bodyBoxHeight medido ≈ 6.67in) lleva
+  // un 5% de margen de seguridad para títulos largos que envuelvan a una
+  // segunda línea (no se mide el ancho de texto real, es una aproximación).
+  const ITEM_BASE_IN = 0.50;
+  const ITEM_LEADER_IN = 0.17;
+  const ITEM_NOTES_IN = 0.17;
+  const PAGE_BUDGET_FIRST_IN = 6.05; // primera página interior: trae el título "Orden del Culto"
+  const PAGE_BUDGET_REST_IN = 6.3;
+
+  const estimateItemHeight = (it) => {
+    let h = ITEM_BASE_IN;
+    if (it.responsible_id || it.responsible_name) h += ITEM_LEADER_IN;
+    if (it.notes) h += ITEM_NOTES_IN;
+    return h;
+  };
+
   const interiorChunks = [];
-  for (let i = 0; i < interiorPageCount; i++) {
-    interiorChunks.push(items.slice(i * ITEMS_PER_PAGE, (i + 1) * ITEMS_PER_PAGE));
+  if (items.length === 0) {
+    interiorChunks.push([]);
+  } else {
+    let current = [];
+    let currentHeight = 0;
+    let budget = PAGE_BUDGET_FIRST_IN;
+    for (const it of items) {
+      const h = estimateItemHeight(it);
+      if (current.length > 0 && currentHeight + h > budget) {
+        interiorChunks.push(current);
+        current = [];
+        currentHeight = 0;
+        budget = PAGE_BUDGET_REST_IN;
+      }
+      current.push(it);
+      currentHeight += h;
+    }
+    interiorChunks.push(current);
   }
+  const interiorPageCount = interiorChunks.length;
+  const interiorChunkStarts = [];
+  {
+    let offset = 0;
+    for (const chunk of interiorChunks) {
+      interiorChunkStarts.push(offset);
+      offset += chunk.length;
+    }
+  }
+
+  // Cada hoja física aporta 4 páginas, así que el total tiene que ser
+  // múltiplo de 4 para que la imposición cierre — se completa con páginas
+  // en blanco solo lo estrictamente necesario.
   const rawTotal = 2 + interiorPageCount; // portada + interior + contraportada
   const totalPages = Math.ceil(rawTotal / 4) * 4;
   const numSheets = totalPages / 4;
@@ -1998,7 +2046,7 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
     const chunkIdx = pageNum - 2; // páginas 2..(2+interiorPageCount-1)
     if (chunkIdx >= 0 && chunkIdx < interiorChunks.length) {
       const chunk = interiorChunks[chunkIdx];
-      const startNum = chunkIdx * ITEMS_PER_PAGE;
+      const startNum = interiorChunkStarts[chunkIdx];
       const body = chunk.length === 0
         ? `<p class="bk-empty">Este programa aún no tiene elementos.</p>`
         : chunk.map((it, i) => itemHtml(it, startNum + i)).join('');
