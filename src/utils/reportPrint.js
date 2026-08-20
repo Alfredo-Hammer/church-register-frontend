@@ -1933,24 +1933,21 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
         </div>`;
   };
 
-  // ── Paginación interior: por ALTURA estimada de cada ítem, no por conteo
-  // fijo — un conteo fijo (probado antes con 8/página) se quedaba corto
-  // cuando la mayoría de los ítems no tenían responsable/notas (dejaba
-  // media página vacía) y sobraban hojas completas en blanco al completar
-  // el múltiplo de 4. Un primer intento de estimado por altura (0.34/0.15/0.14in)
-  // resultó CORTO — un programa real de 13 ítems (con líder la mayoría)
-  // desbordó la caja ~220px. Recalibrado midiendo scrollHeight real contra
-  // bodyBoxHeight en el navegador: para .bk-item con line-height:1.5,
-  // título 12px + renglón tipo/hora ~9.5px + padding 14px + borde 1px dan
-  // ~0.50in base; cada renglón extra (líder ~10px, notas ~9.5px) agrega
-  // ~0.17in. El presupuesto de página (bodyBoxHeight medido ≈ 6.67in) lleva
-  // un 5% de margen de seguridad para títulos largos que envuelvan a una
-  // segunda línea (no se mide el ancho de texto real, es una aproximación).
-  const ITEM_BASE_IN = 0.50;
+  // ── Paginación interior: por ALTURA estimada de cada ítem (no por conteo
+  // fijo por página, que deja páginas a medio llenar y sobra en hojas
+  // blancas al completar el múltiplo de 4 que exige la imposición).
+  // El presupuesto es uniforme en todas las páginas interiores porque el
+  // rediseño movió el título "Orden del Culto" de estar en línea (solo en
+  // la primera página) a una cabecera editorial fija de igual alto en
+  // todas las páginas — ya no hace falta distinguir primera/resto.
+  // Constantes recalibradas para el rediseño (rótulo tipo en píldora,
+  // numeral en círculo, notas con borde izquierdo) contra scrollHeight
+  // real medido en el navegador — ver nota de verificación en el historial
+  // de memoria del proyecto si se vuelve a tocar la tipografía de .bk-item.
+  const ITEM_BASE_IN = 0.51;
   const ITEM_LEADER_IN = 0.17;
   const ITEM_NOTES_IN = 0.17;
-  const PAGE_BUDGET_FIRST_IN = 6.05; // primera página interior: trae el título "Orden del Culto"
-  const PAGE_BUDGET_REST_IN = 6.3;
+  const PAGE_BUDGET_IN = 6.25;
 
   const estimateItemHeight = (it) => {
     let h = ITEM_BASE_IN;
@@ -1965,14 +1962,12 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   } else {
     let current = [];
     let currentHeight = 0;
-    let budget = PAGE_BUDGET_FIRST_IN;
     for (const it of items) {
       const h = estimateItemHeight(it);
-      if (current.length > 0 && currentHeight + h > budget) {
+      if (current.length > 0 && currentHeight + h > PAGE_BUDGET_IN) {
         interiorChunks.push(current);
         current = [];
         currentHeight = 0;
-        budget = PAGE_BUDGET_REST_IN;
       }
       current.push(it);
       currentHeight += h;
@@ -2001,17 +1996,24 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
     ? `Generado por Sistema Congrega — Creado por: ${program.created_by_name}`
     : 'Generado por Sistema Congrega';
 
-  // Páginas que no son la portada llevan una decoración distinta: una
-  // raya arriba y abajo con el número de página, en vez del marco de
-  // doble línea (ese queda exclusivo de la portada).
-  const wrapPlain = (pageNum, innerHtml, extraClass = '') => `
-    <div class="bk-plain-page ${extraClass}">
-      <p class="bk-folio">${pageNum}</p>
-      <div class="bk-folio-rule"></div>
+  // Páginas que no son la portada: cabecera editorial fija arriba (nombre
+  // de iglesia + sección, vacía en contraportada/relleno) y el folio SOLO
+  // abajo, pegado al margen exterior — izquierda en páginas pares, derecha
+  // en impares — como en un libro real, en vez de un número centrado
+  // repetido arriba y abajo.
+  const wrapPlain = (pageNum, innerHtml, opts = {}) => {
+    const { headerLabel = '', center = false } = opts;
+    const sideClass = pageNum % 2 === 0 ? 'bk-folio-left' : 'bk-folio-right';
+    return `
+    <div class="bk-plain-page${center ? ' bk-plain-center' : ''}">
+      <div class="bk-run-head">${headerLabel ? `<span>${headerLabel}</span>` : ''}</div>
       <div class="bk-page-body">${innerHtml}</div>
-      <div class="bk-folio-rule"></div>
-      <p class="bk-folio">${pageNum}</p>
+      <div class="bk-folio-bar ${sideClass}">
+        <span class="bk-folio-rule"></span>
+        <span class="bk-folio-num">${pageNum}</span>
+      </div>
     </div>`;
+  };
 
   // ── Contenido de cada página lógica, por número (1 = portada, totalPages
   // = contraportada, en medio = ítems repartidos en interiorChunks, y
@@ -2019,29 +2021,46 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   const pageContent = (pageNum) => {
     if (pageNum === 1) {
       return `<div class="bk-cover-frame">
-        ${logoHtml}
-        <p class="bk-church-name">${churchName}</p>
-        <div class="bk-rule"></div>
-        <h1 class="bk-title">${program.title || 'Programa'}</h1>
-        ${dateLabel ? `<p class="bk-date">${dateLabel}</p>` : ''}
-        ${program.start_time ? `<p class="bk-time">${to12h(program.start_time)} hrs</p>` : ''}
-        ${totalMins > 0 ? `<p class="bk-duration">Duración aproximada: ${minutesToDuration(totalMins)}</p>` : ''}
-        ${program.notes ? `<p class="bk-cover-note">${program.notes}</p>` : ''}
-        <p class="bk-cover-footer">${creatorLine}</p>
+        <span class="bk-corner bk-corner-tl"></span>
+        <span class="bk-corner bk-corner-tr"></span>
+        <span class="bk-corner bk-corner-bl"></span>
+        <span class="bk-corner bk-corner-br"></span>
+        <div class="bk-cover-top">
+          ${logoHtml}
+          <p class="bk-church-name">${churchName}</p>
+        </div>
+        <div class="bk-cover-mid">
+          <span class="bk-eyebrow">Orden del Culto</span>
+          <h1 class="bk-title">${program.title || 'Programa'}</h1>
+          <div class="bk-cover-divider"></div>
+          ${dateLabel ? `<p class="bk-date">${dateLabel}</p>` : ''}
+          ${(program.start_time || totalMins > 0) ? `<div class="bk-meta-row">
+            ${program.start_time ? `<span class="bk-meta-pill">${to12h(program.start_time)} hrs</span>` : ''}
+            ${totalMins > 0 ? `<span class="bk-meta-pill">${minutesToDuration(totalMins)}</span>` : ''}
+          </div>` : ''}
+          ${program.notes ? `<p class="bk-cover-note">${program.notes}</p>` : ''}
+        </div>
+        <div class="bk-cover-footer">
+          <span class="bk-cover-footer-line"></span>
+          <p>${creatorLine}</p>
+        </div>
       </div>`;
     }
     if (pageNum === totalPages) {
+      const showStats = totalMins > 0 || endTime;
       const inner = `<div class="bk-back">
-        ${(totalMins > 0 || endTime) ? `<p class="bk-summary">
-          ${totalMins > 0 ? `<strong>Duración estimada:</strong> ${minutesToDuration(totalMins)}` : ''}
-          ${endTime ? `${totalMins > 0 ? ' &nbsp;·&nbsp; ' : ''}<strong>Fin estimado:</strong> ${endTime}` : ''}
-        </p>` : ''}
+        <div class="bk-back-mark">✝</div>
+        ${showStats ? `<div class="bk-stats">
+          ${totalMins > 0 ? `<div class="bk-stat"><span class="bk-stat-label">Duración</span><span class="bk-stat-value">${minutesToDuration(totalMins)}</span></div>` : ''}
+          ${(totalMins > 0 && endTime) ? `<div class="bk-stat-divider"></div>` : ''}
+          ${endTime ? `<div class="bk-stat"><span class="bk-stat-label">Fin estimado</span><span class="bk-stat-value">${endTime}</span></div>` : ''}
+        </div>` : ''}
         <div class="bk-rule"></div>
         <p class="bk-church-name-back">${churchName}</p>
         ${contactLine ? `<p class="bk-contact">${contactLine}</p>` : ''}
         <p class="bk-thanks">Gracias por acompañarnos hoy</p>
       </div>`;
-      return wrapPlain(pageNum, inner, 'bk-plain-center');
+      return wrapPlain(pageNum, inner, { center: true });
     }
     const chunkIdx = pageNum - 2; // páginas 2..(2+interiorPageCount-1)
     if (chunkIdx >= 0 && chunkIdx < interiorChunks.length) {
@@ -2050,8 +2069,7 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
       const body = chunk.length === 0
         ? `<p class="bk-empty">Este programa aún no tiene elementos.</p>`
         : chunk.map((it, i) => itemHtml(it, startNum + i)).join('');
-      const inner = `${chunkIdx === 0 ? `<p class="bk-section-title">Orden del Culto</p>` : ''}${body}`;
-      return wrapPlain(pageNum, inner);
+      return wrapPlain(pageNum, body, { headerLabel: `${churchName} &middot; Orden del Culto` });
     }
     return wrapPlain(pageNum, ''); // página de relleno en blanco
   };
@@ -2080,60 +2098,93 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>${program.title || 'Programa'} — Librillo</title>
 <style>
+  :root {
+    --ink: #1c1f26;
+    --ink-soft: #4b4f58;
+    --muted: #8a8e97;
+    --gold: #a9835a;
+    --gold-deep: #8a6a41;
+    --gold-soft: #cdb890;
+    --rule: #e8e2d3;
+    --rule-strong: #d8cfb8;
+  }
   @page { size: 11in 8.5in; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Georgia, 'Times New Roman', serif; color: #1f2430; font-size: 12px; line-height: 1.5; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: var(--ink); font-size: 12px; line-height: 1.5; }
 
   .bk-sheet { display: flex; width: 11in; height: 8.5in; page-break-after: always; }
 
-  .bk-panel { width: 5.5in; height: 8.5in; padding: 0.32in; box-sizing: border-box; }
+  .bk-panel { width: 5.5in; height: 8.5in; padding: 0.32in; box-sizing: border-box; background: #fff; }
 
-  /* Portada: única página con el marco de doble línea */
+  /* ── Portada: zonas arriba/medio/abajo repartidas con space-between,
+     esquinas abiertas en vez de un recuadro cerrado — look editorial en
+     vez de diploma. ── */
   .bk-cover-frame {
     width: 100%; height: 100%; box-sizing: border-box; position: relative;
-    border: 1.5px solid #c9b98a; outline: 0.75px solid #c9b98a; outline-offset: 5px;
-    padding: 0.3in 0.34in; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center; gap: 4px;
+    padding: 0.4in 0.42in; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; text-align: center;
   }
-  .bk-logo { max-height: 80px; max-width: 70%; object-fit: contain; margin: 0 auto 8px; }
-  .bk-cross { font-size: 42px; color: #94a3b8; margin-bottom: 8px; }
-  .bk-church-name { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #6b7280; }
-  .bk-rule { width: 56px; height: 1px; background: #cbd5e1; margin: 16px auto; }
-  .bk-title { font-size: 23px; font-weight: 700; color: #111827; line-height: 1.25; padding: 0 6px; }
-  .bk-date { font-size: 12.5px; color: #4b5563; margin-top: 13px; }
-  .bk-time { font-size: 11.5px; color: #6b7280; margin-top: 2px; }
-  .bk-duration { font-size: 11px; color: #9c8b5e; font-weight: 600; margin-top: 6px; }
-  .bk-cover-note { font-size: 10.5px; color: #6b7280; font-style: italic; margin-top: 18px; max-width: 85%; margin-left: auto; margin-right: auto; }
-  .bk-cover-footer { position: absolute; bottom: 0.28in; left: 0; right: 0; text-align: center; font-size: 8.5px; color: #b3a984; font-family: Arial, sans-serif; letter-spacing: 0.3px; }
+  .bk-corner { position: absolute; width: 20px; height: 20px; }
+  .bk-corner-tl { top: 0.26in; left: 0.26in; border-top: 1.25px solid var(--gold); border-left: 1.25px solid var(--gold); }
+  .bk-corner-tr { top: 0.26in; right: 0.26in; border-top: 1.25px solid var(--gold); border-right: 1.25px solid var(--gold); }
+  .bk-corner-bl { bottom: 0.26in; left: 0.26in; border-bottom: 1.25px solid var(--gold); border-left: 1.25px solid var(--gold); }
+  .bk-corner-br { bottom: 0.26in; right: 0.26in; border-bottom: 1.25px solid var(--gold); border-right: 1.25px solid var(--gold); }
 
-  /* Todas las demás páginas: raya + número arriba y abajo, sin marco */
-  .bk-plain-page { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0.3in 0.34in; }
-  .bk-folio { text-align: center; font-size: 9px; letter-spacing: 2px; color: #b3a984; font-family: Arial, sans-serif; }
-  .bk-folio-rule { height: 1px; background: #e3ddc9; margin: 4px 0 10px; }
-  .bk-folio-rule:last-of-type { margin: 10px 0 4px; }
+  .bk-cover-top { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bk-logo { max-height: 64px; max-width: 60%; object-fit: contain; }
+  .bk-cross { font-size: 30px; color: var(--gold-soft); line-height: 1; }
+  .bk-church-name { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; }
+
+  .bk-cover-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 88%; }
+  .bk-eyebrow { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-deep); font-family: Arial, sans-serif; font-weight: 700; margin-bottom: 4px; }
+  .bk-title { font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .bk-cover-divider { width: 34px; height: 2px; background: var(--gold); margin: 14px 0; }
+  .bk-date { font-size: 12.5px; color: var(--ink-soft); }
+  .bk-meta-row { display: flex; gap: 8px; margin-top: 10px; }
+  .bk-meta-pill { font-size: 10px; color: var(--ink-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; padding: 4px 12px; border: 1px solid var(--rule-strong); border-radius: 20px; }
+  .bk-cover-note { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 16px; }
+
+  .bk-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bk-cover-footer-line { width: 100%; max-width: 120px; height: 1px; background: var(--rule); }
+  .bk-cover-footer p { font-size: 8.5px; color: var(--gold-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; }
+
+  /* ── Resto de páginas: cabecera editorial fija arriba (una raya, con o
+     sin texto), folio SOLO abajo pegado al margen exterior. ── */
+  .bk-plain-page { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0.34in 0.38in; }
+  .bk-run-head { height: 0.24in; display: flex; align-items: center; font-size: 8px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; border-bottom: 1px solid var(--rule); margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bk-page-body { flex: 1; min-height: 0; }
   .bk-plain-center .bk-page-body { display: flex; }
-  .bk-back { width: 100%; align-items: center; justify-content: center; text-align: center; gap: 4px; display: flex; flex-direction: column; }
+  .bk-back { width: 100%; height: 100%; align-items: center; justify-content: center; text-align: center; gap: 4px; display: flex; flex-direction: column; }
+  .bk-back-mark { font-size: 22px; color: var(--gold-soft); margin-bottom: 6px; }
+  .bk-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
+  .bk-stat { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .bk-stat-label { font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; }
+  .bk-stat-value { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .bk-stat-divider { width: 1px; height: 26px; background: var(--rule-strong); }
 
-  .bk-section-title { font-size: 9.5px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #9ca3af; text-align: center; margin-bottom: 12px; }
-  .bk-item { display: flex; gap: 9px; padding: 7px 0; border-bottom: 1px solid #eef0f3; page-break-inside: avoid; break-inside: avoid; }
+  .bk-folio-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .bk-folio-bar.bk-folio-left { justify-content: flex-start; }
+  .bk-folio-bar.bk-folio-right { justify-content: flex-end; flex-direction: row-reverse; }
+  .bk-folio-rule { width: 22px; height: 1px; background: var(--rule-strong); }
+  .bk-folio-num { font-size: 9px; color: var(--muted); font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+
+  .bk-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); page-break-inside: avoid; break-inside: avoid; }
   .bk-item:last-child { border-bottom: none; }
-  .bk-item-num { font-size: 10px; font-weight: 700; color: #c3c9d4; width: 15px; text-align: right; flex-shrink: 0; padding-top: 1px; }
+  .bk-item-num { width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--rule-strong); display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--muted); font-family: Arial, sans-serif; flex-shrink: 0; margin-top: 1px; }
   .bk-item-body { flex: 1; min-width: 0; }
-  .bk-item-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .bk-item-type { font-size: 8px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #9c8b5e; }
-  .bk-item-time { font-size: 9.5px; color: #9ca3af; font-family: 'Courier New', monospace; flex-shrink: 0; }
-  .bk-item-title { font-size: 12px; font-weight: 600; color: #111827; margin-top: 1px; }
-  .bk-item-leader { font-size: 10px; color: #6b7280; margin-top: 1px; }
+  .bk-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .bk-item-type { font-size: 7px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-deep); background: rgba(169,131,90,0.12); padding: 2px 7px; border-radius: 20px; font-family: Arial, sans-serif; }
+  .bk-item-time { font-size: 9.5px; color: var(--muted); font-family: 'Courier New', monospace; flex-shrink: 0; }
+  .bk-item-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 3px; }
+  .bk-item-leader { font-size: 10px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
   .bk-item-leader::before { content: "— "; }
-  .bk-item-notes { font-size: 9.5px; color: #9ca3af; font-style: italic; margin-top: 2px; }
-  .bk-empty { text-align: center; color: #9ca3af; padding: 26px 0; font-size: 11px; }
+  .bk-item-notes { font-size: 9.5px; color: var(--muted); font-style: italic; margin-top: 2px; padding-left: 7px; border-left: 2px solid var(--gold-soft); }
+  .bk-empty { text-align: center; color: var(--muted); padding: 26px 0; font-size: 11px; }
 
-  .bk-summary { font-size: 11.5px; color: #4b5563; margin-bottom: 16px; }
-  .bk-summary strong { color: #111827; }
-  .bk-church-name-back { font-size: 13px; font-weight: 700; color: #111827; }
-  .bk-contact { font-size: 9.5px; color: #6b7280; margin-top: 4px; }
-  .bk-thanks { font-size: 10.5px; color: #6b7280; font-style: italic; margin-top: 18px; }
+  .bk-rule { width: 44px; height: 1px; background: var(--rule-strong); margin: 4px 0; }
+  .bk-church-name-back { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .bk-contact { font-size: 9.5px; color: var(--muted); margin-top: 2px; }
+  .bk-thanks { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 14px; }
 
   .no-print { display: none; }
   @media screen {
