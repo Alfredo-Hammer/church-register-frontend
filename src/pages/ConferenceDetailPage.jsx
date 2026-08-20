@@ -1144,13 +1144,13 @@ export default function ConferenceDetailPage() {
         </button>
 
         <div className="rounded-3xl border border-border bg-gradient-to-br from-card via-card to-blue-500/5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] overflow-hidden">
-          <div className="flex flex-wrap items-start justify-between gap-4 p-5 md:p-6">
-            <div className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-5 md:p-6">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 shrink-0">
                   <BookOpen size={18} />
                 </div>
-                <h1 className="text-2xl md:text-[1.75rem] font-bold tracking-tight text-foreground truncate">{conference.name}</h1>
+                <h1 className="text-xl sm:text-2xl md:text-[1.75rem] font-bold tracking-tight text-foreground break-words">{conference.name}</h1>
                 <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border flex-shrink-0 shadow-sm", confStatus.classes)}>
                   <ConfStatusIcon size={11} /> {confStatus.label}
                 </span>
@@ -1162,21 +1162,21 @@ export default function ConferenceDetailPage() {
                 <p className="mt-1 text-xs md:text-sm text-muted-foreground/80 italic">"{conference.theme_verse}"</p>
               )}
               <div className="flex flex-wrap gap-2 mt-4 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background/80 px-2.5 py-1.5">
                   <CalendarDays size={12} />
                   {new Date(String(conference.start_date).slice(0,10) + 'T00:00:00').toLocaleDateString('es', { day:'numeric', month:'short', year:'numeric' })}
                   {conference.start_date !== conference.end_date && ` → ${new Date(String(conference.end_date).slice(0,10) + 'T00:00:00').toLocaleDateString('es', { day:'numeric', month:'short', year:'numeric' })}`}
                 </span>
                 {conference.location && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><MapPin size={12} />{conference.location}</span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background/80 px-2.5 py-1.5"><MapPin size={12} />{conference.location}</span>
                 )}
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><CalendarDays size={12} />{days.length} días</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><Users size={12} />{stats?.total || 0} asistentes</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1.5"><Church size={12} />{stats?.churches || 0} iglesias</span>
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background/80 px-2.5 py-1.5"><CalendarDays size={12} />{days.length} días</span>
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background/80 px-2.5 py-1.5"><Users size={12} />{stats?.total || 0} asistentes</span>
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background/80 px-2.5 py-1.5"><Church size={12} />{stats?.churches || 0} iglesias</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {isLocked ? (
                 <Button variant="outline" disabled={savingConfStatus}
                   onClick={() => handleChangeConferenceStatus("ACTIVO")}
@@ -1247,7 +1247,7 @@ export default function ConferenceDetailPage() {
       ════════════════════════════════════════ */}
       {activeTab === "programa" && (
         <div className="space-y-4">
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => setAddDayDialog(true)} disabled={isLocked}
               className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40 disabled:opacity-50">
               <Plus size={14} /> Agregar Día
@@ -1299,7 +1299,7 @@ export default function ConferenceDetailPage() {
 
               {currentDay && (
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
-                  <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-muted/30">
+                  <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-muted/30">
                     <span className="text-sm font-semibold text-foreground capitalize">{formatDate(currentDay.day_date)}</span>
                     {!isLocked && (
                       <div className="flex items-center gap-1">
@@ -1319,107 +1319,106 @@ export default function ConferenceDetailPage() {
                     )}
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          {["Hora", "Tipo", "Sesión", "Estado", ""].map((h) => (
-                            <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 uppercase tracking-wide">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentDay.sessions.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground italic">Sin sesiones aún</td>
-                          </tr>
-                        ) : currentDay.sessions.map((session) => (
-                          <tr key={session.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
-                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap align-top">
+                  {/* Lista de sesiones — filas flex en vez de <table>: la tabla
+                      con 5 columnas obligaba a scroll horizontal en móvil y
+                      escondía las acciones detrás de un hover que el touch no
+                      dispara. Este layout se reacomoda solo por breakpoint y
+                      las acciones quedan siempre visibles; también es más
+                      compacto verticalmente para programas con muchas sesiones. */}
+                  {currentDay.sessions.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-xs text-muted-foreground italic">Sin sesiones aún</p>
+                  ) : (
+                    <div className="divide-y divide-border/60">
+                      {currentDay.sessions.map((session) => (
+                        <div key={session.id}
+                          className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-muted/40 transition-colors">
+                          {/* Hora (+ tipo, solo en móvil) */}
+                          <div className="flex items-center gap-2 sm:w-24 sm:shrink-0">
+                            <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">
                               {session.time_start ? formatTime(session.time_start) : "—"}
-                              {session.time_end && (
-                                <span className="block text-xs">a {formatTime(session.time_end)}</span>
+                              {session.time_end && <span className="opacity-60"> – {formatTime(session.time_end)}</span>}
+                            </span>
+                            <span className="sm:hidden"><TypeBadge type={session.type} /></span>
+                          </div>
+
+                          {/* Título + tipo (desktop) + reunión/pasaje */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+                              <span className="hidden sm:inline-flex shrink-0"><TypeBadge type={session.type} /></span>
+                              <p className="font-semibold text-foreground text-sm sm:truncate">{session.title}</p>
+                              {session.takes_attendance === false && (
+                                <span title="No requiere control de asistencia"
+                                  className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                  Sin asistencia
+                                </span>
                               )}
-                            </td>
-                            <td className="px-4 py-3 align-top">
-                              <TypeBadge type={session.type} />
-                            </td>
-                            <td className="px-4 py-3 align-top">
-                              <p className="font-semibold text-foreground flex items-center gap-1.5">
-                                {session.title}
-                                {session.takes_attendance === false && (
-                                  <span title="No requiere control de asistencia"
-                                    className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                    Sin asistencia
-                                  </span>
+                            </div>
+                            {(session.speaker || session.scripture_ref) && (
+                              <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                                {session.speaker && (
+                                  <span className="flex items-center gap-1"><Users size={10} /> {session.speaker}</span>
+                                )}
+                                {session.scripture_ref && (
+                                  <span className="flex items-center gap-1"><BookOpen size={10} /> {session.scripture_ref}</span>
                                 )}
                               </p>
-                              {(session.speaker || session.scripture_ref) && (
-                                <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-                                  {session.speaker && (
-                                    <span className="flex items-center gap-1"><Users size={10} /> {session.speaker}</span>
-                                  )}
-                                  {session.scripture_ref && (
-                                    <span className="flex items-center gap-1"><BookOpen size={10} /> {session.scripture_ref}</span>
-                                  )}
-                                </p>
+                            )}
+                          </div>
+
+                          {/* Estado en vivo + acciones. El estado lo va
+                              cambiando quien controla la conferencia según
+                              avanza el programa — la pantalla del salón lo
+                              refleja sola (encuesta cada 5s). */}
+                          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:shrink-0">
+                            <select
+                              value={session.status || "PROGRAMADA"}
+                              disabled={updatingStatusId === session.id || isLocked}
+                              onChange={(e) => handleChangeSessionStatus(session.id, e.target.value)}
+                              className={cn(
+                                "appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed",
+                                SESSION_STATUS_CLASSES[session.status] || SESSION_STATUS_CLASSES.PROGRAMADA
                               )}
-                            </td>
-                            <td className="px-4 py-3 align-top">
-                              {/* Estado en vivo: lo va cambiando quien controla la
-                                  conferencia según avanza el programa — la pantalla
-                                  del salón lo refleja sola (encuesta cada 5s). */}
-                              <select
-                                value={session.status || "PROGRAMADA"}
-                                disabled={updatingStatusId === session.id || isLocked}
-                                onChange={(e) => handleChangeSessionStatus(session.id, e.target.value)}
-                                className={cn(
-                                  "appearance-none rounded-md border px-2 py-1 text-[11px] font-semibold text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed",
-                                  SESSION_STATUS_CLASSES[session.status] || SESSION_STATUS_CLASSES.PROGRAMADA
+                            >
+                              {SESSION_STATUSES.map((s) => (
+                                <option key={s.value} value={s.value}>{s.label}</option>
+                              ))}
+                            </select>
+
+                            {!isLocked && (
+                              <div className="flex items-center gap-0.5">
+                                {session.takes_attendance !== false && (
+                                  <>
+                                    <button onClick={() => navigate(`/dashboard/conference/${id}/attendance/${session.id}`)}
+                                      title="Tomar asistencia manual"
+                                      className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                                      <ClipboardCheck size={13} />
+                                    </button>
+                                    <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
+                                      title="Escanear asistencia (QR)"
+                                      className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                      <ScanLine size={13} />
+                                    </button>
+                                  </>
                                 )}
-                              >
-                                {SESSION_STATUSES.map((s) => (
-                                  <option key={s.value} value={s.value}>{s.label}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="px-4 py-3 align-top">
-                              {!isLocked && (
-                                <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                  {session.takes_attendance !== false && (
-                                    <>
-                                      <button onClick={() => navigate(`/dashboard/conference/${id}/attendance/${session.id}`)}
-                                        title="Tomar asistencia manual"
-                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
-                                        <ClipboardCheck size={13} />
-                                      </button>
-                                      <button onClick={() => navigate(`/dashboard/conference/${id}/check-in/${session.id}`)}
-                                        title="Escanear asistencia (QR)"
-                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                        <ScanLine size={13} />
-                                      </button>
-                                    </>
-                                  )}
-                                  <button onClick={() => openEditSession(session, currentDay.id)}
-                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                                    <Pencil size={13} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSession(session.id)}
-                                    disabled={deletingSession === session.id}
-                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                                    {deletingSession === session.id
-                                      ? <Loader2 size={13} className="animate-spin" />
-                                      : <Trash2 size={13} />}
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                                <button onClick={() => openEditSession(session, currentDay.id)}
+                                  className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-accent transition-colors">
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSession(session.id)}
+                                  disabled={deletingSession === session.id}
+                                  className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                                  {deletingSession === session.id
+                                    ? <Loader2 size={13} className="animate-spin" />
+                                    : <Trash2 size={13} />}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </>
