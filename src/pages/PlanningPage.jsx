@@ -22,6 +22,7 @@ import {
   planProgress,
   ProgressBar,
   Pager,
+  ResponsiblePicker,
 } from "@/pages/PlanningShared";
 import {
   ClipboardList,
@@ -56,6 +57,7 @@ const emptyForm = () => ({
   startDate: "",
   endDate: "",
   description: "",
+  responsibleId: "",
   responsibleName: "",
   status: "BORRADOR",
 });
@@ -77,6 +79,7 @@ export function PlanModal({open, onClose, plan, defaultGroupId, onSaved}) {
         startDate: plan.start_date ? plan.start_date.slice(0, 10) : "",
         endDate: plan.end_date ? plan.end_date.slice(0, 10) : "",
         description: plan.description || "",
+        responsibleId: plan.responsible_id || "",
         responsibleName: plan.responsible_name || "",
         status: plan.status || "BORRADOR",
       });
@@ -113,7 +116,8 @@ export function PlanModal({open, onClose, plan, defaultGroupId, onSaved}) {
         startDate: form.startDate,
         endDate: form.endDate,
         description: form.description.trim() || null,
-        responsibleName: form.responsibleName.trim() || null,
+        responsibleId: form.responsibleId || null,
+        responsibleName: (form.responsibleName || "").trim() || null,
         status: form.status,
       };
       if (plan) await planningService.update(plan.id, payload);
@@ -195,11 +199,10 @@ export function PlanModal({open, onClose, plan, defaultGroupId, onSaved}) {
 
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">Responsable (opcional)</label>
-            <Input
-              value={form.responsibleName}
-              onChange={(e) => setForm((f) => ({...f, responsibleName: e.target.value}))}
-              placeholder="Nombre de quien lidera el plan"
-              className="bg-background border-border text-foreground"
+            <ResponsiblePicker
+              groupId={form.groupId || null}
+              value={{responsibleId: form.responsibleId, responsibleName: form.responsibleName}}
+              onChange={(v) => setForm((f) => ({...f, responsibleId: v.responsibleId, responsibleName: v.responsibleName}))}
             />
           </div>
 
@@ -255,7 +258,14 @@ export default function PlanningPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [periodType, setPeriodType] = useState("");
+  const [groupId, setGroupId] = useState("");
+  const [groups, setGroups] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    groupsService.getAll({limit: 200}).then((r) => setGroups(r.groups || [])).catch(() => {});
+  }, []);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -263,6 +273,8 @@ export default function PlanningPage() {
       const params = {limit: pagination.limit, offset: pagination.offset};
       if (search) params.search = search;
       if (status) params.status = status;
+      if (periodType) params.periodType = periodType;
+      if (groupId) params.groupId = groupId;
       const r = await planningService.getAll(params);
       setPlans(r.plans || []);
       setPagination((p) => ({...p, total: r.pagination?.total ?? 0}));
@@ -271,7 +283,7 @@ export default function PlanningPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.limit, pagination.offset, search, status]);
+  }, [pagination.limit, pagination.offset, search, status, periodType, groupId]);
 
   useEffect(() => {
     const t = setTimeout(() => loadPlans(), 300);
@@ -280,9 +292,9 @@ export default function PlanningPage() {
 
   useEffect(() => {
     setPagination((p) => (p.offset === 0 ? p : {...p, offset: 0}));
-  }, [search, status]);
+  }, [search, status, periodType, groupId]);
 
-  const hasFilters = search || status;
+  const hasFilters = search || status || periodType || groupId;
   const activeCount = plans.filter((p) => p.status === "ACTIVO").length;
 
   return (
@@ -343,10 +355,36 @@ export default function PlanningPage() {
           </select>
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         </div>
+        <div className="relative">
+          <select
+            value={periodType}
+            onChange={(e) => setPeriodType(e.target.value)}
+            className="h-10 px-3 pr-8 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-indigo-500 appearance-none"
+          >
+            <option value="">Todos los periodos</option>
+            {PERIOD_TYPES.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select
+            value={groupId}
+            onChange={(e) => setGroupId(e.target.value)}
+            className="h-10 px-3 pr-8 bg-card border border-border text-foreground rounded-md text-sm focus:outline-none focus:border-indigo-500 appearance-none"
+          >
+            <option value="">Todos los grupos</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        </div>
         {hasFilters && (
           <Button
             variant="outline"
-            onClick={() => { setSearch(""); setStatus(""); }}
+            onClick={() => { setSearch(""); setStatus(""); setPeriodType(""); setGroupId(""); }}
             className="border-border text-muted-foreground hover:text-foreground shrink-0"
           >
             <X className="w-4 h-4" />

@@ -1,5 +1,7 @@
+import {useEffect, useState} from "react";
 import {Button} from "@/components/ui/Button";
 import {ChevronLeft, ChevronRight} from "lucide-react";
+import {groupsService, membersService} from "@/services/api";
 
 // Piezas compartidas entre PlanningPage (listado) y PlanningDetailPage
 // (ficha de un plan, con sus objetivos y acciones) — mismo patrón que
@@ -44,8 +46,35 @@ export const fmtDate = (d) =>
 export const fmtDateRange = (start, end) => `${fmtDate(start)} → ${fmtDate(end)}`;
 
 const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const DAY_NAMES_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
 export const fmtDayOfWeek = (d) =>
   d ? DAY_NAMES[new Date(d.slice(0, 10) + "T12:00:00").getDay()] : "—";
+
+export const fmtMonthYear = (year, month) => `${MONTH_NAMES[month]} ${year}`;
+
+// Matriz de semanas (7 columnas Dom-Sáb) para el mes `month` (0-11) del año
+// `year` — cada celda es { day, dateStr } o null si cae fuera del mes (para
+// dejar el hueco en blanco en vez de mostrar días del mes vecino, que
+// confunden más de lo que ayudan en una vista de turnos).
+export function buildMonthGrid(year, month) {
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startWeekday = firstDay.getDay(); // 0=domingo
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    cells.push({day, dateStr});
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+export const WEEKDAY_HEADERS = DAY_NAMES_SHORT;
 
 export const fmtTime = (t) => {
   if (!t) return "—";
@@ -125,6 +154,63 @@ export function Pager({pagination, onChange}) {
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
+    </div>
+  );
+}
+
+// Selector de responsable: miembros del GRUPO si el plan/objetivo/acción
+// pertenece a uno, o de toda la iglesia si es un plan general — en vez del
+// texto libre que había antes (usado en PlanModal, GoalModal y ActionModal).
+// "Otro…" se deja como escape hatch para alguien que dirige algo sin ser
+// miembro del sistema (p. ej. un predicador invitado) — el backend ya
+// acepta responsibleId O responsibleName, nunca ambos a la vez.
+export function ResponsiblePicker({groupId, value, onChange, className = ""}) {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    const load = groupId
+      ? groupsService.getById(groupId).then((r) => r.members || [])
+      : membersService.getAll({limit: 1000, status: "ACTIVO"}).then((r) => r.members || []);
+    load
+      .then((list) => { if (!cancelled) setMembers(list); })
+      .catch(() => { if (!cancelled) setMembers([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [groupId]);
+
+  const isOther = !value.responsibleId && !!value.responsibleName;
+  const selectValue = isOther ? "__other__" : (value.responsibleId || "");
+
+  return (
+    <div className={className}>
+      <select
+        value={selectValue}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "__other__") onChange({responsibleId: null, responsibleName: value.responsibleName || ""});
+          else if (v === "") onChange({responsibleId: null, responsibleName: null});
+          else onChange({responsibleId: v, responsibleName: null});
+        }}
+        className="w-full h-10 px-3 rounded-md bg-background border border-border text-foreground text-sm"
+      >
+        <option value="">{loading ? "Cargando…" : "Sin asignar"}</option>
+        {members.map((m) => (
+          <option key={m.id} value={m.id}>{`${m.first_name} ${m.last_name}`.trim()}</option>
+        ))}
+        <option value="__other__">Otro (escribir nombre)…</option>
+      </select>
+      {isOther && (
+        <input
+          type="text"
+          value={value.responsibleName || ""}
+          onChange={(e) => onChange({responsibleId: null, responsibleName: e.target.value})}
+          placeholder="Nombre de quien dirige"
+          className="w-full h-10 px-3 mt-2 rounded-md bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground"
+        />
+      )}
     </div>
   );
 }

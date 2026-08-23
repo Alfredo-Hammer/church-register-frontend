@@ -76,6 +76,25 @@ const CSS = `
   .sig-row{display:flex;justify-content:center;gap:60px;margin-top:20px}
   .sig-block{text-align:center;width:220px}
   .sig-blank-line{border-top:1px solid #1e293b;padding-top:6px;font-size:10px;color:#64748b}
+  /* ── Calendario impreso (plan de acción / rol de turnos) — formato de
+     agenda vertical: una "ficha" de día compacta (día de la semana +
+     número, como una casilla de calendario suelta) seguida de sus
+     actividades. A diferencia de la cuadrícula Dom..Sáb (que necesita
+     casillas vacías para mantener alineadas las columnas), este formato
+     no tiene esa restricción — así que solo aparecen los días que
+     realmente tienen algo, cero huecos. En 2 columnas para que un plan
+     con muchos días no se vaya en varias hojas por gastar toda la altura
+     en una sola columna angosta; cada ficha lleva break-inside:avoid para
+     que el salto de columna nunca la parta a la mitad. ── */
+  .cal-month-title{font-size:12px;font-weight:700;color:#0f172a;text-transform:capitalize;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}
+  .cal-days-columns{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-items:start}
+  .cal-day-card{border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;break-inside:avoid;-webkit-column-break-inside:avoid}
+  .cal-day-card .cal-day-date{display:flex;align-items:baseline;gap:4px;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid #f1f5f9}
+  .cal-day-card .cal-day-date .dow{font-size:7.5px;text-transform:uppercase;color:#3b82f6;font-weight:700;letter-spacing:.03em}
+  .cal-day-card .cal-day-date .num{font-size:11px;font-weight:700;color:#1e40af}
+  .cal-day-card .etitle{font-weight:700;color:#0f172a;font-size:10px;line-height:1.3;margin-bottom:3px}
+  .cal-day-card .efield{font-size:8.5px;color:#475569;line-height:1.55}
+  .cal-day-card .efield.estatus{color:#94a3b8}
 `;
 
 // ── Botones flotantes (no se imprimen) ────────────────────────────────────
@@ -1849,13 +1868,94 @@ const fmtPlanTime = (t) => {
   return `${h12}:${String(m).padStart(2, "0")} ${period}`;
 };
 
-export function buildPlanPDF(plan = {}, goals = [], actions = [], church = {}) {
+// Calendario impreso — misma cuadrícula (Dom..Sáb) que la vista en
+// pantalla, no la tabla de "Lista": un mes completo con casillas de día
+// numeradas y las actividades dentro de cada una — cero huecos, porque
+// este formato (a diferencia de una cuadrícula Dom..Sáb) no depende de
+// mantener alineadas 7 columnas: solo aparecen los días que de verdad
+// tienen algo. Se sigue agrupando por mes con un encabezado, y un mes sin
+// ninguna actividad simplemente no imprime su sección.
+function buildPrintedCalendar(actions) {
+  const PLAN_MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const DOW_SHORT = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+
+  const withDate = actions.filter((a) => a.due_date);
+  if (withDate.length === 0) {
+    return `<p style="color:#94a3b8;font-size:12px">Este plan aún no tiene acciones con fecha.</p>`;
+  }
+
+  const byDate = {};
+  for (const a of withDate) {
+    const key = a.due_date.slice(0, 10);
+    (byDate[key] = byDate[key] || []).push(a);
+  }
+  const sortedDates = Object.keys(byDate).sort();
+
+  const groups = [];
+  let currentKey = null;
+  for (const dateStr of sortedDates) {
+    const d = new Date(dateStr + "T12:00:00");
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (key !== currentKey) {
+      groups.push({year: d.getFullYear(), month: d.getMonth(), dates: []});
+      currentKey = key;
+    }
+    groups[groups.length - 1].dates.push(dateStr);
+  }
+
+  return groups.map(({year, month, dates}) => {
+    const cards = dates.flatMap((dateStr) => {
+      const d = new Date(dateStr + "T12:00:00");
+      return byDate[dateStr].map((a) => {
+        const responsible = a.responsible_name || [a.responsible_first_name, a.responsible_last_name].filter(Boolean).join(" ");
+        const fields = [
+          responsible ? `<div class="efield">${responsible}</div>` : "",
+          a.due_time ? `<div class="efield">${fmtPlanTime(a.due_time)}</div>` : "",
+          `<div class="efield estatus">${ACTION_STATUS_LABEL[a.status] || a.status}</div>`,
+        ].filter(Boolean).join("");
+        return `
+          <div class="cal-day-card">
+            <div class="cal-day-date"><span class="dow">${DOW_SHORT[d.getDay()]}</span><span class="num">${d.getDate()}</span></div>
+            <div class="etitle">${a.title}</div>
+            ${fields}
+          </div>`;
+      });
+    }).join("");
+
+    return `
+      <p class="cal-month-title">${PLAN_MONTH_NAMES[month]} de ${year}</p>
+      <div class="cal-days-columns">${cards}</div>`;
+  }).join("");
+}
+
+export function buildPlanPDF(plan = {}, goals = [], actions = [], church = {}, opts = {}) {
   const title = plan.title || "Plan";
   const period = `${PLAN_PERIOD_LABEL[plan.period_type] || plan.period_type} · ${fmtPlanDate(plan.start_date)} → ${fmtPlanDate(plan.end_date)}`;
   const subtitle = plan.group_name ? `Plan del grupo: ${plan.group_name}` : "Plan de la iglesia";
 
   const responsibleLabel = plan.responsible_name ||
     [plan.responsible_first_name, plan.responsible_last_name].filter(Boolean).join(" ") || null;
+
+  // Modo calendario: el usuario pidió una hoja aparte, solo con la tabla
+  // del plan — sin las tarjetas de estado/objetivos/acciones ni las
+  // secciones de objetivos — y en horizontal (más ancho para la agenda en
+  // columnas). El @page va en un <style> aparte dentro del body en vez de
+  // tocar la constante CSS compartida, que usan todos los demás reportes
+  // de este archivo — así el cambio de orientación no se filtra a Grupos,
+  // Finanzas, etc.
+  if (opts.actionsView === "calendario") {
+    return doc(title, `
+      <style>@page { size: landscape; margin: 1.2cm; }</style>
+      ${hdr(title, subtitle, period, church)}
+      <div class="section">
+        <h2>Plan de acción</h2>
+        ${actions.length === 0
+          ? `<p style="color:#94a3b8;font-size:12px">Este plan aún no tiene acciones.</p>`
+          : buildPrintedCalendar(actions)}
+      </div>
+      ${footerFor(church)}
+    `);
+  }
 
   const goalsCompleted = goals.filter((g) => g.status === "COMPLETADO").length;
   const actionsCompleted = actions.filter((a) => a.status === "COMPLETADA").length;
