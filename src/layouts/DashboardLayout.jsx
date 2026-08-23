@@ -37,6 +37,7 @@ import {
   Cake,
   Sun,
   Moon,
+  Target,
 } from "lucide-react";
 import {Button} from "@/components/ui/Button";
 import {ConfirmDialog} from "@/components/ui/ConfirmDialog";
@@ -323,6 +324,7 @@ const navigation = [
   {name: "Eventos", href: "/dashboard/events", icon: CalendarDays},
   {name: "Programa", href: "/dashboard/programs", icon: ClipboardList},
   {name: "Actividades", href: "/dashboard/activities", icon: Rocket},
+  {name: "Planificación", href: "/dashboard/planning", icon: Target},
   {name: "Inventario", href: "/dashboard/inventory", icon: Boxes},
   {name: "Finanzas", href: "/dashboard/finances", icon: DollarSign, roles: ["ADMIN", "PASTOR", "TESORERO"]},
   {name: "Bautismos", href: "/dashboard/baptisms", icon: Droplet},

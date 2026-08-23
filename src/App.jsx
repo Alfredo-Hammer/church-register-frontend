@@ -43,6 +43,8 @@ import LettersPage from "@/pages/LettersPage";
 import InternalRegulationsPage from "@/pages/InternalRegulationsPage";
 import InventoryPage from "@/pages/InventoryPage";
 import InventoryDetailPage from "@/pages/InventoryDetailPage";
+import PlanningPage from "@/pages/PlanningPage";
+import PlanningDetailPage from "@/pages/PlanningDetailPage";
 import ConferencePage from "@/pages/ConferencePage";
 import ConferenceDetailPage from "@/pages/ConferenceDetailPage";
 import ConferenceCheckInPage from "@/pages/ConferenceCheckInPage";
@@ -288,6 +290,26 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <InventoryDetailPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/planning"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <PlanningPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/planning/:id"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <PlanningDetailPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

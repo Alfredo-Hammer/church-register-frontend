@@ -644,6 +644,56 @@ export const programsService = {
 };
 
 // ============================================
+// PLANNING SERVICE
+// ============================================
+export const planningService = {
+  getAll: async (params = {}) => {
+    const response = await api.get('/planning', { params });
+    return response.data;
+  },
+  getById: async (id) => {
+    const response = await api.get(`/planning/${id}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post('/planning', data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/planning/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/planning/${id}`);
+    return response.data;
+  },
+  addGoal: async (planId, data) => {
+    const response = await api.post(`/planning/${planId}/goals`, data);
+    return response.data;
+  },
+  updateGoal: async (planId, goalId, data) => {
+    const response = await api.put(`/planning/${planId}/goals/${goalId}`, data);
+    return response.data;
+  },
+  deleteGoal: async (planId, goalId) => {
+    const response = await api.delete(`/planning/${planId}/goals/${goalId}`);
+    return response.data;
+  },
+  addAction: async (planId, data) => {
+    const response = await api.post(`/planning/${planId}/actions`, data);
+    return response.data;
+  },
+  updateAction: async (planId, actionId, data) => {
+    const response = await api.put(`/planning/${planId}/actions/${actionId}`, data);
+    return response.data;
+  },
+  deleteAction: async (planId, actionId) => {
+    const response = await api.delete(`/planning/${planId}/actions/${actionId}`);
+    return response.data;
+  },
+};
+
+// ============================================
 // VISITORS SERVICE
 // ============================================
 export const visitorsService = {

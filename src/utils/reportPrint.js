@@ -1829,6 +1829,121 @@ export function buildInventoryReport(items = [], church = {}, opts = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// PLANIFICACIÓN — ficha de un plan (mensual/trimestral/semestral/anual),
+// con sus objetivos (barra de avance por objetivo, igual patrón .bar-row
+// que ya usan Grupos/Finanzas) y sus acciones concretas.
+// ─────────────────────────────────────────────────────────────────────────
+const PLAN_PERIOD_LABEL = { MENSUAL: "Mensual", TRIMESTRAL: "Trimestral", SEMESTRAL: "Semestral", ANUAL: "Anual", PERSONALIZADO: "Personalizado" };
+const PLAN_STATUS_LABEL = { BORRADOR: "Borrador", ACTIVO: "Activo", COMPLETADO: "Completado", ARCHIVADO: "Archivado" };
+const GOAL_STATUS_LABEL = { PENDIENTE: "Pendiente", EN_PROGRESO: "En progreso", COMPLETADO: "Completado", NO_LOGRADO: "No logrado" };
+const ACTION_STATUS_LABEL = { PENDIENTE: "Pendiente", EN_PROGRESO: "En progreso", COMPLETADA: "Completada", CANCELADA: "Cancelada" };
+
+const fmtPlanDate = (d) => d ? new Date(String(d).slice(0, 10) + "T12:00:00").toLocaleDateString("es", { day: "2-digit", month: "long", year: "numeric" }) : "—";
+const PLAN_DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const fmtPlanDayOfWeek = (d) => d ? PLAN_DAY_NAMES[new Date(String(d).slice(0, 10) + "T12:00:00").getDay()] : "—";
+const fmtPlanTime = (t) => {
+  if (!t) return "—";
+  const [h, m] = String(t).slice(0, 5).split(":").map(Number);
+  const period = h >= 12 ? "p. m." : "a. m.";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+};
+
+export function buildPlanPDF(plan = {}, goals = [], actions = [], church = {}) {
+  const title = plan.title || "Plan";
+  const period = `${PLAN_PERIOD_LABEL[plan.period_type] || plan.period_type} · ${fmtPlanDate(plan.start_date)} → ${fmtPlanDate(plan.end_date)}`;
+  const subtitle = plan.group_name ? `Plan del grupo: ${plan.group_name}` : "Plan de la iglesia";
+
+  const responsibleLabel = plan.responsible_name ||
+    [plan.responsible_first_name, plan.responsible_last_name].filter(Boolean).join(" ") || null;
+
+  const goalsCompleted = goals.filter((g) => g.status === "COMPLETADO").length;
+  const actionsCompleted = actions.filter((a) => a.status === "COMPLETADA").length;
+
+  const goalBars = goals.length === 0
+    ? `<p style="color:#94a3b8;font-size:12px">Este plan aún no tiene objetivos.</p>`
+    : goals.map((g) => {
+        let pct;
+        if (g.target_value != null && Number(g.target_value) > 0) {
+          pct = Math.max(0, Math.min(100, Math.round((Number(g.current_value || 0) / Number(g.target_value)) * 100)));
+        } else {
+          pct = g.status === "COMPLETADO" ? 100 : g.status === "EN_PROGRESO" ? 50 : 0;
+        }
+        const color = g.status === "COMPLETADO" ? "#10b981" : g.status === "NO_LOGRADO" ? "#ef4444" : "#3b82f6";
+        const valueLabel = g.target_value != null
+          ? `${Number(g.current_value || 0)} / ${Number(g.target_value)} ${g.target_unit || ""}`.trim()
+          : `${pct}%`;
+        return `<div class="bar-row">
+          <div class="bar-lbl" style="width:170px" title="${g.title}">${g.title}</div>
+          <div class="bar-wrap"><div class="bar" style="background:${color};width:${pct}%"></div></div>
+          <div class="bar-val">${valueLabel}</div>
+        </div>`;
+      }).join("");
+
+  const goalRows = goals.length === 0
+    ? `<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:14px">Sin objetivos registrados</td></tr>`
+    : goals.map((g, i) => {
+        const responsible = g.responsible_name || [g.responsible_first_name, g.responsible_last_name].filter(Boolean).join(" ") || "—";
+        return `<tr>
+          <td style="text-align:center;color:#94a3b8;width:26px">${i + 1}</td>
+          <td style="font-weight:500">${g.title}${g.description ? `<div style="color:#94a3b8;font-size:10.5px;font-weight:400">${g.description}</div>` : ""}</td>
+          <td style="color:#64748b">${responsible}</td>
+          <td style="text-align:center">${GOAL_STATUS_LABEL[g.status] || g.status}</td>
+        </tr>`;
+      }).join("");
+
+  const actionRows = actions.length === 0
+    ? `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px">Sin acciones registradas</td></tr>`
+    : actions.map((a) => {
+        const responsible = a.responsible_name || [a.responsible_first_name, a.responsible_last_name].filter(Boolean).join(" ") || "—";
+        const linkedGoal = goals.find((g) => g.id === a.goal_id);
+        return `<tr>
+          <td style="color:#64748b;white-space:nowrap">${fmtPlanDayOfWeek(a.due_date)}</td>
+          <td style="color:#64748b;white-space:nowrap">${a.due_date ? fmtPlanDate(a.due_date) : "—"}</td>
+          <td style="color:#64748b;white-space:nowrap">${fmtPlanTime(a.due_time)}</td>
+          <td style="font-weight:500">${a.title}${linkedGoal ? `<div style="color:#94a3b8;font-size:10.5px;font-weight:400">${linkedGoal.title}</div>` : ""}${a.notes ? `<div style="color:#94a3b8;font-size:10.5px;font-weight:400">${a.notes}</div>` : ""}</td>
+          <td>${responsible}</td>
+          <td style="text-align:center">${ACTION_STATUS_LABEL[a.status] || a.status}</td>
+        </tr>`;
+      }).join("");
+
+  return doc(title, `
+    ${hdr(title, subtitle, period, church)}
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">Estado</div><div class="metric-val" style="font-size:17px">${PLAN_STATUS_LABEL[plan.status] || plan.status}</div></div>
+      <div class="metric"><div class="metric-lbl">Objetivos</div><div class="metric-val">${goalsCompleted} / ${goals.length}</div><div class="metric-sub">completados</div></div>
+      <div class="metric"><div class="metric-lbl">Acciones</div><div class="metric-val">${actionsCompleted} / ${actions.length}</div><div class="metric-sub">completadas</div></div>
+    </div>
+
+    ${plan.description ? `<div class="section"><h2>Descripción</h2><p style="color:#334155;white-space:pre-line">${plan.description}</p></div>` : ""}
+    ${responsibleLabel ? `<p style="color:#64748b;font-size:12px;margin:-10px 0 16px">Responsable: <strong style="color:#0f172a">${responsibleLabel}</strong></p>` : ""}
+
+    <div class="section">
+      <h2>Avance de objetivos</h2>
+      ${goalBars}
+    </div>
+
+    <div class="section">
+      <h2>Detalle de objetivos</h2>
+      <table>
+        <thead><tr><th style="width:26px">#</th><th>Objetivo</th><th>Responsable</th><th style="text-align:center">Estado</th></tr></thead>
+        <tbody>${goalRows}</tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Plan de acción</h2>
+      <table>
+        <thead><tr><th>Día</th><th>Fecha</th><th>Hora</th><th>Actividad</th><th>Nombre</th><th style="text-align:center">Estado</th></tr></thead>
+        <tbody>${actionRows}</tbody>
+      </table>
+    </div>
+
+    ${footerFor(church)}
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // PROGRAMA — librillo real: hojas tamaño carta EN HORIZONTAL (11in × 8.5in),
 // cada una con dos páginas de media carta (5.5in × 8.5in) una junto a otra,
 // ya en el orden de imposición correcto para que al imprimir a doble cara y

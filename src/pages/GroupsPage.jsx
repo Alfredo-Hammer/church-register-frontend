@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useCallback} from "react";
+import {useNavigate} from "react-router-dom";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
@@ -33,10 +34,13 @@ import {
   BadgeCheck,
   ArrowLeft,
   Printer,
+  Target,
 } from "lucide-react";
-import {groupsService, membersService, settingsService} from "@/services/api";
+import {groupsService, membersService, settingsService, planningService} from "@/services/api";
 import {buildGroupMembersPDF} from "@/utils/reportPrint";
 import {cn} from "@/lib/utils";
+import {PlanModal} from "@/pages/PlanningPage";
+import {PLAN_STATUS_MAP, PERIOD_MAP, fmtDateRange, planProgress, ProgressBar} from "@/pages/PlanningShared";
 
 // helpers
 
@@ -122,7 +126,34 @@ function MemberAvatar({name = "", photo, size = "sm"}) {
 // GroupDetailPage
 
 function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("members");
+
+  // Planificación no se carga con el resto (loadAll): es la única pestaña
+  // con su propia página de detalle (objetivos/acciones viven ahí), así que
+  // aquí solo hace falta la lista — se trae perezosa, la primera vez que se
+  // entra a la pestaña.
+  const [plans, setPlans] = useState([]);
+  const [plansLoaded, setPlansLoaded] = useState(false);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+
+  const loadPlans = useCallback(async () => {
+    setPlansLoading(true);
+    try {
+      const r = await planningService.getAll({groupId: group.id, limit: 50});
+      setPlans(r.plans || []);
+      setPlansLoaded(true);
+    } catch {
+      /* ignore */
+    } finally {
+      setPlansLoading(false);
+    }
+  }, [group.id]);
+
+  useEffect(() => {
+    if (activeTab === "planning" && !plansLoaded) loadPlans();
+  }, [activeTab, plansLoaded, loadPlans]);
 
   const [groupMembers, setGroupMembers] = useState([]);
   const [availableMembers, setAvailableMembers] = useState([]);
@@ -338,6 +369,7 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
     {id: "members", label: "Miembros", icon: Users},
     {id: "leaders", label: "Líderes", icon: Crown},
     {id: "activities", label: "Actividades", icon: CalendarDays},
+    {id: "planning", label: "Planificación", icon: Target},
     {id: "finances", label: "Finanzas", icon: Wallet},
   ];
 
@@ -789,6 +821,64 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
           </div>
         )}
 
+        {!loading && activeTab === "planning" && (
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Target className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
+                Planes de este grupo ({plans.length})
+              </CardTitle>
+              <Button
+                onClick={() => setPlanModalOpen(true)}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs h-8 px-3 gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Nuevo Plan
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {plansLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : plans.length === 0 ? (
+                <div className="text-center py-10">
+                  <Target className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                  <p className="text-sm text-muted-foreground">Este grupo aún no tiene planes.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {plans.map((plan) => {
+                    const st = PLAN_STATUS_MAP[plan.status];
+                    const progress = planProgress(plan);
+                    return (
+                      <button
+                        key={plan.id}
+                        onClick={() => navigate(`/dashboard/planning/${plan.id}`)}
+                        className="text-left bg-muted/50 hover:bg-muted rounded-xl px-4 py-3 border-l-2 border-cyan-500/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground">{plan.title}</p>
+                          <span className={cn("shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium border", st?.classes)}>
+                            {st?.label || plan.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{fmtDateRange(plan.start_date, plan.end_date)}</p>
+                        <p className="text-[11px] text-cyan-700 dark:text-cyan-400 mt-0.5">
+                          {PERIOD_MAP[plan.period_type]?.label || plan.period_type}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <ProgressBar value={progress} className="flex-1" />
+                          <span className="text-[11px] font-medium text-muted-foreground shrink-0">{progress}%</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {!loading && activeTab === "finances" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1014,6 +1104,14 @@ function GroupDetailPage({group, onBack, onEdit, onDelete, onGroupUpdated}) {
           </div>
         )}
       </div>
+
+      <PlanModal
+        open={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        plan={null}
+        defaultGroupId={group.id}
+        onSaved={loadPlans}
+      />
     </div>
   );
 }
