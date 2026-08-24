@@ -588,6 +588,20 @@ export const settingsService = {
     return response.data;
   },
 
+  // Formas de dar (links externos, la app no procesa pagos)
+  getGivingLinks: async () => {
+    const response = await api.get('/settings/church/giving-links');
+    return response.data;
+  },
+  addGivingLink: async (label, value) => {
+    const response = await api.post('/settings/church/giving-links', {label, value});
+    return response.data;
+  },
+  deleteGivingLink: async (id) => {
+    const response = await api.delete(`/settings/church/giving-links/${id}`);
+    return response.data;
+  },
+
   // Galería de fotos (carrusel de la app móvil)
   getChurchPhotos: async () => {
     const response = await api.get('/settings/church/photos');

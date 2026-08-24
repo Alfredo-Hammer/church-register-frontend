@@ -19,6 +19,7 @@ import {
   Heart,
   MessageCircle,
   Radio,
+  Wallet,
   Trash,
   Smartphone,
   Copy,
@@ -192,11 +193,25 @@ export default function SettingsPage() {
   const [photos, setPhotos] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const MAX_CHURCH_PHOTOS = 8;
+  const [givingLinks, setGivingLinks] = useState(null);
+  const [givingLinkSaving, setGivingLinkSaving] = useState(false);
+  const [givingLabelInput, setGivingLabelInput] = useState("");
+  const [givingValueInput, setGivingValueInput] = useState("");
+  const MAX_GIVING_LINKS = 10;
 
   const fetchPhotos = useCallback(async () => {
     try {
       const data = await settingsService.getChurchPhotos();
       setPhotos(data.photos || []);
+    } catch {
+      /* silent */
+    }
+  }, []);
+
+  const fetchGivingLinks = useCallback(async () => {
+    try {
+      const data = await settingsService.getGivingLinks();
+      setGivingLinks(data.givingLinks || []);
     } catch {
       /* silent */
     }
@@ -291,6 +306,10 @@ export default function SettingsPage() {
   useEffect(() => {
     if (activeTab === "church" && !photos) fetchPhotos();
   }, [activeTab, photos, fetchPhotos]);
+
+  useEffect(() => {
+    if (activeTab === "church" && !givingLinks) fetchGivingLinks();
+  }, [activeTab, givingLinks, fetchGivingLinks]);
 
   useEffect(() => {
     if (activeTab === "church" && isAdmin && !joinCode) fetchJoinCode();
@@ -428,6 +447,35 @@ export default function SettingsPage() {
       notify(e?.response?.data?.error || "Error al eliminar el video.", "error");
     } finally {
       setDefaultVideoSaving(false);
+    }
+  };
+
+  const handleAddGivingLink = async () => {
+    if (!givingLabelInput.trim() || !givingValueInput.trim()) return;
+    setGivingLinkSaving(true);
+    try {
+      const res = await settingsService.addGivingLink(givingLabelInput.trim(), givingValueInput.trim());
+      setGivingLinks((prev) => [...(prev || []), res.givingLink]);
+      setGivingLabelInput("");
+      setGivingValueInput("");
+      notify("Forma de dar agregada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al agregar.", "error");
+    } finally {
+      setGivingLinkSaving(false);
+    }
+  };
+
+  const handleDeleteGivingLink = async (id) => {
+    setGivingLinkSaving(true);
+    try {
+      await settingsService.deleteGivingLink(id);
+      setGivingLinks((prev) => (prev || []).filter((g) => g.id !== id));
+      notify("Forma de dar eliminada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al eliminar.", "error");
+    } finally {
+      setGivingLinkSaving(false);
     }
   };
 
@@ -810,6 +858,70 @@ export default function SettingsPage() {
               <p className="text-muted-foreground text-xs">No hay ningún video predeterminado configurado.</p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Formas de dar (links externos — la app no procesa pagos) */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Formas de Dar
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            Aparece en la pestaña "Dar" de la app móvil. Cada fila es un link o dato externo (Zelle, Cashapp, sitio web...) — nunca procesamos pagos nosotros, solo mostramos cómo dar.
+          </p>
+          {(givingLinks || []).length > 0 && (
+            <div className="space-y-2">
+              {givingLinks.map((g) => (
+                <div key={g.id} className="flex items-center justify-between gap-3 bg-background border border-border rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{g.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{g.value}</p>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      disabled={givingLinkSaving}
+                      onClick={() => handleDeleteGivingLink(g.id)}
+                      className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {isAdmin && (givingLinks?.length || 0) < MAX_GIVING_LINKS && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={givingLabelInput}
+                onChange={(e) => setGivingLabelInput(e.target.value)}
+                placeholder="Nombre (ej. Zelle)"
+                className="w-full sm:w-40 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={givingValueInput}
+                onChange={(e) => setGivingValueInput(e.target.value)}
+                placeholder="Link, correo o dato"
+                className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <button
+                disabled={givingLinkSaving || !givingLabelInput.trim() || !givingValueInput.trim()}
+                onClick={handleAddGivingLink}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              >
+                {givingLinkSaving ? "Guardando..." : "Agregar"}
+              </button>
+            </div>
+          )}
+          {givingLinks && givingLinks.length === 0 && !isAdmin && (
+            <p className="text-muted-foreground text-xs">No hay formas de dar configuradas.</p>
+          )}
         </CardContent>
       </Card>
 
