@@ -259,24 +259,24 @@ export default function DisplayPage() {
     // el diseño. Encontrado auditando: mi propio script de contraste no veía
     // ningún fondo en la cadena de ancestros y caía en el <body>, que en ese
     // momento estaba en tema claro por otra pestaña de la misma sesión.
-    <div className="relative min-h-screen bg-[#1e1b4b] text-white p-6 sm:p-10">
+    <div className="relative min-h-screen bg-[#1e1b4b] text-white p-3 sm:p-6 lg:p-10">
       <FondoAnimado />
 
       <div className="relative">
-        <header className="flex flex-wrap items-start justify-between gap-6 rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-md">
-          <div className="flex items-center gap-5 min-w-0">
+        <header className="flex flex-wrap items-start justify-between gap-3 sm:gap-6 rounded-2xl lg:rounded-3xl border border-white/10 bg-black/30 p-3 sm:p-5 lg:p-6 backdrop-blur-md">
+          <div className="flex items-center gap-3 sm:gap-5 min-w-0">
             {data.church.logoUrl ? (
-              <img src={data.church.logoUrl} alt="" className="h-16 w-16 rounded-2xl object-contain bg-white/5 p-1" />
+              <img src={data.church.logoUrl} alt="" className="h-9 w-9 sm:h-12 sm:w-12 lg:h-16 lg:w-16 rounded-xl lg:rounded-2xl object-contain bg-white/5 p-1 shrink-0" />
             ) : (
-              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600">
-                <Church className="h-9 w-9 text-white" />
+              <span className="flex h-9 w-9 sm:h-12 sm:w-12 lg:h-16 lg:w-16 items-center justify-center rounded-xl lg:rounded-2xl bg-blue-600 shrink-0">
+                <Church className="h-5 w-5 sm:h-7 sm:w-7 lg:h-9 lg:w-9 text-white" />
               </span>
             )}
             <div className="min-w-0">
-              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight truncate">
+              <h1 className="text-base sm:text-2xl lg:text-5xl font-bold tracking-tight truncate">
                 {data.conference.name}
               </h1>
-              <p className="mt-1 text-lg sm:text-2xl text-blue-300">
+              <p className="mt-0.5 text-xs sm:text-base lg:text-2xl text-blue-300 truncate">
                 {data.conference.theme}
                 {data.conference.themeVerse && (
                   <span className="text-slate-300"> · {data.conference.themeVerse}</span>
@@ -286,12 +286,12 @@ export default function DisplayPage() {
           </div>
 
           <div className="text-right shrink-0">
-            <p className="text-5xl sm:text-7xl font-bold tabular-nums leading-none">{reloj}</p>
-            <p className="mt-2 text-lg sm:text-2xl capitalize text-slate-300">
+            <p className="text-2xl sm:text-4xl lg:text-7xl font-bold tabular-nums leading-none">{reloj}</p>
+            <p className="mt-1 text-xs sm:text-base lg:text-2xl capitalize text-slate-300">
               {data.day ? fmtFecha(data.day.date) : "—"}
             </p>
             {data.day && (
-              <p className="text-base sm:text-lg text-slate-400">
+              <p className="text-[10px] sm:text-sm lg:text-lg text-slate-400">
                 Día {data.day.dayNumber} de {data.totalDays}
                 {!data.day.isToday && " · próxima jornada"}
               </p>
@@ -300,17 +300,17 @@ export default function DisplayPage() {
         </header>
 
         {data.conference.location && (
-          <p className="mt-4 flex items-center gap-2 text-lg text-slate-300">
-            <MapPin className="h-5 w-5" /> {data.conference.location}
+          <p className="mt-2 sm:mt-4 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base lg:text-lg text-slate-300">
+            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {data.conference.location}
           </p>
         )}
 
         {sesiones.length === 0 ? (
-          <p className="mt-24 text-center text-4xl text-slate-300">
+          <p className="mt-12 sm:mt-24 text-center text-lg sm:text-2xl lg:text-4xl text-slate-300">
             No hay programa para este día.
           </p>
         ) : (
-          <ul className="mt-8 space-y-4">
+          <ul className="mt-4 sm:mt-6 lg:mt-8 space-y-2 sm:space-y-3 lg:space-y-4">
             {sesiones.map((s) => {
               const activa = s.estado === "encurso";
               const pasada = s.estado === "pasada";
@@ -320,7 +320,7 @@ export default function DisplayPage() {
               return (
                 <li
                   key={s.id}
-                  className={`flex items-stretch gap-5 rounded-2xl border p-5 sm:p-6 backdrop-blur-md transition-all ${
+                  className={`flex items-stretch gap-2.5 sm:gap-4 lg:gap-5 rounded-xl lg:rounded-2xl border p-2.5 sm:p-4 lg:p-6 backdrop-blur-md transition-all ${
                     activa
                       ? "border-blue-400/60 bg-blue-500/20 shadow-lg shadow-blue-500/20"
                       : cancelada
@@ -330,19 +330,19 @@ export default function DisplayPage() {
                           : "border-white/10 bg-black/40"
                   }`}
                 >
-                  <div className={`w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : cancelada ? "bg-red-400" : accentClasses(s.type?.color)} ${pasada || cancelada ? "opacity-40" : ""}`} />
+                  <div className={`w-1 sm:w-1.5 shrink-0 rounded-full ${activa ? "bg-blue-300" : cancelada ? "bg-red-400" : accentClasses(s.type?.color)} ${pasada || cancelada ? "opacity-40" : ""}`} />
 
-                  <div className="w-32 sm:w-44 shrink-0">
-                    <p className={`text-3xl sm:text-4xl font-bold tabular-nums ${activa ? "text-blue-200" : "text-slate-200"}`}>
+                  <div className="w-14 sm:w-24 lg:w-44 shrink-0">
+                    <p className={`text-sm sm:text-xl lg:text-4xl font-bold tabular-nums ${activa ? "text-blue-200" : "text-slate-200"}`}>
                       {s.timeStart || "—"}
                     </p>
                     {s.timeEnd && (
-                      <p className="text-lg text-slate-400 tabular-nums">a {s.timeEnd}</p>
+                      <p className="text-[10px] sm:text-sm lg:text-lg text-slate-400 tabular-nums">a {s.timeEnd}</p>
                     )}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 lg:gap-3">
                       {s.type?.label && (
                         // bg-white/10 aclaraba el chip lo suficiente para que
                         // ni el blanco puro llegara a 4.5:1 sobre el fondo
@@ -357,41 +357,41 @@ export default function DisplayPage() {
                         // El nombre del tipo (label) es el de la iglesia,
                         // incluidos los personalizados: ya no hay un mapa fijo
                         // de tipos en el frontend, todo llega de la API.
-                        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${activa ? "bg-blue-600 text-white" : "bg-black/50 text-slate-200"}`}>
+                        <span className={`rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 lg:px-3 text-[9px] sm:text-xs lg:text-sm font-semibold ${activa ? "bg-blue-600 text-white" : "bg-black/50 text-slate-200"}`}>
                           {s.type.label}
                         </span>
                       )}
                       {activa && (
-                        <span className="flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
-                          <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                        <span className="flex items-center gap-1 sm:gap-2 rounded-full bg-blue-600 px-1.5 py-0.5 sm:px-2.5 sm:py-1 lg:px-3 text-[9px] sm:text-xs lg:text-sm font-bold text-white">
+                          <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 animate-pulse rounded-full bg-white" />
                           EN CURSO
                         </span>
                       )}
                       {cancelada && (
-                        <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">
+                        <span className="rounded-full bg-red-600 px-1.5 py-0.5 sm:px-2.5 sm:py-1 lg:px-3 text-[9px] sm:text-xs lg:text-sm font-bold text-white">
                           CANCELADO
                         </span>
                       )}
                       {siguiente && (
-                        <span className="flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-sm font-semibold text-slate-200">
-                          <Clock className="h-4 w-4" /> A CONTINUACIÓN
+                        <span className="flex items-center gap-1 sm:gap-2 rounded-full border border-white/20 px-1.5 py-0.5 sm:px-2.5 sm:py-1 lg:px-3 text-[9px] sm:text-xs lg:text-sm font-semibold text-slate-200 whitespace-nowrap">
+                          <Clock className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 shrink-0" /> A CONTINUACIÓN
                         </span>
                       )}
                     </div>
 
-                    <h2 className={`mt-2 text-2xl sm:text-4xl font-bold leading-tight ${activa ? "text-white" : "text-slate-100"} ${cancelada ? "line-through decoration-red-400/70" : ""}`}>
+                    <h2 className={`mt-1 sm:mt-2 text-sm sm:text-lg lg:text-4xl font-bold leading-tight ${activa ? "text-white" : "text-slate-100"} ${cancelada ? "line-through decoration-red-400/70" : ""}`}>
                       {s.title}
                     </h2>
 
-                    <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-lg sm:text-xl text-slate-300">
+                    <div className="mt-1 sm:mt-2 flex flex-wrap gap-x-3 sm:gap-x-6 gap-y-0.5 sm:gap-y-1 text-[10px] sm:text-sm lg:text-xl text-slate-300">
                       {s.speaker && (
-                        <span className="flex items-center gap-2">
-                          <User className="h-5 w-5 shrink-0" /> {s.speaker}
+                        <span className="flex items-center gap-1 sm:gap-2">
+                          <User className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.speaker}
                         </span>
                       )}
                       {s.scriptureRef && (
-                        <span className="flex items-center gap-2">
-                          <BookOpen className="h-5 w-5 shrink-0" /> {s.scriptureRef}
+                        <span className="flex items-center gap-1 sm:gap-2">
+                          <BookOpen className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.scriptureRef}
                         </span>
                       )}
                     </div>
