@@ -602,6 +602,20 @@ export const settingsService = {
     return response.data;
   },
 
+  // Prédicas (pestaña "Mensajes" de la app móvil)
+  getSermons: async () => {
+    const response = await api.get('/settings/church/sermons');
+    return response.data;
+  },
+  addSermon: async (data) => {
+    const response = await api.post('/settings/church/sermons', data);
+    return response.data;
+  },
+  deleteSermon: async (id) => {
+    const response = await api.delete(`/settings/church/sermons/${id}`);
+    return response.data;
+  },
+
   // Galería de fotos (carrusel de la app móvil)
   getChurchPhotos: async () => {
     const response = await api.get('/settings/church/photos');

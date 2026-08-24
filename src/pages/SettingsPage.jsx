@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Radio,
   Wallet,
+  BookOpen,
   Trash,
   Smartphone,
   Copy,
@@ -198,6 +199,12 @@ export default function SettingsPage() {
   const [givingLabelInput, setGivingLabelInput] = useState("");
   const [givingValueInput, setGivingValueInput] = useState("");
   const MAX_GIVING_LINKS = 10;
+  const [sermons, setSermons] = useState(null);
+  const [sermonSaving, setSermonSaving] = useState(false);
+  const [sermonTitleInput, setSermonTitleInput] = useState("");
+  const [sermonSpeakerInput, setSermonSpeakerInput] = useState("");
+  const [sermonUrlInput, setSermonUrlInput] = useState("");
+  const [sermonDateInput, setSermonDateInput] = useState("");
 
   const fetchPhotos = useCallback(async () => {
     try {
@@ -212,6 +219,15 @@ export default function SettingsPage() {
     try {
       const data = await settingsService.getGivingLinks();
       setGivingLinks(data.givingLinks || []);
+    } catch {
+      /* silent */
+    }
+  }, []);
+
+  const fetchSermons = useCallback(async () => {
+    try {
+      const data = await settingsService.getSermons();
+      setSermons(data.sermons || []);
     } catch {
       /* silent */
     }
@@ -310,6 +326,10 @@ export default function SettingsPage() {
   useEffect(() => {
     if (activeTab === "church" && !givingLinks) fetchGivingLinks();
   }, [activeTab, givingLinks, fetchGivingLinks]);
+
+  useEffect(() => {
+    if (activeTab === "church" && !sermons) fetchSermons();
+  }, [activeTab, sermons, fetchSermons]);
 
   useEffect(() => {
     if (activeTab === "church" && isAdmin && !joinCode) fetchJoinCode();
@@ -476,6 +496,42 @@ export default function SettingsPage() {
       notify(e?.response?.data?.error || "Error al eliminar.", "error");
     } finally {
       setGivingLinkSaving(false);
+    }
+  };
+
+  const handleAddSermon = async () => {
+    if (!sermonTitleInput.trim() || !sermonUrlInput.trim()) return;
+    setSermonSaving(true);
+    try {
+      const res = await settingsService.addSermon({
+        title: sermonTitleInput.trim(),
+        speaker: sermonSpeakerInput.trim(),
+        videoUrl: sermonUrlInput.trim(),
+        sermonDate: sermonDateInput || null,
+      });
+      setSermons((prev) => [res.sermon, ...(prev || [])]);
+      setSermonTitleInput("");
+      setSermonSpeakerInput("");
+      setSermonUrlInput("");
+      setSermonDateInput("");
+      notify("Prédica agregada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al agregar.", "error");
+    } finally {
+      setSermonSaving(false);
+    }
+  };
+
+  const handleDeleteSermon = async (id) => {
+    setSermonSaving(true);
+    try {
+      await settingsService.deleteSermon(id);
+      setSermons((prev) => (prev || []).filter((s) => s.id !== id));
+      notify("Prédica eliminada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al eliminar.", "error");
+    } finally {
+      setSermonSaving(false);
     }
   };
 
@@ -921,6 +977,85 @@ export default function SettingsPage() {
           )}
           {givingLinks && givingLinks.length === 0 && !isAdmin && (
             <p className="text-muted-foreground text-xs">No hay formas de dar configuradas.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Prédicas (pestaña "Mensajes" de la app móvil) */}
+      <Card className="bg-card border-border lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Prédicas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            Aparecen en la pestaña "Mensajes" de la app móvil, más recientes primero. Cada una es un link de Facebook (video normal o guardado de una transmisión pasada).
+          </p>
+          {(sermons || []).length > 0 && (
+            <div className="space-y-2">
+              {sermons.map((s) => (
+                <div key={s.id} className="flex items-center justify-between gap-3 bg-background border border-border rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{s.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[s.speaker, s.sermon_date ? new Date(s.sermon_date).toLocaleDateString("es", {day: "numeric", month: "long", year: "numeric"}) : null].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      disabled={sermonSaving}
+                      onClick={() => handleDeleteSermon(s.id)}
+                      className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {isAdmin && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={sermonTitleInput}
+                onChange={(e) => setSermonTitleInput(e.target.value)}
+                placeholder="Título"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={sermonSpeakerInput}
+                onChange={(e) => setSermonSpeakerInput(e.target.value)}
+                placeholder="Predicador (opcional)"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={sermonUrlInput}
+                onChange={(e) => setSermonUrlInput(e.target.value)}
+                placeholder="https://www.facebook.com/..."
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="date"
+                value={sermonDateInput}
+                onChange={(e) => setSermonDateInput(e.target.value)}
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <button
+                disabled={sermonSaving || !sermonTitleInput.trim() || !sermonUrlInput.trim()}
+                onClick={handleAddSermon}
+                className="sm:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {sermonSaving ? "Guardando..." : "Agregar prédica"}
+              </button>
+            </div>
+          )}
+          {sermons && sermons.length === 0 && !isAdmin && (
+            <p className="text-muted-foreground text-xs">Todavía no hay prédicas publicadas.</p>
           )}
         </CardContent>
       </Card>
