@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useCallback} from "react";
 import {toast} from "sonner";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/Card";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/Dialog";
 import {Button} from "@/components/ui/Button";
 import {Input} from "@/components/ui/Input";
 import {
@@ -15,6 +16,8 @@ import {
   ShieldCheck,
   ImagePlus,
   Images,
+  Heart,
+  MessageCircle,
   Trash,
   Smartphone,
   Copy,
@@ -410,6 +413,39 @@ export default function SettingsPage() {
     }
   };
 
+  // Moderación: los comentarios los deja gente anónima desde el móvil (sin
+  // cuenta ni login todavía), así que borrar acá es el único control que
+  // tiene el staff sobre lo que se publica.
+  const [commentsDialogPhoto, setCommentsDialogPhoto] = useState(null);
+  const [photoComments, setPhotoComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
+  const openPhotoComments = async (photo) => {
+    setCommentsDialogPhoto(photo);
+    setCommentsLoading(true);
+    try {
+      const data = await settingsService.getPhotoComments(photo.id);
+      setPhotoComments(data.comments || []);
+    } catch {
+      setPhotoComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await settingsService.deletePhotoComment(commentId);
+      setPhotoComments((prev) => prev.filter((c) => c.id !== commentId));
+      setPhotos((prev) => prev.map((p) =>
+        p.id === commentsDialogPhoto?.id ? {...p, comment_count: Math.max(0, (p.comment_count || 1) - 1)} : p
+      ));
+      notify("Comentario eliminado.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al eliminar el comentario.", "error");
+    }
+  };
+
   // ─── Render Tabs ──────────────────────────────────────────────────────────
   const renderProfile = () => (
     <div className="space-y-6">
@@ -644,6 +680,19 @@ export default function SettingsPage() {
                     <Trash className="w-3.5 h-3.5" />
                   </button>
                 )}
+                <div className="absolute bottom-0 inset-x-0 flex items-center gap-2 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                  <span className="inline-flex items-center gap-1 text-white text-[11px] font-semibold">
+                    <Heart className="w-3 h-3 fill-current" />
+                    {photo.like_count || 0}
+                  </span>
+                  <button
+                    onClick={() => openPhotoComments(photo)}
+                    className="inline-flex items-center gap-1 text-white text-[11px] font-semibold hover:text-violet-300 transition-colors"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    {photo.comment_count || 0}
+                  </button>
+                </div>
               </div>
             ))}
             {isAdmin && (photos?.length || 0) < MAX_CHURCH_PHOTOS && (
@@ -1050,6 +1099,43 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!commentsDialogPhoto} onOpenChange={(open) => !open && setCommentsDialogPhoto(null)}>
+        <DialogContent onClose={() => setCommentsDialogPhoto(null)} className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Comentarios</DialogTitle>
+          </DialogHeader>
+          {commentsDialogPhoto && (
+            <img src={commentsDialogPhoto.photo_url} alt="" className="w-full h-32 object-cover rounded-lg mt-2" />
+          )}
+          <div className="mt-4 space-y-3 max-h-80 overflow-y-auto">
+            {commentsLoading ? (
+              <p className="text-muted-foreground text-sm text-center py-6">Cargando...</p>
+            ) : photoComments.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-6">Todavía no hay comentarios.</p>
+            ) : (
+              photoComments.map((c) => (
+                <div key={c.id} className="flex items-start justify-between gap-3 border-b border-border pb-3 last:border-0">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{c.author_name}</p>
+                    <p className="text-sm text-foreground/90 break-words">{c.body}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(c.created_at).toLocaleDateString("es", {day: "numeric", month: "long", hour: "2-digit", minute: "2-digit"})}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteComment(c.id)}
+                    className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title="Eliminar comentario"
+                  >
+                    <Trash className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 

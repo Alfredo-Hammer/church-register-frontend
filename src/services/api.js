@@ -583,6 +583,14 @@ export const settingsService = {
     const response = await api.delete(`/settings/church/photos/${id}`);
     return response.data;
   },
+  getPhotoComments: async (photoId) => {
+    const response = await api.get(`/settings/church/photos/${photoId}/comments`);
+    return response.data;
+  },
+  deletePhotoComment: async (commentId) => {
+    const response = await api.delete(`/settings/church/photos/comments/${commentId}`);
+    return response.data;
+  },
 
   // Usuarios (ADMIN)
   getUsers: async (params = {}) => {
