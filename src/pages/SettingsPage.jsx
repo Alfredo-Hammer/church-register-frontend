@@ -78,6 +78,7 @@ function PasswordInput({value, onChange, placeholder, name}) {
 const TABS = [
   {id: "profile", label: "Mi Perfil", icon: User},
   {id: "church", label: "Iglesia", icon: Building2},
+  {id: "mobile", label: "App Móvil", icon: Smartphone},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,23 +317,23 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "church" && !church) fetchChurch();
+    if ((activeTab === "church" || activeTab === "mobile") && !church) fetchChurch();
   }, [activeTab, church, fetchChurch]);
 
   useEffect(() => {
-    if (activeTab === "church" && !photos) fetchPhotos();
+    if (activeTab === "mobile" && !photos) fetchPhotos();
   }, [activeTab, photos, fetchPhotos]);
 
   useEffect(() => {
-    if (activeTab === "church" && !givingLinks) fetchGivingLinks();
+    if (activeTab === "mobile" && !givingLinks) fetchGivingLinks();
   }, [activeTab, givingLinks, fetchGivingLinks]);
 
   useEffect(() => {
-    if (activeTab === "church" && !sermons) fetchSermons();
+    if (activeTab === "mobile" && !sermons) fetchSermons();
   }, [activeTab, sermons, fetchSermons]);
 
   useEffect(() => {
-    if (activeTab === "church" && isAdmin && !joinCode) fetchJoinCode();
+    if ((activeTab === "church" || activeTab === "mobile") && isAdmin && !joinCode) fetchJoinCode();
   }, [activeTab, isAdmin, joinCode, fetchJoinCode]);
 
   const handleChurchSave = async (e) => {
@@ -821,370 +822,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Transmisión en vivo (link manual de Facebook) */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground text-base flex items-center gap-2">
-            <Radio className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-            Transmisión en Vivo
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {church?.liveStreamUrl ? (
-            <>
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse shrink-0" />
-                <span className="text-red-700 dark:text-red-400 text-sm font-semibold">Transmisión activa</span>
-              </div>
-              <p className="text-muted-foreground text-xs break-all">{church.liveStreamUrl}</p>
-              {canManageLiveStream && (
-                <button
-                  disabled={liveStreamSaving}
-                  onClick={handleEndLiveStream}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors disabled:opacity-40"
-                >
-                  <Trash className="w-4 h-4" />
-                  {liveStreamSaving ? "Finalizando..." : "Finalizar transmisión"}
-                </button>
-              )}
-            </>
-          ) : canManageLiveStream ? (
-            <>
-              <p className="text-muted-foreground text-sm">
-                Pegá el link del video/transmisión de Facebook cuando arranque el culto. Se muestra embebido en el Inicio de la app móvil hasta que la finalices acá.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  value={liveStreamInput}
-                  onChange={(e) => setLiveStreamInput(e.target.value)}
-                  placeholder="https://www.facebook.com/..."
-                  className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-                <button
-                  disabled={liveStreamSaving || !liveStreamInput.trim()}
-                  onClick={handleStartLiveStream}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                >
-                  {liveStreamSaving ? "Guardando..." : "Iniciar transmisión"}
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground text-sm">No hay ninguna transmisión activa en este momento.</p>
-          )}
-
-          <div className="border-t border-border pt-3 mt-1">
-            <p className="text-foreground text-sm font-semibold mb-1">Video predeterminado</p>
-            <p className="text-muted-foreground text-xs mb-2">
-              Se muestra en el Inicio de la app cuando no hay transmisión en vivo — por ejemplo, la grabación del último culto — para que siempre haya un video de la iglesia disponible.
-            </p>
-            {church?.defaultVideoUrl ? (
-              <>
-                <p className="text-muted-foreground text-xs break-all mb-2">{church.defaultVideoUrl}</p>
-                {canManageLiveStream && (
-                  <button
-                    disabled={defaultVideoSaving}
-                    onClick={handleRemoveDefaultVideo}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors disabled:opacity-40"
-                  >
-                    <Trash className="w-4 h-4" />
-                    {defaultVideoSaving ? "Eliminando..." : "Quitar video predeterminado"}
-                  </button>
-                )}
-              </>
-            ) : canManageLiveStream ? (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  value={defaultVideoInput}
-                  onChange={(e) => setDefaultVideoInput(e.target.value)}
-                  placeholder="https://www.facebook.com/..."
-                  className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-                <button
-                  disabled={defaultVideoSaving || !defaultVideoInput.trim()}
-                  onClick={handleSaveDefaultVideo}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                >
-                  {defaultVideoSaving ? "Guardando..." : "Guardar"}
-                </button>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-xs">No hay ningún video predeterminado configurado.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Formas de dar (links externos — la app no procesa pagos) */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground text-base flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-            Formas de Dar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-sm">
-            Aparece en la pestaña "Dar" de la app móvil. Cada fila es un link o dato externo (Zelle, Cashapp, sitio web...) — nunca procesamos pagos nosotros, solo mostramos cómo dar.
-          </p>
-          {(givingLinks || []).length > 0 && (
-            <div className="space-y-2">
-              {givingLinks.map((g) => (
-                <div key={g.id} className="flex items-center justify-between gap-3 bg-background border border-border rounded-lg px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{g.label}</p>
-                    <p className="text-xs text-muted-foreground truncate">{g.value}</p>
-                  </div>
-                  {isAdmin && (
-                    <button
-                      disabled={givingLinkSaving}
-                      onClick={() => handleDeleteGivingLink(g.id)}
-                      className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-                    >
-                      <Trash className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {isAdmin && (givingLinks?.length || 0) < MAX_GIVING_LINKS && (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={givingLabelInput}
-                onChange={(e) => setGivingLabelInput(e.target.value)}
-                placeholder="Nombre (ej. Zelle)"
-                className="w-full sm:w-40 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-              <input
-                type="text"
-                value={givingValueInput}
-                onChange={(e) => setGivingValueInput(e.target.value)}
-                placeholder="Link, correo o dato"
-                className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-              <button
-                disabled={givingLinkSaving || !givingLabelInput.trim() || !givingValueInput.trim()}
-                onClick={handleAddGivingLink}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              >
-                {givingLinkSaving ? "Guardando..." : "Agregar"}
-              </button>
-            </div>
-          )}
-          {givingLinks && givingLinks.length === 0 && !isAdmin && (
-            <p className="text-muted-foreground text-xs">No hay formas de dar configuradas.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Prédicas (pestaña "Mensajes" de la app móvil) */}
-      <Card className="bg-card border-border lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-foreground text-base flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-            Prédicas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-sm">
-            Aparecen en la pestaña "Mensajes" de la app móvil, más recientes primero. Cada una es un link de Facebook (video normal o guardado de una transmisión pasada).
-          </p>
-          {(sermons || []).length > 0 && (
-            <div className="space-y-2">
-              {sermons.map((s) => (
-                <div key={s.id} className="flex items-center justify-between gap-3 bg-background border border-border rounded-lg px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{s.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {[s.speaker, s.sermon_date ? new Date(s.sermon_date).toLocaleDateString("es", {day: "numeric", month: "long", year: "numeric"}) : null].filter(Boolean).join(" · ")}
-                    </p>
-                  </div>
-                  {isAdmin && (
-                    <button
-                      disabled={sermonSaving}
-                      onClick={() => handleDeleteSermon(s.id)}
-                      className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-                    >
-                      <Trash className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {isAdmin && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                type="text"
-                value={sermonTitleInput}
-                onChange={(e) => setSermonTitleInput(e.target.value)}
-                placeholder="Título"
-                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-              <input
-                type="text"
-                value={sermonSpeakerInput}
-                onChange={(e) => setSermonSpeakerInput(e.target.value)}
-                placeholder="Predicador (opcional)"
-                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-              <input
-                type="text"
-                value={sermonUrlInput}
-                onChange={(e) => setSermonUrlInput(e.target.value)}
-                placeholder="https://www.facebook.com/..."
-                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-              <input
-                type="date"
-                value={sermonDateInput}
-                onChange={(e) => setSermonDateInput(e.target.value)}
-                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-              <button
-                disabled={sermonSaving || !sermonTitleInput.trim() || !sermonUrlInput.trim()}
-                onClick={handleAddSermon}
-                className="sm:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {sermonSaving ? "Guardando..." : "Agregar prédica"}
-              </button>
-            </div>
-          )}
-          {sermons && sermons.length === 0 && !isAdmin && (
-            <p className="text-muted-foreground text-xs">Todavía no hay prédicas publicadas.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Galería de fotos (carrusel de la app móvil) */}
-      <Card className="bg-card border-border lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-foreground text-base flex items-center gap-2">
-            <Images className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-            Galería de Fotos
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Estas fotos aparecen en el carrusel de "presentación" del Inicio de la app móvil. Hasta {MAX_CHURCH_PHOTOS} fotos, máx. 2MB cada una.
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {(photos || []).map((photo) => (
-              <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-background">
-                <img src={photo.photo_url} alt="" className="w-full h-full object-cover" />
-                {isAdmin && (
-                  <button
-                    disabled={photoUploading}
-                    onClick={() => handlePhotoDelete(photo.id)}
-                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
-                  >
-                    <Trash className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                <div className="absolute bottom-0 inset-x-0 flex items-center gap-2 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
-                  <span className="inline-flex items-center gap-1 text-white text-[11px] font-semibold">
-                    <Heart className="w-3 h-3 fill-current" />
-                    {photo.like_count || 0}
-                  </span>
-                  <button
-                    onClick={() => openPhotoComments(photo)}
-                    className="inline-flex items-center gap-1 text-white text-[11px] font-semibold hover:text-violet-300 transition-colors"
-                  >
-                    <MessageCircle className="w-3 h-3" />
-                    {photo.comment_count || 0}
-                  </button>
-                </div>
-              </div>
-            ))}
-            {isAdmin && (photos?.length || 0) < MAX_CHURCH_PHOTOS && (
-              <label className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors
-                ${photoUploading ? "border-border text-muted-foreground cursor-not-allowed" : "border-border hover:border-violet-500 text-muted-foreground hover:text-violet-700 dark:hover:text-violet-400"}`}>
-                <ImagePlus className="w-5 h-5" />
-                <span className="text-xs font-medium">{photoUploading ? "Subiendo..." : "Agregar"}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={photoUploading}
-                  onChange={handlePhotoAdd}
-                />
-              </label>
-            )}
-          </div>
-          {photos && photos.length === 0 && (
-            <p className="text-muted-foreground text-xs">Todavía no hay fotos en la galería.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Código de invitación (app móvil) */}
-      {isAdmin && (
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground text-base flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-              Código de Invitación
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row items-start gap-5">
-              <div className="bg-white p-3 rounded-xl shrink-0">
-                {joinCode ? (
-                  <QRCodeSVG value={joinCode} size={104} level="M" />
-                ) : (
-                  <div className="w-[104px] h-[104px] animate-pulse bg-muted rounded" />
-                )}
-              </div>
-              <div className="flex-1 space-y-3 min-w-0">
-                <p className="text-muted-foreground text-sm">
-                  Compártelo con tu congregación para que se unan desde la app móvil, sin necesitar una cuenta — impreso, de palabra, o escaneando el QR.
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-lg font-bold tracking-wider text-foreground bg-background border border-border rounded-lg px-3 py-1.5">
-                    {joinCode || "···· ····"}
-                  </span>
-                  <button
-                    onClick={handleCopyCode}
-                    disabled={!joinCode}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40"
-                  >
-                    {codeCopied ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    {codeCopied ? "Copiado" : "Copiar"}
-                  </button>
-                </div>
-
-                {confirmRegenerate ? (
-                  <div className="flex flex-wrap items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
-                    <p className="text-xs text-amber-700 dark:text-amber-400 flex-1 min-w-[180px]">
-                      El código actual dejará de funcionar. ¿Regenerar?
-                    </p>
-                    <Button size="sm" variant="ghost" onClick={() => setConfirmRegenerate(false)} disabled={regeneratingCode}>
-                      Cancelar
-                    </Button>
-                    <Button size="sm" onClick={handleRegenerateCode} disabled={regeneratingCode}
-                      className="bg-amber-600 hover:bg-amber-700 text-white">
-                      {regeneratingCode ? "Regenerando..." : "Sí, regenerar"}
-                    </Button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmRegenerate(true)}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Regenerar código
-                  </button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Links de auto-registro (miembros y visitantes) */}
       {isAdmin && (
         <Card className="bg-card border-border">
@@ -1504,6 +1141,376 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+
+  const renderMobile = () => (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+      {/* Código de invitación (app móvil) */}
+      {isAdmin && (
+        <Card className="bg-card border-border lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-foreground text-base flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+              Código de Invitación
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row items-start gap-5">
+              <div className="bg-white p-3 rounded-xl shrink-0">
+                {joinCode ? (
+                  <QRCodeSVG value={joinCode} size={104} level="M" />
+                ) : (
+                  <div className="w-[104px] h-[104px] animate-pulse bg-muted rounded" />
+                )}
+              </div>
+              <div className="flex-1 space-y-3 min-w-0">
+                <p className="text-muted-foreground text-sm">
+                  Compártelo con tu congregación para que se unan desde la app móvil, sin necesitar una cuenta — impreso, de palabra, o escaneando el QR.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-lg font-bold tracking-wider text-foreground bg-background border border-border rounded-lg px-3 py-1.5">
+                    {joinCode || "···· ····"}
+                  </span>
+                  <button
+                    onClick={handleCopyCode}
+                    disabled={!joinCode}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40"
+                  >
+                    {codeCopied ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {codeCopied ? "Copiado" : "Copiar"}
+                  </button>
+                </div>
+
+                {confirmRegenerate ? (
+                  <div className="flex flex-wrap items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 flex-1 min-w-[180px]">
+                      El código actual dejará de funcionar. ¿Regenerar?
+                    </p>
+                    <Button size="sm" variant="ghost" onClick={() => setConfirmRegenerate(false)} disabled={regeneratingCode}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleRegenerateCode} disabled={regeneratingCode}
+                      className="bg-amber-600 hover:bg-amber-700 text-white">
+                      {regeneratingCode ? "Regenerando..." : "Sí, regenerar"}
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmRegenerate(true)}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Regenerar código
+                  </button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transmisión en vivo (link manual de Facebook) */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Radio className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Transmisión en Vivo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {church?.liveStreamUrl ? (
+            <>
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse shrink-0" />
+                <span className="text-red-700 dark:text-red-400 text-sm font-semibold">Transmisión activa</span>
+              </div>
+              <p className="text-muted-foreground text-xs break-all">{church.liveStreamUrl}</p>
+              {canManageLiveStream && (
+                <button
+                  disabled={liveStreamSaving}
+                  onClick={handleEndLiveStream}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors disabled:opacity-40"
+                >
+                  <Trash className="w-4 h-4" />
+                  {liveStreamSaving ? "Finalizando..." : "Finalizar transmisión"}
+                </button>
+              )}
+            </>
+          ) : canManageLiveStream ? (
+            <>
+              <p className="text-muted-foreground text-sm">
+                Pegá el link del video/transmisión de Facebook cuando arranque el culto. Se muestra embebido en el Inicio de la app móvil hasta que la finalices acá.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={liveStreamInput}
+                  onChange={(e) => setLiveStreamInput(e.target.value)}
+                  placeholder="https://www.facebook.com/..."
+                  className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                <button
+                  disabled={liveStreamSaving || !liveStreamInput.trim()}
+                  onClick={handleStartLiveStream}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {liveStreamSaving ? "Guardando..." : "Iniciar transmisión"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">No hay ninguna transmisión activa en este momento.</p>
+          )}
+
+          <div className="border-t border-border pt-3 mt-1">
+            <p className="text-foreground text-sm font-semibold mb-1">Video predeterminado</p>
+            <p className="text-muted-foreground text-xs mb-2">
+              Se muestra en el Inicio de la app cuando no hay transmisión en vivo — por ejemplo, la grabación del último culto — para que siempre haya un video de la iglesia disponible.
+            </p>
+            {church?.defaultVideoUrl ? (
+              <>
+                <p className="text-muted-foreground text-xs break-all mb-2">{church.defaultVideoUrl}</p>
+                {canManageLiveStream && (
+                  <button
+                    disabled={defaultVideoSaving}
+                    onClick={handleRemoveDefaultVideo}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors disabled:opacity-40"
+                  >
+                    <Trash className="w-4 h-4" />
+                    {defaultVideoSaving ? "Eliminando..." : "Quitar video predeterminado"}
+                  </button>
+                )}
+              </>
+            ) : canManageLiveStream ? (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={defaultVideoInput}
+                  onChange={(e) => setDefaultVideoInput(e.target.value)}
+                  placeholder="https://www.facebook.com/..."
+                  className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                <button
+                  disabled={defaultVideoSaving || !defaultVideoInput.trim()}
+                  onClick={handleSaveDefaultVideo}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {defaultVideoSaving ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-xs">No hay ningún video predeterminado configurado.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Formas de dar (links externos — la app no procesa pagos) */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Formas de Dar
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            Aparece en la pestaña "Dar" de la app móvil. Cada fila es un link o dato externo (Zelle, Cashapp, sitio web...) — nunca procesamos pagos nosotros, solo mostramos cómo dar.
+          </p>
+          {(givingLinks || []).length > 0 && (
+            <div className="space-y-2">
+              {givingLinks.map((g) => (
+                <div key={g.id} className="flex items-center justify-between gap-3 bg-background border border-border rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{g.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{g.value}</p>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      disabled={givingLinkSaving}
+                      onClick={() => handleDeleteGivingLink(g.id)}
+                      className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {isAdmin && (givingLinks?.length || 0) < MAX_GIVING_LINKS && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={givingLabelInput}
+                onChange={(e) => setGivingLabelInput(e.target.value)}
+                placeholder="Nombre (ej. Zelle)"
+                className="w-full sm:w-40 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={givingValueInput}
+                onChange={(e) => setGivingValueInput(e.target.value)}
+                placeholder="Link, correo o dato"
+                className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <button
+                disabled={givingLinkSaving || !givingLabelInput.trim() || !givingValueInput.trim()}
+                onClick={handleAddGivingLink}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              >
+                {givingLinkSaving ? "Guardando..." : "Agregar"}
+              </button>
+            </div>
+          )}
+          {givingLinks && givingLinks.length === 0 && !isAdmin && (
+            <p className="text-muted-foreground text-xs">No hay formas de dar configuradas.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Prédicas (pestaña "Mensajes" de la app móvil) */}
+      <Card className="bg-card border-border lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Prédicas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            Aparecen en la pestaña "Mensajes" de la app móvil, más recientes primero. Cada una es un link de Facebook (video normal o guardado de una transmisión pasada).
+          </p>
+          {(sermons || []).length > 0 && (
+            <div className="space-y-2">
+              {sermons.map((s) => (
+                <div key={s.id} className="flex items-center justify-between gap-3 bg-background border border-border rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{s.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[s.speaker, s.sermon_date ? new Date(s.sermon_date).toLocaleDateString("es", {day: "numeric", month: "long", year: "numeric"}) : null].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      disabled={sermonSaving}
+                      onClick={() => handleDeleteSermon(s.id)}
+                      className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-700 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {isAdmin && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={sermonTitleInput}
+                onChange={(e) => setSermonTitleInput(e.target.value)}
+                placeholder="Título"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={sermonSpeakerInput}
+                onChange={(e) => setSermonSpeakerInput(e.target.value)}
+                placeholder="Predicador (opcional)"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={sermonUrlInput}
+                onChange={(e) => setSermonUrlInput(e.target.value)}
+                placeholder="https://www.facebook.com/..."
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <input
+                type="date"
+                value={sermonDateInput}
+                onChange={(e) => setSermonDateInput(e.target.value)}
+                className="h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <button
+                disabled={sermonSaving || !sermonTitleInput.trim() || !sermonUrlInput.trim()}
+                onClick={handleAddSermon}
+                className="sm:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {sermonSaving ? "Guardando..." : "Agregar prédica"}
+              </button>
+            </div>
+          )}
+          {sermons && sermons.length === 0 && !isAdmin && (
+            <p className="text-muted-foreground text-xs">Todavía no hay prédicas publicadas.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Galería de fotos (carrusel de la app móvil) */}
+      <Card className="bg-card border-border lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Images className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Galería de Fotos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground text-sm">
+            Estas fotos aparecen en el carrusel de "presentación" del Inicio de la app móvil. Hasta {MAX_CHURCH_PHOTOS} fotos, máx. 2MB cada una.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {(photos || []).map((photo) => (
+              <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-background">
+                <img src={photo.photo_url} alt="" className="w-full h-full object-cover" />
+                {isAdmin && (
+                  <button
+                    disabled={photoUploading}
+                    onClick={() => handlePhotoDelete(photo.id)}
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
+                  >
+                    <Trash className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <div className="absolute bottom-0 inset-x-0 flex items-center gap-2 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                  <span className="inline-flex items-center gap-1 text-white text-[11px] font-semibold">
+                    <Heart className="w-3 h-3 fill-current" />
+                    {photo.like_count || 0}
+                  </span>
+                  <button
+                    onClick={() => openPhotoComments(photo)}
+                    className="inline-flex items-center gap-1 text-white text-[11px] font-semibold hover:text-violet-300 transition-colors"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    {photo.comment_count || 0}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {isAdmin && (photos?.length || 0) < MAX_CHURCH_PHOTOS && (
+              <label className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors
+                ${photoUploading ? "border-border text-muted-foreground cursor-not-allowed" : "border-border hover:border-violet-500 text-muted-foreground hover:text-violet-700 dark:hover:text-violet-400"}`}>
+                <ImagePlus className="w-5 h-5" />
+                <span className="text-xs font-medium">{photoUploading ? "Subiendo..." : "Agregar"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={photoUploading}
+                  onChange={handlePhotoAdd}
+                />
+              </label>
+            )}
+          </div>
+          {photos && photos.length === 0 && (
+            <p className="text-muted-foreground text-xs">Todavía no hay fotos en la galería.</p>
+          )}
+        </CardContent>
+      </Card>
+      </div>
 
       <Dialog open={!!commentsDialogPhoto} onOpenChange={(open) => !open && setCommentsDialogPhoto(null)}>
         <DialogContent onClose={() => setCommentsDialogPhoto(null)} className="max-w-md">
@@ -1587,6 +1594,7 @@ export default function SettingsPage() {
       <div>
         {activeTab === "profile" && renderProfile()}
         {activeTab === "church" && renderChurch()}
+        {activeTab === "mobile" && renderMobile()}
       </div>
     </div>
   );
