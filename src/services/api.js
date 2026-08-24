@@ -570,6 +570,20 @@ export const settingsService = {
     return response.data;
   },
 
+  // Galería de fotos (carrusel de la app móvil)
+  getChurchPhotos: async () => {
+    const response = await api.get('/settings/church/photos');
+    return response.data;
+  },
+  addChurchPhoto: async (photoBase64) => {
+    const response = await api.post('/settings/church/photos', {photoBase64});
+    return response.data;
+  },
+  deleteChurchPhoto: async (id) => {
+    const response = await api.delete(`/settings/church/photos/${id}`);
+    return response.data;
+  },
+
   // Usuarios (ADMIN)
   getUsers: async (params = {}) => {
     const response = await api.get('/settings/users', {params});

@@ -14,6 +14,7 @@ import {
   EyeOff,
   ShieldCheck,
   ImagePlus,
+  Images,
   Trash,
   Smartphone,
   Copy,
@@ -179,6 +180,18 @@ export default function SettingsPage() {
   const [churchSaving, setChurchSaving] = useState(false);
   const [churchEditing, setChurchEditing] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [photos, setPhotos] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const MAX_CHURCH_PHOTOS = 8;
+
+  const fetchPhotos = useCallback(async () => {
+    try {
+      const data = await settingsService.getChurchPhotos();
+      setPhotos(data.photos || []);
+    } catch {
+      /* silent */
+    }
+  }, []);
 
   // Código de invitación — lo que un miembro sin cuenta usa en la app móvil
   // para asociarse a esta iglesia.
@@ -267,6 +280,10 @@ export default function SettingsPage() {
   }, [activeTab, church, fetchChurch]);
 
   useEffect(() => {
+    if (activeTab === "church" && !photos) fetchPhotos();
+  }, [activeTab, photos, fetchPhotos]);
+
+  useEffect(() => {
     if (activeTab === "church" && isAdmin && !joinCode) fetchJoinCode();
   }, [activeTab, isAdmin, joinCode, fetchJoinCode]);
 
@@ -346,6 +363,50 @@ export default function SettingsPage() {
       notify(e?.response?.data?.error || "Error al eliminar logo.", "error");
     } finally {
       setLogoUploading(false);
+    }
+  };
+
+  const handlePhotoAdd = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/"))
+      return notify("Solo se permiten archivos de imagen.", "error");
+    if (file.size > 2 * 1024 * 1024)
+      return notify("La imagen debe ser menor a 2MB.", "error");
+    if ((photos?.length || 0) >= MAX_CHURCH_PHOTOS)
+      return notify(`Máximo ${MAX_CHURCH_PHOTOS} fotos en la galería.`, "error");
+    setPhotoUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result;
+        try {
+          const res = await settingsService.addChurchPhoto(base64);
+          setPhotos((prev) => [...(prev || []), res.photo]);
+          notify("Foto agregada.");
+        } catch (err) {
+          notify(err?.response?.data?.error || "Error al subir la foto.", "error");
+        } finally {
+          setPhotoUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setPhotoUploading(false);
+    }
+    e.target.value = "";
+  };
+
+  const handlePhotoDelete = async (id) => {
+    setPhotoUploading(true);
+    try {
+      await settingsService.deleteChurchPhoto(id);
+      setPhotos((prev) => (prev || []).filter((p) => p.id !== id));
+      notify("Foto eliminada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al eliminar la foto.", "error");
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -555,6 +616,54 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Galería de fotos (carrusel de la app móvil) */}
+      <Card className="bg-card border-border lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Images className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Galería de Fotos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground text-sm">
+            Estas fotos aparecen en el carrusel de "presentación" del Inicio de la app móvil. Hasta {MAX_CHURCH_PHOTOS} fotos, máx. 2MB cada una.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {(photos || []).map((photo) => (
+              <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-background">
+                <img src={photo.photo_url} alt="" className="w-full h-full object-cover" />
+                {isAdmin && (
+                  <button
+                    disabled={photoUploading}
+                    onClick={() => handlePhotoDelete(photo.id)}
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
+                  >
+                    <Trash className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {isAdmin && (photos?.length || 0) < MAX_CHURCH_PHOTOS && (
+              <label className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors
+                ${photoUploading ? "border-border text-muted-foreground cursor-not-allowed" : "border-border hover:border-violet-500 text-muted-foreground hover:text-violet-700 dark:hover:text-violet-400"}`}>
+                <ImagePlus className="w-5 h-5" />
+                <span className="text-xs font-medium">{photoUploading ? "Subiendo..." : "Agregar"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={photoUploading}
+                  onChange={handlePhotoAdd}
+                />
+              </label>
+            )}
+          </div>
+          {photos && photos.length === 0 && (
+            <p className="text-muted-foreground text-xs">Todavía no hay fotos en la galería.</p>
+          )}
         </CardContent>
       </Card>
 
