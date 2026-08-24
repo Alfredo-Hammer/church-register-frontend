@@ -187,6 +187,8 @@ export default function SettingsPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [liveStreamSaving, setLiveStreamSaving] = useState(false);
   const [liveStreamInput, setLiveStreamInput] = useState("");
+  const [defaultVideoSaving, setDefaultVideoSaving] = useState(false);
+  const [defaultVideoInput, setDefaultVideoInput] = useState("");
   const [photos, setPhotos] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const MAX_CHURCH_PHOTOS = 8;
@@ -398,6 +400,34 @@ export default function SettingsPage() {
       notify(e?.response?.data?.error || "Error al finalizar la transmisión.", "error");
     } finally {
       setLiveStreamSaving(false);
+    }
+  };
+
+  const handleSaveDefaultVideo = async () => {
+    if (!defaultVideoInput.trim()) return;
+    setDefaultVideoSaving(true);
+    try {
+      const res = await settingsService.updateDefaultVideo(defaultVideoInput.trim());
+      setChurch((prev) => ({...prev, defaultVideoUrl: res.defaultVideoUrl}));
+      setDefaultVideoInput("");
+      notify("Video predeterminado guardado.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al guardar el video.", "error");
+    } finally {
+      setDefaultVideoSaving(false);
+    }
+  };
+
+  const handleRemoveDefaultVideo = async () => {
+    setDefaultVideoSaving(true);
+    try {
+      await settingsService.deleteDefaultVideo();
+      setChurch((prev) => ({...prev, defaultVideoUrl: null}));
+      notify("Video predeterminado eliminado.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al eliminar el video.", "error");
+    } finally {
+      setDefaultVideoSaving(false);
     }
   };
 
@@ -739,6 +769,47 @@ export default function SettingsPage() {
           ) : (
             <p className="text-muted-foreground text-sm">No hay ninguna transmisión activa en este momento.</p>
           )}
+
+          <div className="border-t border-border pt-3 mt-1">
+            <p className="text-foreground text-sm font-semibold mb-1">Video predeterminado</p>
+            <p className="text-muted-foreground text-xs mb-2">
+              Se muestra en el Inicio de la app cuando no hay transmisión en vivo — por ejemplo, la grabación del último culto — para que siempre haya un video de la iglesia disponible.
+            </p>
+            {church?.defaultVideoUrl ? (
+              <>
+                <p className="text-muted-foreground text-xs break-all mb-2">{church.defaultVideoUrl}</p>
+                {canManageLiveStream && (
+                  <button
+                    disabled={defaultVideoSaving}
+                    onClick={handleRemoveDefaultVideo}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors disabled:opacity-40"
+                  >
+                    <Trash className="w-4 h-4" />
+                    {defaultVideoSaving ? "Eliminando..." : "Quitar video predeterminado"}
+                  </button>
+                )}
+              </>
+            ) : canManageLiveStream ? (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={defaultVideoInput}
+                  onChange={(e) => setDefaultVideoInput(e.target.value)}
+                  placeholder="https://www.facebook.com/..."
+                  className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                <button
+                  disabled={defaultVideoSaving || !defaultVideoInput.trim()}
+                  onClick={handleSaveDefaultVideo}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {defaultVideoSaving ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-xs">No hay ningún video predeterminado configurado.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -579,6 +579,14 @@ export const settingsService = {
     const response = await api.delete('/settings/church/live-stream');
     return response.data;
   },
+  updateDefaultVideo: async (url) => {
+    const response = await api.put('/settings/church/default-video', {url});
+    return response.data;
+  },
+  deleteDefaultVideo: async () => {
+    const response = await api.delete('/settings/church/default-video');
+    return response.data;
+  },
 
   // Galería de fotos (carrusel de la app móvil)
   getChurchPhotos: async () => {
