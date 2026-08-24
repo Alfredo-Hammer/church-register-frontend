@@ -18,6 +18,7 @@ import {
   Images,
   Heart,
   MessageCircle,
+  Radio,
   Trash,
   Smartphone,
   Copy,
@@ -81,6 +82,7 @@ const TABS = [
 export default function SettingsPage() {
   const {user, updateUser} = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const canManageLiveStream = ["ADMIN", "PASTOR", "LIDER"].includes(user?.role);
 
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -183,6 +185,8 @@ export default function SettingsPage() {
   const [churchSaving, setChurchSaving] = useState(false);
   const [churchEditing, setChurchEditing] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [liveStreamSaving, setLiveStreamSaving] = useState(false);
+  const [liveStreamInput, setLiveStreamInput] = useState("");
   const [photos, setPhotos] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const MAX_CHURCH_PHOTOS = 8;
@@ -366,6 +370,34 @@ export default function SettingsPage() {
       notify(e?.response?.data?.error || "Error al eliminar logo.", "error");
     } finally {
       setLogoUploading(false);
+    }
+  };
+
+  const handleStartLiveStream = async () => {
+    if (!liveStreamInput.trim()) return;
+    setLiveStreamSaving(true);
+    try {
+      const res = await settingsService.updateLiveStream(liveStreamInput.trim());
+      setChurch((prev) => ({...prev, liveStreamUrl: res.liveStreamUrl}));
+      setLiveStreamInput("");
+      notify("Transmisión iniciada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al iniciar la transmisión.", "error");
+    } finally {
+      setLiveStreamSaving(false);
+    }
+  };
+
+  const handleEndLiveStream = async () => {
+    setLiveStreamSaving(true);
+    try {
+      await settingsService.deleteLiveStream();
+      setChurch((prev) => ({...prev, liveStreamUrl: null}));
+      notify("Transmisión finalizada.");
+    } catch (e) {
+      notify(e?.response?.data?.error || "Error al finalizar la transmisión.", "error");
+    } finally {
+      setLiveStreamSaving(false);
     }
   };
 
@@ -652,6 +684,61 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Transmisión en vivo (link manual de Facebook) */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-base flex items-center gap-2">
+            <Radio className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+            Transmisión en Vivo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {church?.liveStreamUrl ? (
+            <>
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse shrink-0" />
+                <span className="text-red-700 dark:text-red-400 text-sm font-semibold">Transmisión activa</span>
+              </div>
+              <p className="text-muted-foreground text-xs break-all">{church.liveStreamUrl}</p>
+              {canManageLiveStream && (
+                <button
+                  disabled={liveStreamSaving}
+                  onClick={handleEndLiveStream}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors disabled:opacity-40"
+                >
+                  <Trash className="w-4 h-4" />
+                  {liveStreamSaving ? "Finalizando..." : "Finalizar transmisión"}
+                </button>
+              )}
+            </>
+          ) : canManageLiveStream ? (
+            <>
+              <p className="text-muted-foreground text-sm">
+                Pegá el link del video/transmisión de Facebook cuando arranque el culto. Se muestra embebido en el Inicio de la app móvil hasta que la finalices acá.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={liveStreamInput}
+                  onChange={(e) => setLiveStreamInput(e.target.value)}
+                  placeholder="https://www.facebook.com/..."
+                  className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                <button
+                  disabled={liveStreamSaving || !liveStreamInput.trim()}
+                  onClick={handleStartLiveStream}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {liveStreamSaving ? "Guardando..." : "Iniciar transmisión"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">No hay ninguna transmisión activa en este momento.</p>
+          )}
         </CardContent>
       </Card>
 

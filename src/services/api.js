@@ -570,6 +570,16 @@ export const settingsService = {
     return response.data;
   },
 
+  // Transmisión en vivo (link manual de Facebook)
+  updateLiveStream: async (url) => {
+    const response = await api.put('/settings/church/live-stream', {url});
+    return response.data;
+  },
+  deleteLiveStream: async () => {
+    const response = await api.delete('/settings/church/live-stream');
+    return response.data;
+  },
+
   // Galería de fotos (carrusel de la app móvil)
   getChurchPhotos: async () => {
     const response = await api.get('/settings/church/photos');
