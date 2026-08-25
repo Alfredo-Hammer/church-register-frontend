@@ -15,11 +15,12 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
-  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee,
+  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
+import { generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
 import { SESSION_TYPE_COLORS, badgeClasses, swatchClasses } from "@/utils/sessionTypeColors";
+import { buildConferenceProgramBooklet } from "@/utils/reportPrint";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -572,6 +573,16 @@ export default function ConferenceDetailPage() {
       await fetchConference();
     } catch { /* silent */ }
     setSavingDisplayPause(false);
+  };
+
+  // Librillo del programa — misma vista previa en pestaña nueva que ya usa
+  // Programa (ver ProgramPage.jsx): se abre el HTML completo para revisarlo
+  // antes de imprimir/guardar, en vez de descargar un PDF a ciegas.
+  const handleOpenProgramPrint = () => {
+    const html = buildConferenceProgramBooklet(conference, days, church || {});
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
   };
 
   const handleCopyRegLink = async (url) => {
@@ -1293,17 +1304,10 @@ export default function ConferenceDetailPage() {
                 <Coffee size={14} /> Pausar pantalla
               </Button>
             )}
-            <Button variant="outline" disabled={pdfLoading === 'programa'}
-              onClick={() => generateProgramaPDF(
-                conference, days,
-                () => setPdfLoading('programa'),
-                () => setPdfLoading(null),
-              )}
-              className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 dark:text-emerald-300 hover:border-emerald-500 disabled:opacity-50">
-              {pdfLoading === 'programa'
-                ? <Loader2 size={14} className="animate-spin" />
-                : <FileDown size={14} />}
-              PDF Programa
+            <Button variant="outline" onClick={handleOpenProgramPrint}
+              className="flex items-center gap-2 text-sm border-emerald-700/60 text-emerald-700 dark:text-emerald-400 hover:text-emerald-700 dark:text-emerald-300 hover:border-emerald-500">
+              <Eye size={14} />
+              Vista previa del programa
             </Button>
           </div>
 

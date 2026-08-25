@@ -1,1 +1,1 @@
-export { generateProgramaPDF, generateCertificadoPDF } from './conferencePdf';
+export { generateCertificadoPDF } from './conferencePdf';

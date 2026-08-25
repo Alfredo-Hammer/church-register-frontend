@@ -2428,3 +2428,349 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   </div>
 </body></html>`;
 }
+
+// ── Librillo del programa de conferencia ────────────────────────────────────
+// Misma arquitectura de imposición saddle-stitch que buildProgramBooklet
+// (hoja carta horizontal, cada una con 2 páginas de media carta ya en el
+// orden correcto para doblar) — la diferencia real es que acá el interior
+// se organiza por DÍA en vez de una sola lista plana de ítems, y cada sesión
+// ya trae su propia hora de inicio/fin (no hay que acumular por duración
+// como en el orden de culto).
+export function buildConferenceProgramBooklet(conference = {}, days = [], church = {}) {
+  const DAYS_LONG = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  const parseLocalDate = (dateStr) => new Date(String(dateStr).slice(0, 10) + 'T12:00:00');
+
+  const to12h = (time24) => {
+    if (!time24) return null;
+    const [h, m] = time24.slice(0, 5).split(':').map(Number);
+    const period = h >= 12 ? 'p. m.' : 'a. m.';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+  };
+
+  const dayLabelFull = (dateStr) => {
+    const d = parseLocalDate(dateStr);
+    const s = `${DAYS_LONG[d.getDay()]} ${d.getDate()} de ${MONTHS_LONG[d.getMonth()]}`;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+
+  const dateRangeLabel = (start, end) => {
+    const opts = { day: 'numeric', month: 'long', year: 'numeric' };
+    const s = parseLocalDate(start).toLocaleDateString('es', opts);
+    if (String(start).slice(0, 10) === String(end).slice(0, 10)) return s;
+    return `${s} – ${parseLocalDate(end).toLocaleDateString('es', opts)}`;
+  };
+
+  const churchName = church.name || 'Iglesia';
+  const logoHtml = church.logoUrl
+    ? `<img class="bk-logo" src="${church.logoUrl}" alt="Logo">`
+    : `<div class="bk-cross">✝</div>`;
+  const contactLine = [church.address, church.phone, church.website].filter(Boolean).join(' · ');
+
+  const totalDays = days.length;
+  const totalSessions = days.reduce((sum, d) => sum + (d.sessions?.length || 0), 0);
+
+  const sessionHtml = (s, idx) => {
+    const typeLabel = s.type?.label || '';
+    const timeLabel = s.time_start
+      ? `${to12h(s.time_start)}${s.time_end ? ` – ${to12h(s.time_end)}` : ''}`
+      : '';
+    return `
+        <div class="bk-item">
+          <div class="bk-item-num">${idx + 1}</div>
+          <div class="bk-item-body">
+            <div class="bk-item-top">
+              ${typeLabel ? `<span class="bk-item-type">${typeLabel}</span>` : '<span></span>'}
+              ${timeLabel ? `<span class="bk-item-time">${timeLabel}</span>` : ''}
+            </div>
+            <p class="bk-item-title">${s.title}</p>
+            ${s.speaker ? `<p class="bk-item-leader">${s.speaker}</p>` : ''}
+            ${s.scripture_ref ? `<p class="bk-item-scripture">${s.scripture_ref}</p>` : ''}
+            ${s.notes ? `<p class="bk-item-notes">${s.notes}</p>` : ''}
+          </div>
+        </div>`;
+  };
+
+  const dayHeaderHtml = (dayNumber, dayDate) => `
+    <div class="bk-day-header">
+      <span class="bk-day-pill">Día ${dayNumber}</span>
+      <span class="bk-day-date">${dayLabelFull(dayDate)}</span>
+    </div>`;
+
+  // ── Paginación interior: por ALTURA estimada, igual que el librillo de
+  // programa — mismas constantes de fila (misma tipografía/markup de
+  // .bk-item), más una línea opcional para el versículo. A diferencia del
+  // orden de culto, acá cada DÍA siempre arranca en una página interior
+  // nueva (no se mezclan sesiones de dos días distintos en una misma hoja):
+  // más fácil de hojear en un evento real, y evita re-derivar un
+  // bin-packing continuo entre secciones.
+  const ITEM_BASE_IN = 0.51;
+  const ITEM_LEADER_IN = 0.17;
+  const ITEM_SCRIPTURE_IN = 0.15;
+  const ITEM_NOTES_IN = 0.17;
+  const PAGE_BUDGET_IN = 6.25;
+  const DAY_HEADER_IN = 0.5;
+
+  const estimateSessionHeight = (s) => {
+    let h = ITEM_BASE_IN;
+    if (s.speaker) h += ITEM_LEADER_IN;
+    if (s.scripture_ref) h += ITEM_SCRIPTURE_IN;
+    if (s.notes) h += ITEM_NOTES_IN;
+    return h;
+  };
+
+  const interiorChunks = [];
+  for (const day of days) {
+    const sessions = day.sessions || [];
+    let current = [];
+    let currentHeight = 0;
+    let isFirstChunk = true;
+    let num = 0;
+
+    const pushChunk = () => {
+      interiorChunks.push({
+        dayNumber: day.day_number,
+        dayDate: day.day_date,
+        isFirstChunkOfDay: isFirstChunk,
+        sessions: current,
+        startNum: num,
+      });
+      num += current.length;
+      isFirstChunk = false;
+      current = [];
+      currentHeight = 0;
+    };
+
+    if (sessions.length === 0) {
+      pushChunk();
+      continue;
+    }
+    for (const s of sessions) {
+      const h = estimateSessionHeight(s);
+      const budget = PAGE_BUDGET_IN - (isFirstChunk ? DAY_HEADER_IN : 0);
+      if (current.length > 0 && currentHeight + h > budget) {
+        pushChunk();
+      }
+      current.push(s);
+      currentHeight += h;
+    }
+    pushChunk();
+  }
+  const interiorPageCount = interiorChunks.length;
+
+  // Cada hoja física aporta 4 páginas, así que el total tiene que ser
+  // múltiplo de 4 para que la imposición cierre.
+  const rawTotal = 2 + interiorPageCount; // portada + interior + contraportada
+  const totalPages = Math.ceil(rawTotal / 4) * 4;
+  const numSheets = totalPages / 4;
+  const isMultiSheet = numSheets > 1;
+
+  const wrapPlain = (pageNum, innerHtml, opts = {}) => {
+    const { headerLabel = '', center = false } = opts;
+    const sideClass = pageNum % 2 === 0 ? 'bk-folio-left' : 'bk-folio-right';
+    return `
+    <div class="bk-plain-page${center ? ' bk-plain-center' : ''}">
+      <div class="bk-run-head">${headerLabel ? `<span>${headerLabel}</span>` : ''}</div>
+      <div class="bk-page-body">${innerHtml}</div>
+      <div class="bk-folio-bar ${sideClass}">
+        <span class="bk-folio-rule"></span>
+        <span class="bk-folio-num">${pageNum}</span>
+      </div>
+    </div>`;
+  };
+
+  const pageContent = (pageNum) => {
+    if (pageNum === 1) {
+      return `<div class="bk-cover-frame">
+        <span class="bk-corner bk-corner-tl"></span>
+        <span class="bk-corner bk-corner-tr"></span>
+        <span class="bk-corner bk-corner-bl"></span>
+        <span class="bk-corner bk-corner-br"></span>
+        <div class="bk-cover-top">
+          ${logoHtml}
+          <p class="bk-church-name">${churchName}</p>
+        </div>
+        <div class="bk-cover-mid">
+          <span class="bk-eyebrow">Conferencia Bíblica</span>
+          <h1 class="bk-title">${conference.name || 'Programa'}</h1>
+          <div class="bk-cover-divider"></div>
+          ${conference.theme ? `<p class="bk-date" style="font-style:italic;">${conference.theme}</p>` : ''}
+          ${conference.theme_verse ? `<p class="bk-cover-note" style="margin-top:2px;">"${conference.theme_verse}"</p>` : ''}
+          <p class="bk-date" style="margin-top:10px;">${dateRangeLabel(conference.start_date, conference.end_date)}</p>
+          <div class="bk-meta-row">
+            <span class="bk-meta-pill">${totalDays} ${totalDays === 1 ? 'día' : 'días'}</span>
+            ${conference.location ? `<span class="bk-meta-pill">${conference.location}</span>` : ''}
+          </div>
+        </div>
+        <div class="bk-cover-footer">
+          <span class="bk-cover-footer-line"></span>
+          <p>Generado por Sistema Congrega</p>
+        </div>
+      </div>`;
+    }
+    if (pageNum === totalPages) {
+      const inner = `<div class="bk-back">
+        <div class="bk-back-mark">✝</div>
+        <div class="bk-stats">
+          <div class="bk-stat"><span class="bk-stat-label">Días</span><span class="bk-stat-value">${totalDays}</span></div>
+          <div class="bk-stat-divider"></div>
+          <div class="bk-stat"><span class="bk-stat-label">Sesiones</span><span class="bk-stat-value">${totalSessions}</span></div>
+        </div>
+        <div class="bk-rule"></div>
+        <p class="bk-church-name-back">${churchName}</p>
+        ${contactLine ? `<p class="bk-contact">${contactLine}</p>` : ''}
+        <p class="bk-thanks">Gracias por acompañarnos</p>
+      </div>`;
+      return wrapPlain(pageNum, inner, { center: true });
+    }
+    const chunkIdx = pageNum - 2; // páginas 2..(2+interiorPageCount-1)
+    if (chunkIdx >= 0 && chunkIdx < interiorChunks.length) {
+      const chunk = interiorChunks[chunkIdx];
+      const body =
+        (chunk.isFirstChunkOfDay ? dayHeaderHtml(chunk.dayNumber, chunk.dayDate) : '') +
+        (chunk.sessions.length === 0
+          ? `<p class="bk-empty">Sin sesiones programadas para este día.</p>`
+          : chunk.sessions.map((s, i) => sessionHtml(s, chunk.startNum + i)).join(''));
+      return wrapPlain(pageNum, body, { headerLabel: `${churchName} &middot; Día ${chunk.dayNumber}` });
+    }
+    return wrapPlain(pageNum, ''); // página de relleno en blanco
+  };
+
+  let sheetsHtml = '';
+  for (let s = 1; s <= numSheets; s++) {
+    const outerLeft = totalPages - 2 * (s - 1);
+    const outerRight = 2 * (s - 1) + 1;
+    const innerLeft = 2 * (s - 1) + 2;
+    const innerRight = totalPages - 2 * (s - 1) - 1;
+    const isLastSide = s === numSheets;
+    sheetsHtml += `
+    <div class="bk-sheet">
+      <div class="bk-panel">${pageContent(outerLeft)}</div>
+      <div class="bk-panel">${pageContent(outerRight)}</div>
+    </div>
+    <div class="bk-sheet"${isLastSide ? ' style="page-break-after:auto"' : ''}>
+      <div class="bk-panel">${pageContent(innerLeft)}</div>
+      <div class="bk-panel">${pageContent(innerRight)}</div>
+    </div>`;
+  }
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${conference.name || 'Programa'} — Librillo</title>
+<style>
+  :root {
+    --ink: #1c1f26;
+    --ink-soft: #4b4f58;
+    --muted: #8a8e97;
+    --gold: #a9835a;
+    --gold-deep: #8a6a41;
+    --gold-soft: #cdb890;
+    --rule: #e8e2d3;
+    --rule-strong: #d8cfb8;
+  }
+  @page { size: 11in 8.5in; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: var(--ink); font-size: 12px; line-height: 1.5; }
+
+  .bk-sheet { display: flex; width: 11in; height: 8.5in; page-break-after: always; }
+
+  .bk-panel { width: 5.5in; height: 8.5in; padding: 0.32in; box-sizing: border-box; background: #fff; }
+
+  .bk-cover-frame {
+    width: 100%; height: 100%; box-sizing: border-box; position: relative;
+    padding: 0.4in 0.42in; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; text-align: center;
+  }
+  .bk-corner { position: absolute; width: 20px; height: 20px; }
+  .bk-corner-tl { top: 0.26in; left: 0.26in; border-top: 1.25px solid var(--gold); border-left: 1.25px solid var(--gold); }
+  .bk-corner-tr { top: 0.26in; right: 0.26in; border-top: 1.25px solid var(--gold); border-right: 1.25px solid var(--gold); }
+  .bk-corner-bl { bottom: 0.26in; left: 0.26in; border-bottom: 1.25px solid var(--gold); border-left: 1.25px solid var(--gold); }
+  .bk-corner-br { bottom: 0.26in; right: 0.26in; border-bottom: 1.25px solid var(--gold); border-right: 1.25px solid var(--gold); }
+
+  .bk-cover-top { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bk-logo { max-height: 64px; max-width: 60%; object-fit: contain; }
+  .bk-cross { font-size: 30px; color: var(--gold-soft); line-height: 1; }
+  .bk-church-name { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; }
+
+  .bk-cover-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 88%; }
+  .bk-eyebrow { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-deep); font-family: Arial, sans-serif; font-weight: 700; margin-bottom: 4px; }
+  .bk-title { font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .bk-cover-divider { width: 34px; height: 2px; background: var(--gold); margin: 14px 0; }
+  .bk-date { font-size: 12.5px; color: var(--ink-soft); }
+  .bk-meta-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+  .bk-meta-pill { font-size: 10px; color: var(--ink-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; padding: 4px 12px; border: 1px solid var(--rule-strong); border-radius: 20px; }
+  .bk-cover-note { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 16px; }
+
+  .bk-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bk-cover-footer-line { width: 100%; max-width: 120px; height: 1px; background: var(--rule); }
+  .bk-cover-footer p { font-size: 8.5px; color: var(--gold-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; }
+
+  .bk-plain-page { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0.34in 0.38in; }
+  .bk-run-head { height: 0.24in; display: flex; align-items: center; font-size: 8px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; border-bottom: 1px solid var(--rule); margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bk-page-body { flex: 1; min-height: 0; }
+  .bk-plain-center .bk-page-body { display: flex; }
+  .bk-back { width: 100%; height: 100%; align-items: center; justify-content: center; text-align: center; gap: 4px; display: flex; flex-direction: column; }
+  .bk-back-mark { font-size: 22px; color: var(--gold-soft); margin-bottom: 6px; }
+  .bk-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
+  .bk-stat { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .bk-stat-label { font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; }
+  .bk-stat-value { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .bk-stat-divider { width: 1px; height: 26px; background: var(--rule-strong); }
+
+  .bk-day-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule-strong); }
+  .bk-day-pill { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #fff; background: var(--gold-deep); padding: 3px 10px; border-radius: 20px; font-family: Arial, sans-serif; flex-shrink: 0; }
+  .bk-day-date { font-size: 13px; font-weight: 600; color: var(--ink); text-transform: capitalize; }
+
+  .bk-folio-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .bk-folio-bar.bk-folio-left { justify-content: flex-start; }
+  .bk-folio-bar.bk-folio-right { justify-content: flex-end; flex-direction: row-reverse; }
+  .bk-folio-rule { width: 22px; height: 1px; background: var(--rule-strong); }
+  .bk-folio-num { font-size: 9px; color: var(--muted); font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+
+  .bk-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); page-break-inside: avoid; break-inside: avoid; }
+  .bk-item:last-child { border-bottom: none; }
+  .bk-item-num { width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--rule-strong); display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--muted); font-family: Arial, sans-serif; flex-shrink: 0; margin-top: 1px; }
+  .bk-item-body { flex: 1; min-width: 0; }
+  .bk-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .bk-item-type { font-size: 7px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-deep); background: rgba(169,131,90,0.12); padding: 2px 7px; border-radius: 20px; font-family: Arial, sans-serif; }
+  .bk-item-time { font-size: 9.5px; color: var(--muted); font-family: 'Courier New', monospace; flex-shrink: 0; }
+  .bk-item-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 3px; }
+  .bk-item-leader { font-size: 10px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
+  .bk-item-leader::before { content: "— "; }
+  .bk-item-scripture { font-size: 9.5px; color: var(--gold-deep); font-style: italic; margin-top: 1px; font-family: Arial, sans-serif; }
+  .bk-item-notes { font-size: 9.5px; color: var(--muted); font-style: italic; margin-top: 2px; padding-left: 7px; border-left: 2px solid var(--gold-soft); }
+  .bk-empty { text-align: center; color: var(--muted); padding: 26px 0; font-size: 11px; }
+
+  .bk-rule { width: 44px; height: 1px; background: var(--rule-strong); margin: 4px 0; }
+  .bk-church-name-back { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .bk-contact { font-size: 9.5px; color: var(--muted); margin-top: 2px; }
+  .bk-thanks { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 14px; }
+
+  .no-print { display: none; }
+  @media screen {
+    body { background: #e5e7eb; padding: 24px 0; }
+    .bk-sheet { background: #fff; margin: 0 auto 20px; box-shadow: 0 4px 18px rgba(0,0,0,.12); }
+    .no-print { display: block; text-align: center; max-width: 11in; margin: 0 auto 16px; font-size: 12px; color: #4b5563; font-family: Arial, sans-serif; line-height: 1.6; }
+  }
+  .actions { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 8px; z-index: 100; }
+  .btn-print { background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(79,70,229,.4); font-family: Arial, sans-serif; }
+  .btn-close { background: #e2e8f0; color: #334155; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: Arial, sans-serif; }
+  @media print { .actions, .no-print { display: none !important; } }
+</style></head><body>
+
+  <p class="no-print">
+    Vista previa del programa — hojas tamaño carta en horizontal, cada una con dos páginas de media carta ya en el orden correcto para doblar.
+    Imprime a doble cara (recomendado: volteo por el borde corto — si el orden sale invertido, prueba con borde largo,
+    varía según la impresora) y dobla cada hoja por la mitad.
+    ${isMultiSheet ? `Este programa usa ${numSheets} hojas: imprímelas todas, dobla cada una por separado y encájalas en orden (hoja 1 por fuera, hoja 2 adentro, y así sucesivamente) para armar el librillo completo.` : 'Al doblarla ya tienes el librillo completo.'}
+  </p>
+
+  ${sheetsHtml}
+
+  <div class="actions">
+    <button class="btn-print" onclick="window.print()">🖨&nbsp; Imprimir / Guardar PDF</button>
+    <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  </div>
+</body></html>`;
+}
