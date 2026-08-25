@@ -38,6 +38,8 @@ import {
   Sun,
   Moon,
   Target,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import {Button} from "@/components/ui/Button";
 import {ConfirmDialog} from "@/components/ui/ConfirmDialog";
@@ -340,6 +342,18 @@ const navigation = [
 
 export const DashboardLayout = ({children}) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Colapsado (icon-only) es un ajuste de escritorio nomás — en el drawer de
+  // móvil no tendría sentido (una pestaña angosta encima del contenido no
+  // ahorra nada). Se aplica siempre con clases lg: para que el flag JS no
+  // afecte al drawer móvil, que renderiza el mismo DOM. Persiste entre
+  // sesiones porque es una preferencia de "cómo quiero mi pantalla", no un
+  // estado temporal como el drawer abierto/cerrado.
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("sidebarCollapsed") === "true",
+  );
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", String(collapsed));
+  }, [collapsed]);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -406,10 +420,21 @@ export const DashboardLayout = ({children}) => {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-all duration-300 ease-in-out lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          collapsed ? "lg:w-20" : "lg:w-64",
         )}
       >
+        {/* Botón para colapsar/expandir — solo escritorio, a caballo sobre
+            el borde derecho del sidebar como en Notion/Linear. */}
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          title={collapsed ? "Expandir menú" : "Colapsar menú"}
+          className="hidden lg:flex absolute -right-3 top-20 z-10 w-6 h-6 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-blue-500 shadow-sm transition-colors"
+        >
+          {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+        </button>
+
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
           <div className="border-b border-border px-4 py-4">
@@ -431,8 +456,10 @@ export const DashboardLayout = ({children}) => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {/* Church name + tagline */}
-                <div className="min-w-0">
+                {/* Church name + tagline — oculto en escritorio colapsado,
+                    siempre visible en el drawer móvil (mismo DOM, la clase
+                    lg: es lo que hace la diferencia). */}
+                <div className={cn("min-w-0", collapsed && "lg:hidden")}>
                   <p className="text-foreground font-bold text-sm leading-tight truncate">
                     {user?.churchName || "Iglesia"}
                   </p>
@@ -460,16 +487,18 @@ export const DashboardLayout = ({children}) => {
                 <Link
                   key={item.name}
                   to={item.href}
+                  title={collapsed ? item.name : undefined}
                   className={cn(
                     "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
                     isActive
                       ? "bg-blue-600 text-white"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    collapsed && "lg:justify-center lg:px-0",
                   )}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className="h-5 w-5 mr-3" />
-                  {item.name}
+                  <item.icon className={cn("h-5 w-5 shrink-0 mr-3", collapsed && "lg:mr-0")} />
+                  <span className={cn(collapsed && "lg:hidden")}>{item.name}</span>
                 </Link>
               );
             })}
@@ -480,9 +509,13 @@ export const DashboardLayout = ({children}) => {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent rounded-lg transition-colors"
+                title={collapsed ? (user?.fullName || "Usuario") : undefined}
+                className={cn(
+                  "flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent rounded-lg transition-colors",
+                  collapsed && "lg:justify-center lg:px-0",
+                )}
               >
-                <div className="flex-1 flex items-center">
+                <div className={cn("flex-1 flex items-center", collapsed && "lg:flex-none")}>
                   <div
                     className={cn(
                       "w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center",
@@ -503,7 +536,7 @@ export const DashboardLayout = ({children}) => {
                       </span>
                     )}
                   </div>
-                  <div className="ml-3 text-left min-w-0">
+                  <div className={cn("ml-3 text-left min-w-0", collapsed && "lg:hidden")}>
                     <p className="text-sm font-medium text-foreground truncate">
                       {user?.fullName || "Usuario"}
                     </p>
@@ -512,11 +545,14 @@ export const DashboardLayout = ({children}) => {
                     </p>
                   </div>
                 </div>
-                <ChevronDown className="h-4 w-4 ml-2 shrink-0" />
+                <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0", collapsed && "lg:hidden")} />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+                <div className={cn(
+                  "absolute bottom-full left-0 right-0 mb-2 bg-popover border border-border rounded-lg shadow-lg overflow-hidden",
+                  collapsed && "lg:right-auto lg:w-56",
+                )}>
                   <Link
                     to="/dashboard/profile"
                     onClick={() => {
@@ -543,7 +579,7 @@ export const DashboardLayout = ({children}) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className={cn("transition-all duration-300 ease-in-out", collapsed ? "lg:pl-20" : "lg:pl-64")}>
         {/* Top bar */}
         <div className="sticky top-0 z-10 bg-card border-b border-border">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
