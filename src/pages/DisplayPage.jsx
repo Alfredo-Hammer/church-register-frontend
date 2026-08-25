@@ -150,18 +150,16 @@ function FondoAnimado() {
  *    en pasada/cancelada) pero queda otro día — se adelanta su programa.
  *  - "finished": hoy terminó y no queda ningún día después.
  */
-function IdleScreen({mode, church, conference, day, totalDays, sessions, reloj, loadingPreview}) {
+function IdleScreen({mode, church, conference, day, totalDays, sessions, loadingPreview}) {
   return (
     <div className="relative flex min-h-[85vh] flex-col items-center justify-center gap-4 sm:gap-6 lg:gap-8 px-4 py-8 text-center">
       {church.logoUrl ? (
-        <img src={church.logoUrl} alt="" className="h-14 w-14 sm:h-20 sm:w-20 lg:h-28 lg:w-28 rounded-2xl lg:rounded-3xl object-contain bg-white/5 p-1.5" />
+        <img src={church.logoUrl} alt="" className="h-24 w-24 sm:h-36 sm:w-36 lg:h-52 lg:w-52 rounded-3xl object-contain bg-white/5 p-2" />
       ) : (
-        <span className="flex h-14 w-14 sm:h-20 sm:w-20 lg:h-28 lg:w-28 items-center justify-center rounded-2xl lg:rounded-3xl bg-blue-600">
-          <Church className="h-8 w-8 sm:h-11 sm:w-11 lg:h-16 lg:w-16 text-white" />
+        <span className="flex h-24 w-24 sm:h-36 sm:w-36 lg:h-52 lg:w-52 items-center justify-center rounded-3xl bg-blue-600">
+          <Church className="h-12 w-12 sm:h-20 sm:w-20 lg:h-28 lg:w-28 text-white" />
         </span>
       )}
-
-      <p className="text-3xl sm:text-5xl lg:text-7xl font-bold tabular-nums leading-none text-white">{reloj}</p>
 
       <div>
         <p className="text-[10px] sm:text-sm lg:text-lg uppercase tracking-[0.2em] text-blue-300 font-semibold">
@@ -395,7 +393,6 @@ export default function DisplayPage() {
             day={idleMode === "between" ? preview?.day : data.day}
             totalDays={data.totalDays}
             sessions={idleMode === "between" ? preview?.sessions : sesiones}
-            reloj={reloj}
             loadingPreview={idleMode === "between" && !preview}
           />
         ) : (
