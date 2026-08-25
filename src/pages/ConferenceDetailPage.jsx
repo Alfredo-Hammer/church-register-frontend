@@ -15,7 +15,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
-  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck,
+  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateProgramaPDF, generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -262,6 +262,11 @@ export default function ConferenceDetailPage() {
   const [showProgramQR, setShowProgramQR] = useState(false);
   const [savingConfStatus, setSavingConfStatus] = useState(false);
   const [confirmConfStatus, setConfirmConfStatus] = useState(null); // "FINALIZADO" | "CANCELADO" | null
+  // Pausa manual de la pantalla del salón (receso no planeado) — separada
+  // del estado de la conferencia, ver DisplayPage.
+  const [savingDisplayPause, setSavingDisplayPause] = useState(false);
+  const [showPauseDialog, setShowPauseDialog] = useState(false);
+  const [pauseMessageInput, setPauseMessageInput] = useState("");
 
   // Link público de auto-registro (iglesias invitadas registran a sus
   // miembros de antemano; en la puerta solo se recoge el gafete)
@@ -547,6 +552,26 @@ export default function ConferenceDetailPage() {
       setConfirmConfStatus(null);
     } catch { /* silent */ }
     setSavingConfStatus(false);
+  };
+
+  const handlePauseDisplay = async () => {
+    setSavingDisplayPause(true);
+    try {
+      await conferenceService.updateDisplayPause(id, true, pauseMessageInput);
+      await fetchConference();
+      setShowPauseDialog(false);
+      setPauseMessageInput("");
+    } catch { /* silent */ }
+    setSavingDisplayPause(false);
+  };
+
+  const handleResumeDisplay = async () => {
+    setSavingDisplayPause(true);
+    try {
+      await conferenceService.updateDisplayPause(id, false);
+      await fetchConference();
+    } catch { /* silent */ }
+    setSavingDisplayPause(false);
   };
 
   const handleCopyRegLink = async (url) => {
@@ -1256,6 +1281,18 @@ export default function ConferenceDetailPage() {
               className="flex items-center gap-2 text-sm border-blue-700/60 text-blue-700 dark:text-blue-400 hover:border-blue-500">
               <QrCode size={14} /> Ver QR
             </Button>
+            {conference.display_paused ? (
+              <Button variant="outline" onClick={handleResumeDisplay} disabled={savingDisplayPause}
+                className="flex items-center gap-2 text-sm border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:border-amber-500 disabled:opacity-50">
+                {savingDisplayPause ? <Loader2 size={14} className="animate-spin" /> : <Coffee size={14} />}
+                Pantalla en receso · Reanudar
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => setShowPauseDialog(true)}
+                className="flex items-center gap-2 text-sm border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40">
+                <Coffee size={14} /> Pausar pantalla
+              </Button>
+            )}
             <Button variant="outline" disabled={pdfLoading === 'programa'}
               onClick={() => generateProgramaPDF(
                 conference, days,
@@ -2098,7 +2135,7 @@ export default function ConferenceDetailPage() {
                 className="mt-0.5 rounded border-border cursor-pointer" />
               <span className="text-xs text-foreground">
                 <span className="font-semibold">Esta sesión no requiere control de asistencia</span>
-                <span className="block text-muted-foreground mt-0.5">Para recesos, comidas u otros momentos donde no se pasa lista. Oculta el check-in por QR/PIN para esta sesión.</span>
+                <span className="block text-muted-foreground mt-0.5">Para recesos, comidas u otros momentos donde no se pasa lista. Oculta el check-in por QR/PIN para esta sesión, y mientras esté en curso la pantalla del salón muestra un aviso de receso en vez del programa.</span>
               </span>
             </label>
 
@@ -2403,6 +2440,34 @@ export default function ConferenceDetailPage() {
               className={cn("flex items-center gap-2", confirmConfStatus === "CANCELADO" ? "bg-red-600 hover:bg-red-700" : "")}>
               {savingConfStatus && <Loader2 size={14} className="animate-spin" />}
               {confirmConfStatus === "CANCELADO" ? "Sí, cancelar" : "Sí, finalizar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ════ Dialog: Pausar la pantalla del salón (receso manual) ════ */}
+      <Dialog open={showPauseDialog} onOpenChange={(v) => !v && setShowPauseDialog(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <h2 className="text-lg font-semibold text-foreground">Pausar pantalla</h2>
+          </DialogHeader>
+          <p className="text-muted-foreground mt-2 text-sm">
+            La pantalla del salón mostrará este mensaje en vez del programa, hasta que la reanudes desde acá.
+          </p>
+          <div className="mt-3">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              Mensaje (opcional)
+            </label>
+            <Input placeholder="Ej. Volvemos en 15 minutos"
+              value={pauseMessageInput}
+              onChange={(e) => setPauseMessageInput(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowPauseDialog(false)} disabled={savingDisplayPause}>Cancelar</Button>
+            <Button onClick={handlePauseDisplay} disabled={savingDisplayPause}
+              className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white">
+              {savingDisplayPause && <Loader2 size={14} className="animate-spin" />}
+              Pausar pantalla
             </Button>
           </DialogFooter>
         </DialogContent>

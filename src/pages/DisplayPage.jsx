@@ -141,16 +141,21 @@ function FondoAnimado() {
 }
 
 /**
- * Pantalla "en blanco" (bienvenida / entre días / cierre) — reemplaza la
- * lista de sesiones por completo en tres momentos donde no tiene sentido
- * mostrarla:
+ * Pantalla "en blanco" (bienvenida / receso / entre días / cierre) —
+ * reemplaza la lista de sesiones por completo en varios momentos donde no
+ * tiene sentido mostrarla:
+ *  - "paused": alguien del staff forzó "en receso" a mano desde el panel
+ *    (receso no planeado, o uno que se extendió). Manda sobre todo lo demás.
+ *  - "break": la sesión en curso ahora mismo está marcada como receso
+ *    (misma marca de "no requiere asistencia" que ya usa el staff para
+ *    recesos/comidas en el programa) — automático, por reloj.
  *  - "before": el día activo todavía no llegó (antes de que arranque la
  *    conferencia, o un hueco entre jornadas sin nada programado hoy).
  *  - "between": la jornada de hoy ya terminó (todas sus sesiones quedaron
  *    en pasada/cancelada) pero queda otro día — se adelanta su programa.
  *  - "finished": hoy terminó y no queda ningún día después.
  */
-function IdleScreen({mode, church, conference, day, totalDays, sessions, loadingPreview}) {
+function IdleScreen({mode, church, conference, day, totalDays, sessions, loadingPreview, message}) {
   return (
     <div className="relative flex min-h-[85vh] flex-col items-center justify-center gap-4 sm:gap-6 lg:gap-8 px-4 py-8 text-center">
       {church.logoUrl ? (
@@ -181,6 +186,13 @@ function IdleScreen({mode, church, conference, day, totalDays, sessions, loading
             <p className="text-base sm:text-2xl lg:text-4xl font-bold">Gracias por acompañarnos</p>
             <p className="mt-1 text-xs sm:text-base lg:text-xl text-slate-300">La conferencia ha finalizado</p>
           </>
+        ) : mode === "paused" || mode === "break" ? (
+          <>
+            <p className="text-[10px] sm:text-sm lg:text-lg uppercase tracking-[0.15em] text-blue-300 font-semibold">
+              En receso
+            </p>
+            <p className="mt-1 text-base sm:text-2xl lg:text-4xl font-bold">{message}</p>
+          </>
         ) : loadingPreview ? (
           <div className="flex items-center gap-2.5 sm:gap-3 text-slate-300">
             <span className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 animate-spin rounded-full border-2 border-white/20 border-t-blue-400" />
@@ -203,7 +215,7 @@ function IdleScreen({mode, church, conference, day, totalDays, sessions, loading
         )}
       </div>
 
-      {mode !== "finished" && !loadingPreview && sessions?.length > 0 && (
+      {(mode === "before" || mode === "between") && !loadingPreview && sessions?.length > 0 && (
         <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl space-y-1.5 sm:space-y-2 lg:space-y-2.5">
           {sessions.slice(0, 6).map((s) => (
             <div key={s.id} className="flex items-center gap-2.5 sm:gap-4 rounded-xl border border-white/10 bg-black/25 px-3 py-2 sm:px-5 sm:py-3 text-left backdrop-blur-md">
@@ -351,9 +363,33 @@ export default function DisplayPage() {
     };
   }, [nextDay?.date, token]);
 
+  // Sesión en curso ahora mismo marcada como receso — misma marca
+  // ("no requiere asistencia") que ya usa el staff en el programa para
+  // recesos/comidas, reusada acá para no inventar un campo nuevo.
+  const breakSession = sesiones.find((s) => s.estado === "encurso" && s.takesAttendance === false);
+
+  // Orden de prioridad: pausa manual > receso automático (sesión) >
+  // bienvenida/entre-días/cierre > lista normal.
   // "before": el día activo (el que ya trajo `cargar()`) todavía no es hoy.
   // "between"/"finished": hoy ya terminó, con o sin día siguiente.
-  const idleMode = data && !data.day?.isToday ? "before" : todayDone ? (nextDay ? "between" : "finished") : null;
+  const idleMode = data?.displayPaused
+    ? "paused"
+    : breakSession
+      ? "break"
+      : data && !data.day?.isToday
+        ? "before"
+        : todayDone
+          ? (nextDay ? "between" : "finished")
+          : null;
+
+  const idleMessage =
+    idleMode === "paused"
+      ? data?.displayPauseMessage || "Volvemos pronto"
+      : idleMode === "break"
+        ? breakSession.timeEnd
+          ? `${breakSession.title} · Volvemos a las ${breakSession.timeEnd}`
+          : breakSession.title
+        : undefined;
 
   if (error && !data) {
     return (
@@ -394,6 +430,7 @@ export default function DisplayPage() {
             totalDays={data.totalDays}
             sessions={idleMode === "between" ? preview?.sessions : sesiones}
             loadingPreview={idleMode === "between" && !preview}
+            message={idleMessage}
           />
         ) : (
         <>
