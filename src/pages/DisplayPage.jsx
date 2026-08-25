@@ -140,6 +140,89 @@ function FondoAnimado() {
   );
 }
 
+/**
+ * Pantalla "en blanco" (bienvenida / entre días / cierre) — reemplaza la
+ * lista de sesiones por completo en tres momentos donde no tiene sentido
+ * mostrarla:
+ *  - "before": el día activo todavía no llegó (antes de que arranque la
+ *    conferencia, o un hueco entre jornadas sin nada programado hoy).
+ *  - "between": la jornada de hoy ya terminó (todas sus sesiones quedaron
+ *    en pasada/cancelada) pero queda otro día — se adelanta su programa.
+ *  - "finished": hoy terminó y no queda ningún día después.
+ */
+function IdleScreen({mode, church, conference, day, totalDays, sessions, reloj, loadingPreview}) {
+  return (
+    <div className="relative flex min-h-[85vh] flex-col items-center justify-center gap-4 sm:gap-6 lg:gap-8 px-4 py-8 text-center">
+      {church.logoUrl ? (
+        <img src={church.logoUrl} alt="" className="h-14 w-14 sm:h-20 sm:w-20 lg:h-28 lg:w-28 rounded-2xl lg:rounded-3xl object-contain bg-white/5 p-1.5" />
+      ) : (
+        <span className="flex h-14 w-14 sm:h-20 sm:w-20 lg:h-28 lg:w-28 items-center justify-center rounded-2xl lg:rounded-3xl bg-blue-600">
+          <Church className="h-8 w-8 sm:h-11 sm:w-11 lg:h-16 lg:w-16 text-white" />
+        </span>
+      )}
+
+      <p className="text-3xl sm:text-5xl lg:text-7xl font-bold tabular-nums leading-none text-white">{reloj}</p>
+
+      <div>
+        <p className="text-[10px] sm:text-sm lg:text-lg uppercase tracking-[0.2em] text-blue-300 font-semibold">
+          {church.name}
+        </p>
+        <h1 className="mt-1 text-xl sm:text-3xl lg:text-6xl font-bold tracking-tight">
+          {conference.name}
+        </h1>
+        {(conference.theme || conference.themeVerse) && (
+          <p className="mt-1 text-xs sm:text-base lg:text-2xl text-blue-300">
+            {[conference.theme, conference.themeVerse].filter(Boolean).join(" · ")}
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-2xl lg:rounded-3xl border border-white/10 bg-black/30 backdrop-blur-md px-5 py-4 sm:px-10 sm:py-6 lg:px-14 lg:py-9">
+        {mode === "finished" ? (
+          <>
+            <p className="text-base sm:text-2xl lg:text-4xl font-bold">Gracias por acompañarnos</p>
+            <p className="mt-1 text-xs sm:text-base lg:text-xl text-slate-300">La conferencia ha finalizado</p>
+          </>
+        ) : loadingPreview ? (
+          <div className="flex items-center gap-2.5 sm:gap-3 text-slate-300">
+            <span className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 animate-spin rounded-full border-2 border-white/20 border-t-blue-400" />
+            <span className="text-xs sm:text-base lg:text-xl">Preparando el programa...</span>
+          </div>
+        ) : (
+          <>
+            <p className="text-[10px] sm:text-sm lg:text-lg uppercase tracking-[0.15em] text-slate-400 font-semibold">
+              {mode === "between" ? "Nos vemos mañana" : "Bienvenido"}
+            </p>
+            {day && (
+              <>
+                <p className="mt-1 text-base sm:text-2xl lg:text-4xl font-bold capitalize">{fmtFecha(day.date)}</p>
+                <p className="mt-1 text-[10px] sm:text-sm lg:text-lg text-slate-400">
+                  Día {day.dayNumber} de {totalDays}
+                </p>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {mode !== "finished" && !loadingPreview && sessions?.length > 0 && (
+        <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl space-y-1.5 sm:space-y-2 lg:space-y-2.5">
+          {sessions.slice(0, 6).map((s) => (
+            <div key={s.id} className="flex items-center gap-2.5 sm:gap-4 rounded-xl border border-white/10 bg-black/25 px-3 py-2 sm:px-5 sm:py-3 text-left backdrop-blur-md">
+              <span className="w-11 sm:w-16 lg:w-20 shrink-0 text-xs sm:text-lg lg:text-2xl font-bold tabular-nums text-blue-200">
+                {s.timeStart || "—"}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[11px] sm:text-base lg:text-xl font-semibold text-slate-100">
+                {s.title}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DisplayPage() {
   const {token} = useParams();
   const [data, setData] = useState(null);
@@ -147,6 +230,9 @@ export default function DisplayPage() {
   // Desfase entre el reloj del equipo y el del servidor, para corregirlo.
   const [offsetMs, setOffsetMs] = useState(0);
   const [now, setNow] = useState(Date.now());
+  // Programa del día siguiente, para la pantalla "entre días" — solo se
+  // pide cuando la jornada de hoy ya terminó (ver efecto más abajo).
+  const [preview, setPreview] = useState(null);
 
   const cargar = useCallback(async () => {
     try {
@@ -233,6 +319,44 @@ export default function DisplayPage() {
   const marcadaSiguiente = sesiones.find((s) => s.status === "A_CONTINUACION");
   const proxima = marcadaSiguiente || sesiones.find((s) => s.estado === "futura");
 
+  // Hoy "terminó" cuando ya tiene sesiones y ninguna sigue futura/en curso.
+  // Antes de que llegue la primera sesión del día esto es false (no vale
+  // confundir "no ha empezado" con "ya acabó").
+  const todayDone =
+    !!data?.day?.isToday &&
+    sesiones.length > 0 &&
+    sesiones.every((s) => s.estado === "pasada" || s.estado === "cancelada");
+
+  const nextDay = useMemo(() => {
+    if (!todayDone || !data?.days?.length) return null;
+    return data.days.find((d) => d.date > data.day.date) || null;
+  }, [todayDone, data]);
+
+  // Se pide aparte del `cargar()` de arriba porque ese siempre trae el día
+  // "activo" (hoy); este trae el día SIGUIENTE, solo cuando hace falta.
+  useEffect(() => {
+    if (!nextDay) return;
+    let cancelado = false;
+    const pedir = () => {
+      fetch(`${API_URL}/public/conference/${token}/today?date=${nextDay.date}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d && !cancelado) setPreview(d);
+        })
+        .catch(() => {});
+    };
+    pedir();
+    const id = setInterval(pedir, 10_000);
+    return () => {
+      cancelado = true;
+      clearInterval(id);
+    };
+  }, [nextDay?.date, token]);
+
+  // "before": el día activo (el que ya trajo `cargar()`) todavía no es hoy.
+  // "between"/"finished": hoy ya terminó, con o sin día siguiente.
+  const idleMode = data && !data.day?.isToday ? "before" : todayDone ? (nextDay ? "between" : "finished") : null;
+
   if (error && !data) {
     return (
       <div className="relative min-h-screen bg-[#1e1b4b] text-white flex items-center justify-center p-8">
@@ -263,6 +387,19 @@ export default function DisplayPage() {
       <FondoAnimado />
 
       <div className="relative">
+        {idleMode ? (
+          <IdleScreen
+            mode={idleMode}
+            church={data.church}
+            conference={data.conference}
+            day={idleMode === "between" ? preview?.day : data.day}
+            totalDays={data.totalDays}
+            sessions={idleMode === "between" ? preview?.sessions : sesiones}
+            reloj={reloj}
+            loadingPreview={idleMode === "between" && !preview}
+          />
+        ) : (
+        <>
         <header className="flex flex-wrap items-start justify-between gap-3 sm:gap-6 rounded-2xl lg:rounded-3xl border border-white/10 bg-black/30 p-3 sm:p-5 lg:p-6 backdrop-blur-md">
           <div className="flex items-center gap-3 sm:gap-5 min-w-0">
             {data.church.logoUrl ? (
@@ -400,6 +537,8 @@ export default function DisplayPage() {
               );
             })}
           </ul>
+        )}
+        </>
         )}
       </div>
     </div>
