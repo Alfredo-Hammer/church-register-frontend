@@ -79,6 +79,8 @@ export default function PublicConferenceRegistrationPage() {
     setError("");
     if (!form.fullName.trim()) return setError("Tu nombre completo es obligatorio.");
     if (!form.originChurch.trim()) return setError("El nombre de tu iglesia es obligatorio.");
+    if (!form.birthDate) return setError("La fecha de nacimiento es obligatoria.");
+    if (!form.gender) return setError("El sexo es obligatorio.");
 
     setSubmitting(true);
     try {
@@ -90,8 +92,8 @@ export default function PublicConferenceRegistrationPage() {
           originChurch: form.originChurch.trim(),
           city: form.city.trim() || undefined,
           phone: form.phone.trim() || undefined,
-          birthDate: form.birthDate || undefined,
-          gender: form.gender || undefined,
+          birthDate: form.birthDate,
+          gender: form.gender,
           ageGroup: form.ageGroup,
         }),
       });
@@ -288,7 +290,7 @@ export default function PublicConferenceRegistrationPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-1.5">
-                    Fecha de nacimiento
+                    Fecha de nacimiento *
                   </label>
                   <Input
                     type="date"
@@ -299,14 +301,14 @@ export default function PublicConferenceRegistrationPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-1.5">
-                    Sexo
+                    Sexo *
                   </label>
                   <select
                     value={form.gender}
                     onChange={(e) => set("gender", e.target.value)}
                     className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
                   >
-                    <option value="">Sin especificar</option>
+                    <option value="">Selecciona...</option>
                     <option value="MASCULINO">Masculino</option>
                     <option value="FEMENINO">Femenino</option>
                     <option value="OTRO">Otro</option>

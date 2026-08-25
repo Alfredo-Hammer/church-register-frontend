@@ -71,6 +71,8 @@ export default function PublicVisitorRegistrationPage() {
     setError("");
     if (!form.firstName.trim()) return setError("Tu nombre es obligatorio.");
     if (!form.lastName.trim()) return setError("Tu apellido es obligatorio.");
+    if (!form.birthDate) return setError("La fecha de nacimiento es obligatoria.");
+    if (!form.gender) return setError("El género es obligatorio.");
 
     setSubmitting(true);
     try {
@@ -83,8 +85,8 @@ export default function PublicVisitorRegistrationPage() {
           phone: form.phone.trim() || undefined,
           email: form.email.trim() || undefined,
           address: form.address.trim() || undefined,
-          birthDate: form.birthDate || undefined,
-          gender: form.gender || undefined,
+          birthDate: form.birthDate,
+          gender: form.gender,
           howTheyCame: form.howTheyCame || undefined,
           invitedBy: form.invitedBy.trim() || undefined,
           notes: form.notes.trim() || undefined,
@@ -164,7 +166,7 @@ export default function PublicVisitorRegistrationPage() {
         ) : (
           <div className="bg-card border border-border rounded-2xl p-6 shadow-xl">
             <p className="text-sm text-muted-foreground mb-4">
-              Nos encantaría conocerte mejor — puedes dejar en blanco lo que no sepas ahora.
+              Nos encantaría conocerte mejor — puedes dejar en blanco lo que no sepas ahora, salvo los campos marcados con *.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
@@ -226,7 +228,7 @@ export default function PublicVisitorRegistrationPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-1.5">
-                    Fecha de nacimiento
+                    Fecha de nacimiento *
                   </label>
                   <Input
                     type="date"
@@ -237,14 +239,14 @@ export default function PublicVisitorRegistrationPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-1.5">
-                    Género
+                    Género *
                   </label>
                   <select
                     value={form.gender}
                     onChange={(e) => set("gender", e.target.value)}
                     className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600"
                   >
-                    <option value="">Sin especificar</option>
+                    <option value="">Selecciona...</option>
                     <option value="MASCULINO">Masculino</option>
                     <option value="FEMENINO">Femenino</option>
                   </select>
