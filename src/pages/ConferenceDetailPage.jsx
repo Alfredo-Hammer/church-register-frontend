@@ -578,9 +578,13 @@ export default function ConferenceDetailPage() {
   // Librillo del programa — misma vista previa en pestaña nueva que ya usa
   // Programa (ver ProgramPage.jsx): se abre el HTML completo para revisarlo
   // antes de imprimir/guardar, en vez de descargar un PDF a ciegas.
-  const handleOpenProgramPrint = () => {
-    const html = buildConferenceProgramBooklet(conference, days, church || {});
+  const handleOpenProgramPrint = async () => {
+    // Se abre la pestaña ANTES de esperar el QR: si se abriera después del
+    // await, el navegador ya no lo asocia con el clic del usuario y puede
+    // bloquearla como popup.
     const win = window.open('', '_blank');
+    const html = await buildConferenceProgramBooklet(conference, days, church || {});
+    if (!win) return;
     win.document.write(html);
     win.document.close();
   };

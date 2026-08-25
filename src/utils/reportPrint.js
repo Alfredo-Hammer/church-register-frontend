@@ -4,6 +4,11 @@
 // Uso:  const win = window.open('', '_blank'); win.document.write(html); win.document.close();
 // ───────────────────────────────────────────────────────────────────────────
 
+// Único import del archivo — solo la necesita buildConferenceProgramBooklet
+// (QR de la contraportada). El resto de las funciones acá abajo son
+// generadores de string puros, sin dependencias.
+import QRCode from 'qrcode';
+
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const fmtM = (v) =>
@@ -2436,7 +2441,7 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
 // se organiza por DÍA en vez de una sola lista plana de ítems, y cada sesión
 // ya trae su propia hora de inicio/fin (no hay que acumular por duración
 // como en el orden de culto).
-export function buildConferenceProgramBooklet(conference = {}, days = [], church = {}) {
+export async function buildConferenceProgramBooklet(conference = {}, days = [], church = {}) {
   const DAYS_LONG = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -2468,6 +2473,21 @@ export function buildConferenceProgramBooklet(conference = {}, days = [], church
     ? `<img class="bk-logo" src="${church.logoUrl}" alt="Logo">`
     : `<div class="bk-cross">✝</div>`;
   const contactLine = [church.address, church.phone, church.website].filter(Boolean).join(' · ');
+
+  // Mismo destino que ProgramQRDialog (la pantalla pública /pantalla/:token)
+  // — así quien tiene el impreso en la mano puede seguir el programa en vivo
+  // desde su propio teléfono sin depender del televisor del salón.
+  const qrUrl = conference.public_token
+    ? `${window.location.origin}/pantalla/${conference.public_token}`
+    : null;
+  let qrDataUrl = null;
+  if (qrUrl) {
+    try {
+      qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 240, margin: 1, color: {dark: '#1c1f26', light: '#ffffff'},
+      });
+    } catch { /* sin QR si falla — el resto del librillo se genera igual */ }
+  }
 
   const totalDays = days.length;
   const totalSessions = days.reduce((sum, d) => sum + (d.sessions?.length || 0), 0);
@@ -2619,6 +2639,10 @@ export function buildConferenceProgramBooklet(conference = {}, days = [], church
           <div class="bk-stat"><span class="bk-stat-label">Sesiones</span><span class="bk-stat-value">${totalSessions}</span></div>
         </div>
         <div class="bk-rule"></div>
+        ${qrDataUrl ? `<div class="bk-qr-block">
+          <img class="bk-qr-img" src="${qrDataUrl}" alt="QR del programa">
+          <p class="bk-qr-caption">Escanea para ver el programa en vivo</p>
+        </div>` : ''}
         <p class="bk-church-name-back">${churchName}</p>
         ${contactLine ? `<p class="bk-contact">${contactLine}</p>` : ''}
         <p class="bk-thanks">Gracias por acompañarnos</p>
@@ -2717,6 +2741,10 @@ export function buildConferenceProgramBooklet(conference = {}, days = [], church
   .bk-stat-label { font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; }
   .bk-stat-value { font-size: 14px; font-weight: 700; color: var(--ink); }
   .bk-stat-divider { width: 1px; height: 26px; background: var(--rule-strong); }
+
+  .bk-qr-block { display: flex; flex-direction: column; align-items: center; gap: 5px; margin: 8px 0; }
+  .bk-qr-img { width: 0.95in; height: 0.95in; padding: 4px; background: #fff; border: 1px solid var(--rule-strong); border-radius: 6px; }
+  .bk-qr-caption { font-size: 8.5px; color: var(--muted); font-family: Arial, sans-serif; letter-spacing: 0.3px; }
 
   .bk-day-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule-strong); }
   .bk-day-pill { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #fff; background: var(--gold-deep); padding: 3px 10px; border-radius: 20px; font-family: Arial, sans-serif; flex-shrink: 0; }
