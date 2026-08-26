@@ -2519,6 +2519,21 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
       <span class="bk-day-date">${dayLabelFull(dayDate)}</span>
     </div>`;
 
+  // Mañana/Tarde/Noche — separa actividad de día y de noche dentro de la
+  // misma jornada en vez de una sola lista larga sin cortes. Mismo criterio
+  // que la pantalla del salón y el programa público (ver DisplayPage.jsx /
+  // PublicConferenceProgramPage.jsx), duplicado acá a propósito: cada
+  // superficie ya tenía su propia función local, no vale la pena forzar un
+  // import compartido por 6 líneas de lógica.
+  const timeOfDayLabel = (hhmm) => {
+    if (!hhmm) return null;
+    const h = Number(String(hhmm).slice(0, 2));
+    if (h < 12) return 'Mañana';
+    if (h < 18) return 'Tarde';
+    return 'Noche';
+  };
+  const timeGroupHtml = (label) => `<p class="bk-time-group">${label}</p>`;
+
   // ── Paginación interior: por ALTURA estimada, igual que el librillo de
   // programa — mismas constantes de fila (misma tipografía/markup de
   // .bk-item), más una línea opcional para el versículo. A diferencia del
@@ -2532,6 +2547,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   const ITEM_NOTES_IN = 0.17;
   const PAGE_BUDGET_IN = 6.25;
   const DAY_HEADER_IN = 0.5;
+  const TIME_GROUP_IN = 0.3;
 
   const estimateSessionHeight = (s) => {
     let h = ITEM_BASE_IN;
@@ -2541,6 +2557,13 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
     return h;
   };
 
+  // Cada "chunk" ahora guarda `items`: una mezcla en orden de encabezados de
+  // franja ({kind:'group'}) y sesiones ({kind:'session'}) — no solo
+  // sesiones — porque un encabezado de franja también ocupa alto real y
+  // tiene que entrar en el mismo presupuesto por página que ya usan los
+  // ítems. Si una franja se corta entre dos páginas, la continuación repite
+  // su encabezado (mismo criterio que el run-head repite "Día N" en cada
+  // página) para que nunca se pierda el contexto de en qué franja está.
   const interiorChunks = [];
   for (const day of days) {
     const sessions = day.sessions || [];
@@ -2548,16 +2571,15 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
     let currentHeight = 0;
     let isFirstChunk = true;
     let num = 0;
+    let lastLabel = null;
 
     const pushChunk = () => {
       interiorChunks.push({
         dayNumber: day.day_number,
         dayDate: day.day_date,
         isFirstChunkOfDay: isFirstChunk,
-        sessions: current,
-        startNum: num,
+        items: current,
       });
-      num += current.length;
       isFirstChunk = false;
       current = [];
       currentHeight = 0;
@@ -2568,13 +2590,25 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
       continue;
     }
     for (const s of sessions) {
-      const h = estimateSessionHeight(s);
+      const label = timeOfDayLabel(s.time_start);
+      const groupChanged = label !== lastLabel;
+      const sessionH = estimateSessionHeight(s);
+      const provisionalH = sessionH + (groupChanged ? TIME_GROUP_IN : 0);
       const budget = PAGE_BUDGET_IN - (isFirstChunk ? DAY_HEADER_IN : 0);
-      if (current.length > 0 && currentHeight + h > budget) {
+      if (current.length > 0 && currentHeight + provisionalH > budget) {
         pushChunk();
       }
-      current.push(s);
-      currentHeight += h;
+      // Encabezado de franja: hace falta si cambió respecto a la última
+      // sesión agregada, O si esta es la primera sesión de una página nueva
+      // (para no dejar una página "huérfana" sin saber si es mañana/tarde/noche).
+      if (label !== null && (current.length === 0 || label !== lastLabel)) {
+        current.push({ kind: 'group', label });
+        currentHeight += TIME_GROUP_IN;
+      }
+      current.push({ kind: 'session', session: s, num });
+      currentHeight += sessionH;
+      num += 1;
+      lastLabel = label;
     }
     pushChunk();
   }
@@ -2654,9 +2688,9 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
       const chunk = interiorChunks[chunkIdx];
       const body =
         (chunk.isFirstChunkOfDay ? dayHeaderHtml(chunk.dayNumber, chunk.dayDate) : '') +
-        (chunk.sessions.length === 0
+        (chunk.items.length === 0
           ? `<p class="bk-empty">Sin sesiones programadas para este día.</p>`
-          : chunk.sessions.map((s, i) => sessionHtml(s, chunk.startNum + i)).join(''));
+          : chunk.items.map((it) => it.kind === 'group' ? timeGroupHtml(it.label) : sessionHtml(it.session, it.num)).join(''));
       return wrapPlain(pageNum, body, { headerLabel: `${churchName} &middot; Día ${chunk.dayNumber}` });
     }
     return wrapPlain(pageNum, ''); // página de relleno en blanco
@@ -2749,6 +2783,9 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   .bk-day-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule-strong); }
   .bk-day-pill { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #fff; background: var(--gold-deep); padding: 3px 10px; border-radius: 20px; font-family: Arial, sans-serif; flex-shrink: 0; }
   .bk-day-date { font-size: 13px; font-weight: 600; color: var(--ink); text-transform: capitalize; }
+
+  .bk-time-group { font-size: 9.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--gold-deep); font-family: Arial, sans-serif; margin: 10px 0 6px; }
+  .bk-time-group:first-child { margin-top: 0; }
 
   .bk-folio-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .bk-folio-bar.bk-folio-left { justify-content: flex-start; }

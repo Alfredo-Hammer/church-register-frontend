@@ -42,6 +42,31 @@ const fmtFecha = (iso) =>
     month: "long",
   });
 
+// Agrupa sesiones consecutivas por franja horaria (Mañana/Tarde/Noche) —
+// útil cuando un mismo día tiene actividad de día y de noche con un hueco
+// grande entre medio, en vez de una sola lista larga sin cortes.
+const timeOfDayLabel = (hhmm) => {
+  if (!hhmm) return null;
+  const h = Number(hhmm.slice(0, 2));
+  if (h < 12) return "Mañana";
+  if (h < 18) return "Tarde";
+  return "Noche";
+};
+
+function groupByTimeOfDay(sessions) {
+  const groups = [];
+  let currentLabel;
+  for (const s of sessions) {
+    const label = timeOfDayLabel(s.timeStart);
+    if (groups.length === 0 || label !== currentLabel) {
+      groups.push({label, items: []});
+      currentLabel = label;
+    }
+    groups[groups.length - 1].items.push(s);
+  }
+  return groups;
+}
+
 /**
  * Fondo animado: gradiente en movimiento + manchas de luz + partículas que
  * ascienden. Se genera una sola vez (useMemo con deps vacías) para que el
@@ -194,41 +219,50 @@ function IdleScreen({mode, church, conference, day, totalDays, sessions, loading
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 lg:gap-4 overflow-hidden">
-          {sessions.slice(0, 6).map((s) => (
-            <div key={s.id} className="flex flex-1 items-center gap-3 sm:gap-6 lg:gap-8 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 sm:px-8 sm:py-5 lg:px-12 lg:py-6 text-left backdrop-blur-md">
-              <div className="w-16 sm:w-28 lg:w-36 shrink-0">
-                <p className="text-base sm:text-3xl lg:text-5xl font-bold tabular-nums text-blue-200 leading-tight">
-                  {s.timeStart || "—"}
+          {groupByTimeOfDay(sessions.slice(0, 6)).map((group, gi) => (
+            <div key={gi} className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 lg:gap-4">
+              {group.label && (
+                <p className="shrink-0 text-[9px] sm:text-sm lg:text-base font-bold uppercase tracking-[0.15em] text-blue-300/80 px-1">
+                  {group.label}
                 </p>
-                {s.timeEnd && (
-                  <p className="text-[10px] sm:text-sm lg:text-lg text-slate-400 tabular-nums">a {s.timeEnd}</p>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                {s.type?.label && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] sm:text-sm lg:text-base font-semibold uppercase tracking-wide text-slate-300">
-                    <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${accentClasses(s.type.color)}`} />
-                    {s.type.label}
-                  </span>
-                )}
-                <p className="mt-0.5 sm:mt-1 text-sm sm:text-2xl lg:text-4xl font-bold text-slate-100 truncate">
-                  {s.title}
-                </p>
-                {(s.speaker || s.scriptureRef) && (
-                  <div className="mt-0.5 sm:mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] sm:text-base lg:text-xl text-slate-400">
-                    {s.speaker && (
-                      <span className="flex items-center gap-1.5">
-                        <User className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.speaker}
-                      </span>
-                    )}
-                    {s.scriptureRef && (
-                      <span className="flex items-center gap-1.5">
-                        <BookOpen className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.scriptureRef}
-                      </span>
+              )}
+              {group.items.map((s) => (
+                <div key={s.id} className="flex flex-1 items-center gap-3 sm:gap-6 lg:gap-8 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 sm:px-8 sm:py-5 lg:px-12 lg:py-6 text-left backdrop-blur-md">
+                  <div className="w-16 sm:w-28 lg:w-36 shrink-0">
+                    <p className="text-base sm:text-3xl lg:text-5xl font-bold tabular-nums text-blue-200 leading-tight">
+                      {s.timeStart || "—"}
+                    </p>
+                    {s.timeEnd && (
+                      <p className="text-[10px] sm:text-sm lg:text-lg text-slate-400 tabular-nums">a {s.timeEnd}</p>
                     )}
                   </div>
-                )}
-              </div>
+                  <div className="min-w-0 flex-1">
+                    {s.type?.label && (
+                      <span className="inline-flex items-center gap-1.5 text-[9px] sm:text-sm lg:text-base font-semibold uppercase tracking-wide text-slate-300">
+                        <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${accentClasses(s.type.color)}`} />
+                        {s.type.label}
+                      </span>
+                    )}
+                    <p className="mt-0.5 sm:mt-1 text-sm sm:text-2xl lg:text-4xl font-bold text-slate-100 truncate">
+                      {s.title}
+                    </p>
+                    {(s.speaker || s.scriptureRef) && (
+                      <div className="mt-0.5 sm:mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] sm:text-base lg:text-xl text-slate-400">
+                        {s.speaker && (
+                          <span className="flex items-center gap-1.5">
+                            <User className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.speaker}
+                          </span>
+                        )}
+                        {s.scriptureRef && (
+                          <span className="flex items-center gap-1.5">
+                            <BookOpen className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.scriptureRef}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -559,7 +593,15 @@ export default function DisplayPage() {
           </p>
         ) : (
           <ul className="mt-4 sm:mt-6 lg:mt-8 space-y-2 sm:space-y-3 lg:space-y-4">
-            {sesiones.map((s) => {
+            {groupByTimeOfDay(sesiones).flatMap((group, gi) => [
+              group.label && (
+                <li key={`h-${gi}`} className="list-none">
+                  <p className="text-[10px] sm:text-sm lg:text-lg font-bold uppercase tracking-[0.15em] text-blue-300/80 px-0.5 sm:px-1">
+                    {group.label}
+                  </p>
+                </li>
+              ),
+              ...group.items.map((s) => {
               const activa = s.estado === "encurso";
               const pasada = s.estado === "pasada";
               const cancelada = s.estado === "cancelada";
@@ -646,7 +688,8 @@ export default function DisplayPage() {
                   </div>
                 </li>
               );
-            })}
+              }),
+            ].filter(Boolean))}
           </ul>
         )}
         </>

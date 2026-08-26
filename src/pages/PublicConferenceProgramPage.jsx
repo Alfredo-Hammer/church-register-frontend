@@ -38,6 +38,33 @@ const localDateString = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
+// Agrupa las sesiones de un día por franja horaria (Mañana/Tarde/Noche) en
+// vez de una sola lista larga — útil cuando un mismo día tiene actividad de
+// día y de noche con un hueco grande entre medio. Las sesiones ya llegan
+// ordenadas por hora, así que agrupar "cuando cambia la etiqueta respecto a
+// la anterior" basta para formar bloques contiguos correctos.
+const timeOfDayLabel = (timeStr) => {
+  if (!timeStr) return null;
+  const h = Number(timeStr.slice(0, 2));
+  if (h < 12) return "Mañana";
+  if (h < 18) return "Tarde";
+  return "Noche";
+};
+
+function groupByTimeOfDay(sessions) {
+  const groups = [];
+  let currentLabel;
+  for (const s of sessions) {
+    const label = timeOfDayLabel(s.timeStart);
+    if (groups.length === 0 || label !== currentLabel) {
+      groups.push({label, items: []});
+      currentLabel = label;
+    }
+    groups[groups.length - 1].items.push(s);
+  }
+  return groups;
+}
+
 // buildConferenceProgramBooklet espera el mismo shape snake_case que ya usa
 // ConferenceDetailPage (getConferenceById, autenticado) — este endpoint
 // público responde en camelCase (mismo criterio que el resto de las rutas
@@ -267,39 +294,50 @@ export default function PublicConferenceProgramPage() {
             <p className="text-muted-foreground text-sm">Todavía no hay sesiones programadas para este día.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {activeDay.sessions.map((s) => (
-              <div key={s.id} className="bg-card border border-border rounded-2xl p-4 shadow-xl flex items-start gap-4">
-                <div className={`w-1 self-stretch rounded-full ${accentClasses(s.type?.color)} shrink-0`} />
-                <div className="w-20 shrink-0 pt-0.5">
-                  <p className="text-sm font-bold text-foreground tabular-nums leading-tight">
-                    {to12h(s.timeStart) || "—"}
+          <div className="space-y-5">
+            {groupByTimeOfDay(activeDay.sessions).map((group, gi) => (
+              <div key={gi}>
+                {group.label && (
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+                    {group.label}
                   </p>
-                  {s.timeEnd && (
-                    <p className="text-[11px] text-muted-foreground tabular-nums">a {to12h(s.timeEnd)}</p>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  {s.type?.label && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {s.type.label}
-                    </span>
-                  )}
-                  <p className="text-base font-semibold text-foreground mt-0.5">{s.title}</p>
-                  {(s.speaker || s.scriptureRef) && (
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      {s.speaker && (
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3 shrink-0" /> {s.speaker}
-                        </span>
-                      )}
-                      {s.scriptureRef && (
-                        <span className="flex items-center gap-1">
-                          <BookOpen className="w-3 h-3 shrink-0" /> {s.scriptureRef}
-                        </span>
-                      )}
+                )}
+                <div className="space-y-3">
+                  {group.items.map((s) => (
+                    <div key={s.id} className="bg-card border border-border rounded-2xl p-4 shadow-xl flex items-start gap-4">
+                      <div className={`w-1 self-stretch rounded-full ${accentClasses(s.type?.color)} shrink-0`} />
+                      <div className="w-20 shrink-0 pt-0.5">
+                        <p className="text-sm font-bold text-foreground tabular-nums leading-tight">
+                          {to12h(s.timeStart) || "—"}
+                        </p>
+                        {s.timeEnd && (
+                          <p className="text-[11px] text-muted-foreground tabular-nums">a {to12h(s.timeEnd)}</p>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        {s.type?.label && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            {s.type.label}
+                          </span>
+                        )}
+                        <p className="text-base font-semibold text-foreground mt-0.5">{s.title}</p>
+                        {(s.speaker || s.scriptureRef) && (
+                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {s.speaker && (
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3 shrink-0" /> {s.speaker}
+                              </span>
+                            )}
+                            {s.scriptureRef && (
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="w-3 h-3 shrink-0" /> {s.scriptureRef}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             ))}

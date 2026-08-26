@@ -93,6 +93,33 @@ function formatTime(t) {
   return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
 }
 
+// Agrupa sesiones consecutivas por franja horaria (Mañana/Tarde/Noche) —
+// útil cuando un mismo día tiene actividad de día y de noche con un hueco
+// grande entre medio, en vez de una sola lista larga sin cortes. Ya vienen
+// ordenadas por hora, así que agrupar "cuando cambia la etiqueta respecto a
+// la anterior" basta para formar bloques contiguos correctos.
+function timeOfDayLabel(hhmm) {
+  if (!hhmm) return null;
+  const h = Number(hhmm.slice(0, 2));
+  if (h < 12) return 'Mañana';
+  if (h < 18) return 'Tarde';
+  return 'Noche';
+}
+
+function groupByTimeOfDay(sessions) {
+  const groups = [];
+  let currentLabel;
+  for (const s of sessions) {
+    const label = timeOfDayLabel(s.time_start);
+    if (groups.length === 0 || label !== currentLabel) {
+      groups.push({ label, items: [] });
+      currentLabel = label;
+    }
+    groups[groups.length - 1].items.push(s);
+  }
+  return groups;
+}
+
 // "Ausente" solo aplica a una sesión que ya ocurrió y a la que nadie marcó
 // asistencia; una sesión futura o en curso sin marcar es "pendiente", no una
 // falta real. El backend ya manda `is_past` calculado con su propio reloj,
@@ -1446,7 +1473,13 @@ export default function ConferenceDetailPage() {
                     <p className="px-4 py-8 text-center text-xs text-muted-foreground italic">Sin sesiones aún</p>
                   ) : (
                     <div className="divide-y divide-border/60">
-                      {currentDay.sessions.map((session) => (
+                      {groupByTimeOfDay(currentDay.sessions).flatMap((group, gi) => [
+                        group.label && (
+                          <div key={`h-${gi}`} className="px-3 sm:px-4 py-1.5 bg-muted/30">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{group.label}</p>
+                          </div>
+                        ),
+                        ...group.items.map((session) => (
                         <div key={session.id}
                           className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-muted/40 transition-colors">
                           {/* Hora (+ tipo, solo en móvil). Inicio y fin en
@@ -1536,7 +1569,8 @@ export default function ConferenceDetailPage() {
                             )}
                           </div>
                         </div>
-                      ))}
+                        )),
+                      ].filter(Boolean))}
                     </div>
                   )}
                 </div>
