@@ -2,23 +2,29 @@ import {useState} from "react";
 import {QRCodeSVG} from "qrcode.react";
 import {Dialog, DialogContent, DialogHeader, DialogFooter} from "@/components/ui/Dialog";
 import {Button} from "@/components/ui/Button";
-import {Copy, Check, Monitor, ExternalLink} from "lucide-react";
+import {Copy, Check, Monitor, ExternalLink, BookOpen} from "lucide-react";
+import {cn} from "@/lib/utils";
 
 /**
- * QR del programa general: apunta a la pantalla pública (/pantalla/:token),
- * la misma que se cuelga en el salón. Sirve para imprimirlo en la entrada o
- * en el volante de la conferencia, para que cada quien lo abra en su propio
- * teléfono en vez de depender solo del televisor del pasillo.
+ * Dos QR distintos, mismo diálogo — cada uno con un propósito diferente:
+ *  - "pantalla" (/pantalla/:token): la pantalla del salón, un día a la vez,
+ *    enfocada en "qué está pasando ahora". Pensada para el televisor o para
+ *    que alguien la siga en vivo desde su celular.
+ *  - "programa" (/programa/:token): el programa completo, todos los días y
+ *    todas las sesiones sin límite, para compartir con oradores o el
+ *    público en general — no depende de la hora ni de qué esté en curso.
  *
  * No hace ninguna llamada al backend: el token ya viene en `conference`
- * (public_token), así que solo arma la URL y la dibuja como QR local, sin
- * pedirle nada a ningún servicio externo.
+ * (public_token, el mismo para ambos — mismo nivel de exposición pública),
+ * así que solo arma la URL y la dibuja como QR local.
  */
 export function ProgramQRDialog({open, onClose, conference}) {
+  const [mode, setMode] = useState("pantalla");
   const [copiado, setCopiado] = useState(false);
   if (!conference?.public_token) return null;
 
-  const url = `${window.location.origin}/pantalla/${conference.public_token}`;
+  const path = mode === "pantalla" ? "pantalla" : "programa";
+  const url = `${window.location.origin}/${path}/${conference.public_token}`;
 
   const copiar = async () => {
     await navigator.clipboard.writeText(url);
@@ -26,23 +32,52 @@ export function ProgramQRDialog({open, onClose, conference}) {
     setTimeout(() => setCopiado(false), 1500);
   };
 
+  const switchMode = (m) => {
+    if (m === mode) return;
+    setMode(m);
+    setCopiado(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm bg-card border-border">
         <DialogHeader>
           <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Monitor size={16} /> Programa en pantalla
+            {mode === "pantalla" ? <Monitor size={16} /> : <BookOpen size={16} />}
+            {mode === "pantalla" ? "Programa en pantalla" : "Programa completo"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">{conference.name}</p>
         </DialogHeader>
+
+        <div className="flex gap-1.5 rounded-xl border border-border bg-muted/50 p-1 mt-1">
+          <button
+            onClick={() => switchMode("pantalla")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+              mode === "pantalla" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Monitor size={13} /> En vivo
+          </button>
+          <button
+            onClick={() => switchMode("programa")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+              mode === "programa" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <BookOpen size={13} /> Programa completo
+          </button>
+        </div>
 
         <div className="flex flex-col items-center gap-4 py-2">
           <div className="rounded-xl bg-white p-4">
             <QRCodeSVG value={url} size={200} level="M" />
           </div>
           <p className="text-xs text-center text-muted-foreground text-pretty">
-            Cualquiera que escanee este código ve el programa del día en su
-            propio teléfono, tal como aparece en la pantalla del salón.
+            {mode === "pantalla"
+              ? "Cualquiera que escanee este código ve el programa del día en su propio teléfono, tal como aparece en la pantalla del salón."
+              : "Cualquiera que escanee este código ve todos los días y todas las sesiones de la conferencia, sin límite — para oradores o el público en general."}
           </p>
 
           {/* En el televisor o kiosco del salón, este botón evita tener que
@@ -54,7 +89,7 @@ export function ProgramQRDialog({open, onClose, conference}) {
             rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm font-medium transition-colors"
           >
-            <ExternalLink size={14} /> Abrir pantalla en pestaña nueva
+            <ExternalLink size={14} /> Abrir en pestaña nueva
           </a>
 
           <button

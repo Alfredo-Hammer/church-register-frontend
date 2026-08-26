@@ -11,6 +11,7 @@ import {useTheme} from "@/contexts/ThemeContext";
 // Pages
 import LandingPage from "@/pages/LandingPage";
 import DisplayPage from "@/pages/DisplayPage";
+import PublicConferenceProgramPage from "@/pages/PublicConferenceProgramPage";
 import PublicConferenceRegistrationPage from "@/pages/PublicConferenceRegistrationPage";
 import PublicMemberRegistrationPage from "@/pages/PublicMemberRegistrationPage";
 import PublicVisitorRegistrationPage from "@/pages/PublicVisitorRegistrationPage";
@@ -407,6 +408,7 @@ function App() {
             {/* Landing page pública */}
             {/* Pantalla pública del salón: sin sesión, se identifica por token */}
             <Route path="/pantalla/:token" element={<DisplayPage />} />
+            <Route path="/programa/:token" element={<PublicConferenceProgramPage />} />
             <Route path="/registro-conferencia/:token" element={<PublicConferenceRegistrationPage />} />
             <Route path="/registro-miembro/:joinCode" element={<PublicMemberRegistrationPage />} />
             <Route path="/registro-visitante/:joinCode" element={<PublicVisitorRegistrationPage />} />
