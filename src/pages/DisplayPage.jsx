@@ -156,6 +156,86 @@ function FondoAnimado() {
  *  - "finished": hoy terminó y no queda ningún día después.
  */
 function IdleScreen({mode, church, conference, day, totalDays, sessions, loadingPreview, message}) {
+  const hasList = (mode === "before" || mode === "between") && !loadingPreview && sessions?.length > 0;
+
+  // Con lista de sesiones: encabezado angosto + la lista ocupando casi toda
+  // la pantalla — en un televisor real, la marca grande centrada de antes
+  // dejaba la lista chica y arrinconada abajo. Sin lista (bienvenida vacía,
+  // receso, cierre, cargando): mantiene el diseño centrado de siempre, no
+  // hay nada más que mostrar.
+  if (hasList) {
+    return (
+      <div className="relative flex h-full min-h-[85vh] flex-col gap-3 sm:gap-5 lg:gap-7">
+        <div className="flex items-center gap-3 sm:gap-4 lg:gap-5 shrink-0 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-md px-3 py-2.5 sm:px-5 sm:py-4 lg:px-7 lg:py-5">
+          {church.logoUrl ? (
+            <img src={church.logoUrl} alt="" className="h-9 w-9 sm:h-14 sm:w-14 lg:h-16 lg:w-16 rounded-xl object-contain bg-white/5 p-1 shrink-0" />
+          ) : (
+            <span className="flex h-9 w-9 sm:h-14 sm:w-14 lg:h-16 lg:w-16 items-center justify-center rounded-xl bg-blue-600 shrink-0">
+              <Church className="h-5 w-5 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] sm:text-xs lg:text-sm uppercase tracking-[0.15em] text-blue-300 font-semibold truncate">
+              {church.name}
+            </p>
+            <h1 className="text-base sm:text-2xl lg:text-4xl font-bold tracking-tight truncate">
+              {conference.name}
+            </h1>
+          </div>
+          {day && (
+            <div className="text-right shrink-0">
+              <p className="text-[9px] sm:text-xs lg:text-sm uppercase tracking-[0.1em] text-slate-400 font-semibold">
+                {mode === "between" ? "Nos vemos mañana" : "Bienvenido"}
+              </p>
+              <p className="text-sm sm:text-xl lg:text-3xl font-bold capitalize leading-tight">{fmtFecha(day.date)}</p>
+              <p className="text-[9px] sm:text-xs lg:text-sm text-slate-400">Día {day.dayNumber} de {totalDays}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 lg:gap-4 overflow-hidden">
+          {sessions.slice(0, 6).map((s) => (
+            <div key={s.id} className="flex flex-1 items-center gap-3 sm:gap-6 lg:gap-8 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 sm:px-8 sm:py-5 lg:px-12 lg:py-6 text-left backdrop-blur-md">
+              <div className="w-16 sm:w-28 lg:w-36 shrink-0">
+                <p className="text-base sm:text-3xl lg:text-5xl font-bold tabular-nums text-blue-200 leading-tight">
+                  {s.timeStart || "—"}
+                </p>
+                {s.timeEnd && (
+                  <p className="text-[10px] sm:text-sm lg:text-lg text-slate-400 tabular-nums">a {s.timeEnd}</p>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                {s.type?.label && (
+                  <span className="inline-flex items-center gap-1.5 text-[9px] sm:text-sm lg:text-base font-semibold uppercase tracking-wide text-slate-300">
+                    <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${accentClasses(s.type.color)}`} />
+                    {s.type.label}
+                  </span>
+                )}
+                <p className="mt-0.5 sm:mt-1 text-sm sm:text-2xl lg:text-4xl font-bold text-slate-100 truncate">
+                  {s.title}
+                </p>
+                {(s.speaker || s.scriptureRef) && (
+                  <div className="mt-0.5 sm:mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] sm:text-base lg:text-xl text-slate-400">
+                    {s.speaker && (
+                      <span className="flex items-center gap-1.5">
+                        <User className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.speaker}
+                      </span>
+                    )}
+                    {s.scriptureRef && (
+                      <span className="flex items-center gap-1.5">
+                        <BookOpen className="h-2.5 w-2.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 shrink-0" /> {s.scriptureRef}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-[85vh] flex-col items-center justify-center gap-4 sm:gap-6 lg:gap-8 px-4 py-8 text-center">
       {church.logoUrl ? (
@@ -214,48 +294,6 @@ function IdleScreen({mode, church, conference, day, totalDays, sessions, loading
           </>
         )}
       </div>
-
-      {(mode === "before" || mode === "between") && !loadingPreview && sessions?.length > 0 && (
-        <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl space-y-1.5 sm:space-y-2 lg:space-y-2.5">
-          {sessions.slice(0, 5).map((s) => (
-            <div key={s.id} className="flex items-start gap-2.5 sm:gap-4 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 sm:px-5 sm:py-3.5 text-left backdrop-blur-md">
-              <div className="w-14 sm:w-20 lg:w-24 shrink-0 pt-0.5">
-                <p className="text-xs sm:text-lg lg:text-2xl font-bold tabular-nums text-blue-200 leading-tight">
-                  {s.timeStart || "—"}
-                </p>
-                {s.timeEnd && (
-                  <p className="text-[9px] sm:text-xs lg:text-sm text-slate-400 tabular-nums">a {s.timeEnd}</p>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                {s.type?.label && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] sm:text-xs lg:text-sm font-semibold uppercase tracking-wide text-slate-300">
-                    <span className={`h-1.5 w-1.5 rounded-full ${accentClasses(s.type.color)}`} />
-                    {s.type.label}
-                  </span>
-                )}
-                <p className="mt-0.5 text-[11px] sm:text-base lg:text-xl font-semibold text-slate-100 truncate">
-                  {s.title}
-                </p>
-                {(s.speaker || s.scriptureRef) && (
-                  <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] sm:text-xs lg:text-base text-slate-400">
-                    {s.speaker && (
-                      <span className="flex items-center gap-1">
-                        <User className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 shrink-0" /> {s.speaker}
-                      </span>
-                    )}
-                    {s.scriptureRef && (
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 shrink-0" /> {s.scriptureRef}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

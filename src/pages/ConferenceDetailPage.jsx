@@ -1399,22 +1399,41 @@ export default function ConferenceDetailPage() {
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
                   <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-muted/30">
                     <span className="text-sm font-semibold text-foreground capitalize">{formatDate(currentDay.day_date)}</span>
-                    {!isLocked && (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openAddSession(currentDay.id)}
-                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                          <Plus size={12} /> Agregar Sesión
-                        </button>
-                        <button onClick={() => handleDeleteDay(currentDay.id)}
-                          disabled={deletingDay === currentDay.id}
-                          title="Eliminar día"
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                          {deletingDay === currentDay.id
-                            ? <Loader2 size={13} className="animate-spin" />
-                            : <Trash2 size={13} />}
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {/* Mismo forzado que el selector "Pantalla" de arriba, pero a
+                          mano desde el día que ya estás viendo — sin tener que
+                          buscarlo en el dropdown de otro lugar. */}
+                      <button
+                        onClick={() => handleForceDisplayDay(conference.display_forced_day_id === currentDay.id ? null : currentDay.id)}
+                        disabled={savingForcedDay}
+                        title={conference.display_forced_day_id === currentDay.id ? "Volver la pantalla a automático" : "Forzar este día en la pantalla del salón"}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50",
+                          conference.display_forced_day_id === currentDay.id
+                            ? "text-blue-700 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                        )}
+                      >
+                        <Monitor size={12} />
+                        {conference.display_forced_day_id === currentDay.id ? "En pantalla" : "Mostrar en pantalla"}
+                      </button>
+                      {!isLocked && (
+                        <>
+                          <button onClick={() => openAddSession(currentDay.id)}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                            <Plus size={12} /> Agregar Sesión
+                          </button>
+                          <button onClick={() => handleDeleteDay(currentDay.id)}
+                            disabled={deletingDay === currentDay.id}
+                            title="Eliminar día"
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-red-700 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                            {deletingDay === currentDay.id
+                              ? <Loader2 size={13} className="animate-spin" />
+                              : <Trash2 size={13} />}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Lista de sesiones — filas flex en vez de <table>: la tabla
