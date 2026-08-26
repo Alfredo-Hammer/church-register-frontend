@@ -15,7 +15,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
-  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye,
+  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye, Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -268,6 +268,9 @@ export default function ConferenceDetailPage() {
   const [savingDisplayPause, setSavingDisplayPause] = useState(false);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [pauseMessageInput, setPauseMessageInput] = useState("");
+  // Forzar a mano qué día muestra la pantalla del salón, en vez de dejarlo
+  // siempre al cálculo automático por fecha.
+  const [savingForcedDay, setSavingForcedDay] = useState(false);
 
   // Link público de auto-registro (iglesias invitadas registran a sus
   // miembros de antemano; en la puerta solo se recoge el gafete)
@@ -396,10 +399,25 @@ export default function ConferenceDetailPage() {
   const defaultTypeId = () =>
     sessionTypes.find((t) => t.key === "CLASE_BIBLICA")?.id ?? sessionTypes[0]?.id ?? null;
 
+  // Sugiere como hora de inicio la hora de fin de la última sesión del día
+  // (la que termina más tarde, no necesariamente la última en la lista) —
+  // así no hay que volver a escribir a mano la misma hora que ya se usó.
+  // Si esa sesión no tiene hora de fin, usa su hora de inicio en su lugar.
+  const suggestedStartTime = (dayId) => {
+    const day = days.find((d) => d.id === dayId);
+    const sessions = day?.sessions || [];
+    let latest = null;
+    for (const s of sessions) {
+      const t = (s.time_end || s.time_start)?.slice(0, 5);
+      if (t && (!latest || t > latest)) latest = t;
+    }
+    return latest || "";
+  };
+
   const openAddSession = (dayId) => {
     setTargetDayId(dayId);
     setEditingSession(null);
-    setSessionForm({ ...EMPTY_SESSION, sessionTypeId: defaultTypeId() });
+    setSessionForm({ ...EMPTY_SESSION, sessionTypeId: defaultTypeId(), timeStart: suggestedStartTime(dayId) });
     setSessionError("");
     setShowNewType(false);
     setTypeError("");
@@ -573,6 +591,15 @@ export default function ConferenceDetailPage() {
       await fetchConference();
     } catch { /* silent */ }
     setSavingDisplayPause(false);
+  };
+
+  const handleForceDisplayDay = async (dayId) => {
+    setSavingForcedDay(true);
+    try {
+      await conferenceService.updateDisplayForcedDay(id, dayId);
+      await fetchConference();
+    } catch { /* silent */ }
+    setSavingForcedDay(false);
   };
 
   // Librillo del programa — misma vista previa en pestaña nueva que ya usa
@@ -1313,6 +1340,32 @@ export default function ConferenceDetailPage() {
               <Eye size={14} />
               Vista previa del programa
             </Button>
+            {/* Forzar a mano qué día muestra la pantalla del salón — por
+                defecto queda en automático (calcula el día por la fecha real). */}
+            {days.length > 0 && (
+              <div className={cn(
+                "flex items-center gap-1.5 pl-2.5 pr-1.5 rounded-lg text-sm border",
+                conference.display_forced_day_id
+                  ? "border-blue-500/60 bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                  : "border-border text-muted-foreground",
+              )}>
+                <Monitor size={14} className="shrink-0" />
+                <select
+                  value={conference.display_forced_day_id || ""}
+                  disabled={savingForcedDay}
+                  onChange={(e) => handleForceDisplayDay(e.target.value || null)}
+                  className="bg-transparent text-sm py-1.5 pr-1 focus:outline-none disabled:opacity-50"
+                  title="Forzar qué día muestra la pantalla del salón"
+                >
+                  <option value="">Pantalla: Automático</option>
+                  {days.map((day) => (
+                    <option key={day.id} value={day.id}>
+                      Pantalla: Día {day.day_number} · {formatDateShort(day.day_date)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {days.length === 0 ? (

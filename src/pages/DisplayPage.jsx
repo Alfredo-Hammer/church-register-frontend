@@ -217,14 +217,41 @@ function IdleScreen({mode, church, conference, day, totalDays, sessions, loading
 
       {(mode === "before" || mode === "between") && !loadingPreview && sessions?.length > 0 && (
         <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl space-y-1.5 sm:space-y-2 lg:space-y-2.5">
-          {sessions.slice(0, 6).map((s) => (
-            <div key={s.id} className="flex items-center gap-2.5 sm:gap-4 rounded-xl border border-white/10 bg-black/25 px-3 py-2 sm:px-5 sm:py-3 text-left backdrop-blur-md">
-              <span className="w-11 sm:w-16 lg:w-20 shrink-0 text-xs sm:text-lg lg:text-2xl font-bold tabular-nums text-blue-200">
-                {s.timeStart || "—"}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[11px] sm:text-base lg:text-xl font-semibold text-slate-100">
-                {s.title}
-              </span>
+          {sessions.slice(0, 5).map((s) => (
+            <div key={s.id} className="flex items-start gap-2.5 sm:gap-4 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 sm:px-5 sm:py-3.5 text-left backdrop-blur-md">
+              <div className="w-14 sm:w-20 lg:w-24 shrink-0 pt-0.5">
+                <p className="text-xs sm:text-lg lg:text-2xl font-bold tabular-nums text-blue-200 leading-tight">
+                  {s.timeStart || "—"}
+                </p>
+                {s.timeEnd && (
+                  <p className="text-[9px] sm:text-xs lg:text-sm text-slate-400 tabular-nums">a {s.timeEnd}</p>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                {s.type?.label && (
+                  <span className="inline-flex items-center gap-1.5 text-[9px] sm:text-xs lg:text-sm font-semibold uppercase tracking-wide text-slate-300">
+                    <span className={`h-1.5 w-1.5 rounded-full ${accentClasses(s.type.color)}`} />
+                    {s.type.label}
+                  </span>
+                )}
+                <p className="mt-0.5 text-[11px] sm:text-base lg:text-xl font-semibold text-slate-100 truncate">
+                  {s.title}
+                </p>
+                {(s.speaker || s.scriptureRef) && (
+                  <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] sm:text-xs lg:text-base text-slate-400">
+                    {s.speaker && (
+                      <span className="flex items-center gap-1">
+                        <User className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 shrink-0" /> {s.speaker}
+                      </span>
+                    )}
+                    {s.scriptureRef && (
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 shrink-0" /> {s.scriptureRef}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -244,9 +271,21 @@ export default function DisplayPage() {
   // pide cuando la jornada de hoy ya terminó (ver efecto más abajo).
   const [preview, setPreview] = useState(null);
 
+  // Fecha de HOY según el reloj del dispositivo que tiene la pantalla
+  // delante (el televisor del salón), no la del servidor. El backend corre
+  // en un VPS que casi seguro está en UTC — sin esto, cualquier iglesia en
+  // América quedaría "un día adelantada" apenas pasaran unas horas de la
+  // tarde (ej. 8pm hora del Este ya es medianoche UTC), y el "día activo"
+  // saltaría al siguiente aunque la sesión de esta noche siga en curso.
+  const localDateString = () => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
   const cargar = useCallback(async () => {
     try {
-      const r = await fetch(`${API_URL}/public/conference/${token}/today`);
+      const r = await fetch(`${API_URL}/public/conference/${token}/today?date=${localDateString()}`);
       if (!r.ok) throw new Error(r.status === 404 ? "Programa no encontrado" : "Error al cargar");
       const d = await r.json();
       setData(d);
@@ -464,7 +503,7 @@ export default function DisplayPage() {
             {data.day && (
               <p className="text-[10px] sm:text-sm lg:text-lg text-slate-400">
                 Día {data.day.dayNumber} de {data.totalDays}
-                {!data.day.isToday && " · próxima jornada"}
+                {data.displayForcedDayId ? " · fijado manualmente" : !data.day.isToday && " · próxima jornada"}
               </p>
             )}
           </div>

@@ -1110,6 +1110,10 @@ export const conferenceService = {
     const response = await api.put(`/conference/${id}/display-pause`, { paused, message });
     return response.data;
   },
+  updateDisplayForcedDay: async (id, dayId) => {
+    const response = await api.put(`/conference/${id}/display-day`, { dayId });
+    return response.data;
+  },
   regenerateRegistrationToken: async (id) => {
     const response = await api.put(`/conference/${id}/registration-token/regenerate`);
     return response.data;
