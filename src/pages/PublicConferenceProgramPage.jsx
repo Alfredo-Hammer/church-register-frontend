@@ -1,7 +1,8 @@
 import {useEffect, useState} from "react";
 import {useParams} from "react-router-dom";
-import {Church, MapPin, Calendar, Ban, Loader2, User, BookOpen} from "lucide-react";
+import {Church, MapPin, Calendar, Ban, Loader2, User, BookOpen, Share2, Check, FileDown} from "lucide-react";
 import {accentClasses} from "@/utils/sessionTypeColors";
+import {buildConferenceProgramBooklet} from "@/utils/reportPrint";
 
 // Programa completo de una conferencia, público y sin límite de ítems —
 // pensada para compartir con oradores o el público en general (link o QR
@@ -37,12 +38,49 @@ const localDateString = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
+// buildConferenceProgramBooklet espera el mismo shape snake_case que ya usa
+// ConferenceDetailPage (getConferenceById, autenticado) — este endpoint
+// público responde en camelCase (mismo criterio que el resto de las rutas
+// públicas de la app), así que hay que traducir antes de armar el librillo.
+// `notes` queda fuera a propósito: el endpoint público nunca lo incluye
+// (son apuntes internos de organización, ver publicDisplayController).
+function toBookletShape(data, token) {
+  return {
+    conference: {
+      name: data.conference.name,
+      theme: data.conference.theme,
+      theme_verse: data.conference.themeVerse,
+      location: data.conference.location,
+      start_date: data.conference.startDate,
+      end_date: data.conference.endDate,
+      // Sin esto el librillo omite el QR de la contraportada en silencio
+      // (buildConferenceProgramBooklet lo salta si falta, no tira error) —
+      // acá ya lo tenemos gratis: es el mismo token de la URL de esta página.
+      public_token: token,
+    },
+    days: data.days.map((d) => ({
+      day_number: d.dayNumber,
+      day_date: d.date,
+      sessions: d.sessions.map((s) => ({
+        title: s.title,
+        time_start: s.timeStart,
+        time_end: s.timeEnd,
+        speaker: s.speaker,
+        scripture_ref: s.scriptureRef,
+        type: s.type,
+      })),
+    })),
+  };
+}
+
 export default function PublicConferenceProgramPage() {
   const {token} = useParams();
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [data, setData] = useState(null);
   const [activeDayId, setActiveDayId] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+  const [descargando, setDescargando] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -66,6 +104,51 @@ export default function PublicConferenceProgramPage() {
       }
     })();
   }, [token]);
+
+  const compartir = async () => {
+    const shareData = {
+      title: data ? `Programa · ${data.conference.name}` : "Programa de la conferencia",
+      text: data ? `Programa completo de ${data.conference.name}` : undefined,
+      url: window.location.href,
+    };
+    // navigator.share no existe en todos los navegadores (sobre todo
+    // escritorio) — si falta, se cae a copiar el link, que es lo que la
+    // gente termina haciendo de todos modos para pegarlo en un chat.
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // Cancelado por la persona o falló — se cae a copiar el link igual.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    } catch {
+      /* el navegador negó el permiso; no hay nada más que hacer */
+    }
+  };
+
+  const descargarLibrillo = async () => {
+    if (!data) return;
+    setDescargando(true);
+    // Se abre la pestaña ANTES de esperar el QR del librillo: si se abriera
+    // después del await, el navegador ya no la asocia con el clic de la
+    // persona y puede bloquearla como popup.
+    const win = window.open("", "_blank");
+    try {
+      const {conference, days} = toBookletShape(data, token);
+      const html = await buildConferenceProgramBooklet(conference, days, data.church);
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+      }
+    } finally {
+      setDescargando(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -129,6 +212,30 @@ export default function PublicConferenceProgramPage() {
               </span>
             )}
           </div>
+        </div>
+
+        {/* Compartir / descargar — acciones sobre el link en sí, no sobre
+            un día en particular, por eso van antes del selector de día. */}
+        <div className="flex gap-2 mb-5">
+          <button
+            onClick={compartir}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:border-blue-500 transition-colors"
+          >
+            {copiado
+              ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+              : <Share2 className="w-4 h-4" />}
+            {copiado ? "Link copiado" : "Compartir"}
+          </button>
+          <button
+            onClick={descargarLibrillo}
+            disabled={descargando}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:border-blue-500 transition-colors disabled:opacity-50"
+          >
+            {descargando
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <FileDown className="w-4 h-4" />}
+            Descargar programa
+          </button>
         </div>
 
         {/* Selector de día — solo si hay más de uno */}
@@ -198,6 +305,10 @@ export default function PublicConferenceProgramPage() {
             ))}
           </div>
         )}
+
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Generado con Congrega — Sistema de Control Eclesiástico
+        </p>
       </div>
     </div>
   );
