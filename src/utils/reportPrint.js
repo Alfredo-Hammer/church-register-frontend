@@ -2639,11 +2639,12 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
     : `<div class="bk-cross">✝</div>`;
   const contactLine = [church.address, church.phone, church.website].filter(Boolean).join(' · ');
 
-  // Mismo destino que ProgramQRDialog (la pantalla pública /pantalla/:token)
-  // — así quien tiene el impreso en la mano puede seguir el programa en vivo
-  // desde su propio teléfono sin depender del televisor del salón.
+  // Apunta al programa público completo (/programa/:token), no a la pantalla
+  // del salón (/pantalla/:token) — cualquiera que escanee el librillo debe
+  // poder ver el programa entero (todos los días) desde su propio teléfono,
+  // no solo el día activo capado a 6 ítems que muestra el televisor.
   const qrUrl = conference.public_token
-    ? `${window.location.origin}/pantalla/${conference.public_token}`
+    ? `${window.location.origin}/programa/${conference.public_token}`
     : null;
   let qrDataUrl = null;
   if (qrUrl) {
@@ -2809,8 +2810,8 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
         <span class="bk-corner bk-corner-bl"></span>
         <span class="bk-corner bk-corner-br"></span>
         <div class="bk-cover-top">
-          ${logoHtml}
           <p class="bk-church-name">${churchName}</p>
+          ${logoHtml}
         </div>
         <div class="bk-cover-mid">
           <span class="bk-eyebrow">Conferencia Bíblica</span>
@@ -2912,19 +2913,19 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   .bk-corner-bl { bottom: 0.26in; left: 0.26in; border-bottom: 1.25px solid var(--gold); border-left: 1.25px solid var(--gold); }
   .bk-corner-br { bottom: 0.26in; right: 0.26in; border-bottom: 1.25px solid var(--gold); border-right: 1.25px solid var(--gold); }
 
-  .bk-cover-top { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .bk-logo { max-height: 64px; max-width: 60%; object-fit: contain; }
-  .bk-cross { font-size: 30px; color: var(--gold-soft); line-height: 1; }
-  .bk-church-name { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; }
+  .bk-cover-top { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .bk-logo { max-height: 130px; max-width: 72%; object-fit: contain; }
+  .bk-cross { font-size: 58px; color: var(--gold-soft); line-height: 1; }
+  .bk-church-name { font-size: 13px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--ink-soft); font-family: Arial, sans-serif; }
 
   .bk-cover-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 88%; }
   .bk-eyebrow { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-deep); font-family: Arial, sans-serif; font-weight: 700; margin-bottom: 4px; }
   .bk-title { font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
   .bk-cover-divider { width: 34px; height: 2px; background: var(--gold); margin: 14px 0; }
-  .bk-date { font-size: 12.5px; color: var(--ink-soft); }
+  .bk-date { font-size: 13px; color: var(--ink-soft); }
   .bk-meta-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
-  .bk-meta-pill { font-size: 10px; color: var(--ink-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; padding: 4px 12px; border: 1px solid var(--rule-strong); border-radius: 20px; }
-  .bk-cover-note { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 16px; }
+  .bk-meta-pill { font-size: 11px; font-weight: 600; color: var(--ink-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; padding: 4px 12px; border: 1px solid var(--rule-strong); border-radius: 20px; }
+  .bk-cover-note { font-size: 10.5px; color: var(--ink-soft); font-style: italic; margin-top: 16px; }
 
   .bk-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .bk-cover-footer-line { width: 100%; max-width: 120px; height: 1px; background: var(--rule); }
@@ -2952,7 +2953,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
 
   .bk-time-group { font-size: 9.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--gold-deep); font-family: Arial, sans-serif; margin: 10px 0 6px; }
   .bk-time-group:first-child { margin-top: 0; }
-  .bk-time-group-mc { font-weight: 500; letter-spacing: 0.2px; text-transform: none; color: var(--muted); }
+  .bk-time-group-mc { font-weight: 500; letter-spacing: 0.2px; text-transform: none; color: var(--ink-soft); }
 
   .bk-folio-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .bk-folio-bar.bk-folio-left { justify-content: flex-start; }
@@ -2966,7 +2967,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   .bk-item-body { flex: 1; min-width: 0; }
   .bk-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .bk-item-type { font-size: 7px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-deep); background: rgba(169,131,90,0.12); padding: 2px 7px; border-radius: 20px; font-family: Arial, sans-serif; }
-  .bk-item-time { font-size: 9.5px; color: var(--muted); font-family: 'Courier New', monospace; flex-shrink: 0; }
+  .bk-item-time { font-size: 11px; font-weight: 700; color: var(--ink-soft); font-family: 'Courier New', monospace; flex-shrink: 0; }
   .bk-item-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 3px; }
   .bk-item-leader { font-size: 10px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
   .bk-item-leader::before { content: "— "; }

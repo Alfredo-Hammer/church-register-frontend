@@ -1,6 +1,6 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {useParams} from "react-router-dom";
-import {Church, MapPin, Calendar, Ban, Loader2, User, BookOpen, Share2, Check, FileDown} from "lucide-react";
+import {Church, MapPin, Calendar, Ban, Loader2, User, BookOpen, Share2, Check, FileDown, Clock} from "lucide-react";
 import {accentClasses} from "@/utils/sessionTypeColors";
 import {buildConferenceProgramBooklet} from "@/utils/reportPrint";
 
@@ -37,6 +37,40 @@ const localDateString = () => {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
+
+const toMinutes = (hhmm) => {
+  if (!hhmm) return null;
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+};
+
+// Mismo criterio que DisplayPage.jsx (la pantalla del salón): un estado
+// puesto a mano por quien controla la conferencia (CANCELADA/EN_CURSO/
+// FINALIZADA) manda sobre el cálculo automático por reloj. Solo se calcula
+// por reloj cuando la sesión sigue en PROGRAMADA (su valor por defecto) Y el
+// día es hoy — un día pasado se da por "pasada" entera sin mirar la hora, uno
+// futuro se da por "futura" entera, para no depender de time_end en días que
+// ni siquiera han llegado.
+function sessionsWithEstado(day, ahoraMin) {
+  if (!day?.sessions?.length) return [];
+  const hoy = localDateString();
+  const esHoy = day.date === hoy;
+  const esPasado = day.date < hoy;
+
+  return day.sessions.map((s, i) => {
+    if (s.status === "CANCELADA") return {...s, estado: "cancelada"};
+    if (s.status === "EN_CURSO") return {...s, estado: "encurso"};
+    if (s.status === "FINALIZADA") return {...s, estado: "pasada"};
+    if (esPasado) return {...s, estado: "pasada"};
+    if (!esHoy || s.timeStart === null) return {...s, estado: "futura"};
+
+    const ini = toMinutes(s.timeStart);
+    const fin = toMinutes(s.timeEnd) ?? toMinutes(day.sessions[i + 1]?.timeStart) ?? ini + 90;
+    if (ahoraMin >= fin) return {...s, estado: "pasada"};
+    if (ahoraMin >= ini) return {...s, estado: "encurso"};
+    return {...s, estado: "futura"};
+  });
+}
 
 // Agrupa las sesiones de un día por franja horaria (Mañana/Tarde/Noche) en
 // vez de una sola lista larga — útil cuando un mismo día tiene actividad de
@@ -114,29 +148,58 @@ export default function PublicConferenceProgramPage() {
   const [activeDayId, setActiveDayId] = useState(null);
   const [copiado, setCopiado] = useState(false);
   const [descargando, setDescargando] = useState(false);
+  const [offsetMs, setOffsetMs] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    (async () => {
+    let cancelado = false;
+    let primeraCarga = true;
+    const cargar = async () => {
       try {
         const res = await fetch(`${API_URL}/public/conference/${token}/program`);
+        if (cancelado) return;
         if (!res.ok) {
           setNotFound(true);
         } else {
           const body = await res.json();
+          if (cancelado) return;
           setData(body);
-          // Si alguno de los días coincide con hoy, arranca ahí — si no,
-          // el primer día es lo más útil por defecto.
-          const today = localDateString();
-          const match = body.days.find((d) => d.date === today);
-          setActiveDayId((match || body.days[0])?.id ?? null);
+          setOffsetMs(new Date(body.serverTime).getTime() - Date.now());
+          // Solo en la primera carga: si alguno de los días coincide con hoy,
+          // arranca ahí; si no, el primer día. En cargas siguientes (polling)
+          // se respeta la pestaña de día que la persona ya haya elegido.
+          if (primeraCarga) {
+            const today = localDateString();
+            const match = body.days.find((d) => d.date === today);
+            setActiveDayId((match || body.days[0])?.id ?? null);
+          }
         }
       } catch {
-        setNotFound(true);
+        if (!cancelado) setNotFound(true);
       } finally {
-        setLoading(false);
+        if (!cancelado) setLoading(false);
+        primeraCarga = false;
       }
-    })();
+    };
+    cargar();
+    // 15s, más relajado que los 5s de la pantalla del salón: acá puede haber
+    // muchos teléfonos a la vez viendo el mismo link, no un solo televisor.
+    const id = setInterval(cargar, 15_000);
+    return () => {
+      cancelado = true;
+      clearInterval(id);
+    };
   }, [token]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const ahoraMin = useMemo(() => {
+    const d = new Date(now + offsetMs);
+    return d.getHours() * 60 + d.getMinutes();
+  }, [now, offsetMs]);
 
   const compartir = async () => {
     const shareData = {
@@ -207,6 +270,12 @@ export default function PublicConferenceProgramPage() {
 
   const {church, conference, days} = data;
   const activeDay = days.find((d) => d.id === activeDayId) || days[0];
+  const sesiones = sessionsWithEstado(activeDay, ahoraMin);
+  // "A continuación" también se puede fijar a mano desde el panel — ver
+  // DisplayPage.jsx para el mismo criterio completo (útil cuando el orden
+  // real cambió y ya no coincide con la siguiente sesión futura impresa).
+  const marcadaSiguiente = sesiones.find((s) => s.status === "A_CONTINUACION");
+  const proxima = marcadaSiguiente || sesiones.find((s) => s.estado === "futura");
 
   return (
     <div className="surface-public min-h-screen bg-gradient-to-br from-background via-muted to-background p-4 pb-10">
@@ -294,14 +363,14 @@ export default function PublicConferenceProgramPage() {
         )}
 
         {/* Programa del día activo */}
-        {!activeDay || activeDay.sessions.length === 0 ? (
+        {!activeDay || sesiones.length === 0 ? (
           <div className="bg-card border border-border rounded-2xl p-8 text-center shadow-xl">
             <Calendar className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-40" />
             <p className="text-muted-foreground text-sm">Todavía no hay sesiones programadas para este día.</p>
           </div>
         ) : (
           <div className="space-y-5">
-            {groupByTimeOfDay(activeDay.sessions).map((group, gi) => (
+            {groupByTimeOfDay(sesiones).map((group, gi) => (
               <div key={gi}>
                 {group.label && (
                   <p className="flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
@@ -314,41 +383,74 @@ export default function PublicConferenceProgramPage() {
                   </p>
                 )}
                 <div className="space-y-3">
-                  {group.items.map((s) => (
-                    <div key={s.id} className="bg-card border border-border rounded-2xl p-4 shadow-xl flex items-start gap-4">
-                      <div className={`w-1 self-stretch rounded-full ${accentClasses(s.type?.color)} shrink-0`} />
-                      <div className="w-20 shrink-0 pt-0.5">
-                        <p className="text-sm font-bold text-foreground tabular-nums leading-tight">
-                          {to12h(s.timeStart) || "—"}
-                        </p>
-                        {s.timeEnd && (
-                          <p className="text-[11px] text-muted-foreground tabular-nums">a {to12h(s.timeEnd)}</p>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        {s.type?.label && (
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            {s.type.label}
-                          </span>
-                        )}
-                        <p className="text-base font-semibold text-foreground mt-0.5">{s.title}</p>
-                        {(s.speaker || s.scriptureRef) && (
-                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            {s.speaker && (
-                              <span className="flex items-center gap-1">
-                                <User className="w-3 h-3 shrink-0" /> {s.speaker}
+                  {group.items.map((s) => {
+                    const activa = s.estado === "encurso";
+                    const pasada = s.estado === "pasada";
+                    const cancelada = s.estado === "cancelada";
+                    const siguiente = !cancelada && s.id === proxima?.id;
+                    return (
+                      <div key={s.id} className={`rounded-2xl p-4 shadow-xl flex items-start gap-4 border transition-colors ${
+                        activa
+                          ? "border-blue-500 bg-blue-500/5 dark:bg-blue-500/10"
+                          : cancelada
+                            ? "border-red-300 dark:border-red-900/60 bg-red-500/5 dark:bg-red-950/20 opacity-75"
+                            : pasada
+                              ? "border-border bg-card opacity-55"
+                              : "border-border bg-card"
+                      }`}>
+                        <div className={`w-1 self-stretch rounded-full shrink-0 ${activa ? "bg-blue-500" : cancelada ? "bg-red-500" : accentClasses(s.type?.color)}`} />
+                        <div className="w-20 shrink-0 pt-0.5">
+                          <p className="text-sm font-bold text-foreground tabular-nums leading-tight">
+                            {to12h(s.timeStart) || "—"}
+                          </p>
+                          {s.timeEnd && (
+                            <p className="text-[11px] text-muted-foreground tabular-nums">a {to12h(s.timeEnd)}</p>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {s.type?.label && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {s.type.label}
                               </span>
                             )}
-                            {s.scriptureRef && (
-                              <span className="flex items-center gap-1">
-                                <BookOpen className="w-3 h-3 shrink-0" /> {s.scriptureRef}
+                            {activa && (
+                              <span className="flex items-center gap-1 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> EN CURSO
+                              </span>
+                            )}
+                            {cancelada && (
+                              <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                CANCELADO
+                              </span>
+                            )}
+                            {siguiente && (
+                              <span className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                <Clock className="w-2.5 h-2.5 shrink-0" /> A CONTINUACIÓN
                               </span>
                             )}
                           </div>
-                        )}
+                          <p className={`text-base font-semibold text-foreground mt-0.5 ${cancelada ? "line-through decoration-red-500/70" : ""}`}>
+                            {s.title}
+                          </p>
+                          {(s.speaker || s.scriptureRef) && (
+                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              {s.speaker && (
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3 h-3 shrink-0" /> {s.speaker}
+                                </span>
+                              )}
+                              {s.scriptureRef && (
+                                <span className="flex items-center gap-1">
+                                  <BookOpen className="w-3 h-3 shrink-0" /> {s.scriptureRef}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
