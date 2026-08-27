@@ -53,6 +53,9 @@ const timeOfDayLabel = (hhmm) => {
   return "Noche";
 };
 
+const MC_FIELD_FOR_LABEL = {"Mañana": "mcMorning", "Tarde": "mcAfternoon", "Noche": "mcEvening"};
+const mcForLabel = (day, label) => day?.[MC_FIELD_FOR_LABEL[label]] || null;
+
 function groupByTimeOfDay(sessions) {
   const groups = [];
   let currentLabel;
@@ -222,8 +225,13 @@ function IdleScreen({mode, church, conference, day, totalDays, sessions, loading
           {groupByTimeOfDay(sessions.slice(0, 6)).map((group, gi) => (
             <div key={gi} className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 lg:gap-4">
               {group.label && (
-                <p className="shrink-0 text-[9px] sm:text-sm lg:text-base font-bold uppercase tracking-[0.15em] text-blue-300/80 px-1">
-                  {group.label}
+                <p className="shrink-0 flex items-baseline gap-2 text-[9px] sm:text-sm lg:text-base font-bold uppercase tracking-[0.15em] text-blue-300/80 px-1">
+                  <span>{group.label}</span>
+                  {mcForLabel(day, group.label) && (
+                    <span className="normal-case font-medium tracking-normal text-slate-400">
+                      · MC: {mcForLabel(day, group.label)}
+                    </span>
+                  )}
                 </p>
               )}
               {group.items.map((s) => (
@@ -596,8 +604,13 @@ export default function DisplayPage() {
             {groupByTimeOfDay(sesiones).flatMap((group, gi) => [
               group.label && (
                 <li key={`h-${gi}`} className="list-none">
-                  <p className="text-[10px] sm:text-sm lg:text-lg font-bold uppercase tracking-[0.15em] text-blue-300/80 px-0.5 sm:px-1">
-                    {group.label}
+                  <p className="flex items-baseline gap-2 text-[10px] sm:text-sm lg:text-lg font-bold uppercase tracking-[0.15em] text-blue-300/80 px-0.5 sm:px-1">
+                    <span>{group.label}</span>
+                    {mcForLabel(data.day, group.label) && (
+                      <span className="normal-case font-medium tracking-normal text-slate-400">
+                        · MC: {mcForLabel(data.day, group.label)}
+                      </span>
+                    )}
                   </p>
                 </li>
               ),

@@ -51,6 +51,9 @@ const timeOfDayLabel = (timeStr) => {
   return "Noche";
 };
 
+const MC_FIELD_FOR_LABEL = {"Mañana": "mcMorning", "Tarde": "mcAfternoon", "Noche": "mcEvening"};
+const mcForLabel = (day, label) => day?.[MC_FIELD_FOR_LABEL[label]] || null;
+
 function groupByTimeOfDay(sessions) {
   const groups = [];
   let currentLabel;
@@ -88,6 +91,9 @@ function toBookletShape(data, token) {
     days: data.days.map((d) => ({
       day_number: d.dayNumber,
       day_date: d.date,
+      mc_morning: d.mcMorning,
+      mc_afternoon: d.mcAfternoon,
+      mc_evening: d.mcEvening,
       sessions: d.sessions.map((s) => ({
         title: s.title,
         time_start: s.timeStart,
@@ -298,8 +304,13 @@ export default function PublicConferenceProgramPage() {
             {groupByTimeOfDay(activeDay.sessions).map((group, gi) => (
               <div key={gi}>
                 {group.label && (
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
-                    {group.label}
+                  <p className="flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+                    <span>{group.label}</span>
+                    {mcForLabel(activeDay, group.label) && (
+                      <span className="normal-case font-normal tracking-normal text-muted-foreground/80">
+                        · MC: {mcForLabel(activeDay, group.label)}
+                      </span>
+                    )}
                   </p>
                 )}
                 <div className="space-y-3">

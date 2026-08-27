@@ -15,7 +15,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
-  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye, Monitor,
+  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye, Monitor, Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -106,13 +106,15 @@ function timeOfDayLabel(hhmm) {
   return 'Noche';
 }
 
+const TIME_OF_DAY_FIELD = { 'Mañana': 'morning', 'Tarde': 'afternoon', 'Noche': 'evening' };
+
 function groupByTimeOfDay(sessions) {
   const groups = [];
   let currentLabel;
   for (const s of sessions) {
     const label = timeOfDayLabel(s.time_start);
     if (groups.length === 0 || label !== currentLabel) {
-      groups.push({ label, items: [] });
+      groups.push({ label, field: TIME_OF_DAY_FIELD[label] || null, items: [] });
       currentLabel = label;
     }
     groups[groups.length - 1].items.push(s);
@@ -298,6 +300,12 @@ export default function ConferenceDetailPage() {
   // Forzar a mano qué día muestra la pantalla del salón, en vez de dejarlo
   // siempre al cálculo automático por fecha.
   const [savingForcedDay, setSavingForcedDay] = useState(false);
+
+  // Maestro de Ceremonia por franja horaria (mañana/tarde/noche) del día
+  // activo — editingMcField: "morning" | "afternoon" | "evening" | null.
+  const [editingMcField, setEditingMcField] = useState(null);
+  const [mcInput, setMcInput] = useState("");
+  const [savingMc, setSavingMc] = useState(false);
 
   // Link público de auto-registro (iglesias invitadas registran a sus
   // miembros de antemano; en la puerta solo se recoge el gafete)
@@ -627,6 +635,27 @@ export default function ConferenceDetailPage() {
       await fetchConference();
     } catch { /* silent */ }
     setSavingForcedDay(false);
+  };
+
+  const MC_FIELD_KEY = { morning: "mc_morning", afternoon: "mc_afternoon", evening: "mc_evening" };
+
+  const openEditMc = (field, currentDay) => {
+    setEditingMcField(field);
+    setMcInput(currentDay[MC_FIELD_KEY[field]] || "");
+  };
+
+  const handleSaveMc = async (field, currentDay) => {
+    setSavingMc(true);
+    try {
+      await conferenceService.updateDay(id, currentDay.id, {
+        mcMorning: field === "morning" ? mcInput : currentDay.mc_morning,
+        mcAfternoon: field === "afternoon" ? mcInput : currentDay.mc_afternoon,
+        mcEvening: field === "evening" ? mcInput : currentDay.mc_evening,
+      });
+      await fetchConference();
+      setEditingMcField(null);
+    } catch { /* silent */ }
+    setSavingMc(false);
   };
 
   // Librillo del programa — misma vista previa en pestaña nueva que ya usa
@@ -1475,8 +1504,39 @@ export default function ConferenceDetailPage() {
                     <div className="divide-y divide-border/60">
                       {groupByTimeOfDay(currentDay.sessions).flatMap((group, gi) => [
                         group.label && (
-                          <div key={`h-${gi}`} className="px-3 sm:px-4 py-1.5 bg-muted/30">
+                          <div key={`h-${gi}`} className="flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 bg-muted/30">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{group.label}</p>
+                            {editingMcField === group.field ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  autoFocus
+                                  value={mcInput}
+                                  onChange={(e) => setMcInput(e.target.value)}
+                                  onKeyDown={(e) => e.key === "Enter" && handleSaveMc(group.field, currentDay)}
+                                  placeholder="Nombre del MC"
+                                  className="h-6 w-36 sm:w-44 rounded border border-border bg-background px-1.5 text-[11px] text-foreground"
+                                />
+                                <button onClick={() => handleSaveMc(group.field, currentDay)} disabled={savingMc}
+                                  className="p-1 rounded text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10">
+                                  {savingMc ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                </button>
+                                <button onClick={() => setEditingMcField(null)} disabled={savingMc}
+                                  className="p-1 rounded text-muted-foreground hover:bg-accent">
+                                  <X size={11} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => !isLocked && openEditMc(group.field, currentDay)}
+                                disabled={isLocked}
+                                title={isLocked ? undefined : "Editar Maestro de Ceremonia"}
+                                className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors disabled:hover:text-muted-foreground"
+                              >
+                                <Mic size={10} />
+                                {currentDay[MC_FIELD_KEY[group.field]] || (isLocked ? "" : "Agregar MC")}
+                                {!isLocked && currentDay[MC_FIELD_KEY[group.field]] && <Pencil size={9} />}
+                              </button>
+                            )}
                           </div>
                         ),
                         ...group.items.map((session) => (

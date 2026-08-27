@@ -1174,6 +1174,10 @@ export const conferenceService = {
     const response = await api.post(`/conference/${conferenceId}/days`, data);
     return response.data;
   },
+  updateDay: async (conferenceId, dayId, data) => {
+    const response = await api.put(`/conference/${conferenceId}/days/${dayId}`, data);
+    return response.data;
+  },
   deleteDay: async (conferenceId, dayId) => {
     const response = await api.delete(`/conference/${conferenceId}/days/${dayId}`);
     return response.data;

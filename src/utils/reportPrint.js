@@ -2697,7 +2697,8 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
     if (h < 18) return 'Tarde';
     return 'Noche';
   };
-  const timeGroupHtml = (label) => `<p class="bk-time-group">${label}</p>`;
+  const MC_FIELD_FOR_LABEL = { 'Mañana': 'mc_morning', 'Tarde': 'mc_afternoon', 'Noche': 'mc_evening' };
+  const timeGroupHtml = (label, mc) => `<p class="bk-time-group">${label}${mc ? ` <span class="bk-time-group-mc">· MC: ${mc}</span>` : ''}</p>`;
 
   // ── Paginación interior: por ALTURA estimada, igual que el librillo de
   // programa — mismas constantes de fila (misma tipografía/markup de
@@ -2767,7 +2768,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
       // sesión agregada, O si esta es la primera sesión de una página nueva
       // (para no dejar una página "huérfana" sin saber si es mañana/tarde/noche).
       if (label !== null && (current.length === 0 || label !== lastLabel)) {
-        current.push({ kind: 'group', label });
+        current.push({ kind: 'group', label, mc: day[MC_FIELD_FOR_LABEL[label]] || null });
         currentHeight += TIME_GROUP_IN;
       }
       current.push({ kind: 'session', session: s, num });
@@ -2855,7 +2856,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
         (chunk.isFirstChunkOfDay ? dayHeaderHtml(chunk.dayNumber, chunk.dayDate) : '') +
         (chunk.items.length === 0
           ? `<p class="bk-empty">Sin sesiones programadas para este día.</p>`
-          : chunk.items.map((it) => it.kind === 'group' ? timeGroupHtml(it.label) : sessionHtml(it.session, it.num)).join(''));
+          : chunk.items.map((it) => it.kind === 'group' ? timeGroupHtml(it.label, it.mc) : sessionHtml(it.session, it.num)).join(''));
       return wrapPlain(pageNum, body, { headerLabel: `${churchName} &middot; Día ${chunk.dayNumber}` });
     }
     return wrapPlain(pageNum, ''); // página de relleno en blanco
@@ -2951,6 +2952,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
 
   .bk-time-group { font-size: 9.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--gold-deep); font-family: Arial, sans-serif; margin: 10px 0 6px; }
   .bk-time-group:first-child { margin-top: 0; }
+  .bk-time-group-mc { font-weight: 500; letter-spacing: 0.2px; text-transform: none; color: var(--muted); }
 
   .bk-folio-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .bk-folio-bar.bk-folio-left { justify-content: flex-start; }
