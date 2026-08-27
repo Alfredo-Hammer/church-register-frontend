@@ -1200,6 +1200,10 @@ export const conferenceService = {
     const response = await api.delete(`/conference/sessions/${sessionId}`);
     return response.data;
   },
+  reorderDaySessions: async (dayId, sessions) => {
+    const response = await api.put(`/conference/days/${dayId}/sessions/reorder`, { sessions });
+    return response.data;
+  },
 
   // ── Registros de asistentes ────────────────
   getRegistrations: async (conferenceId, params = {}) => {

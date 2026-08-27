@@ -15,7 +15,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, StickyNote, FileDown, Award,
   Badge, QrCode, Check, Camera, Cake, ScanLine, BarChart3, Minus,
   CheckCircle2, XCircle, RotateCcw, AlertTriangle, Lock,
-  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye, Monitor, Mic,
+  Link2, Copy, RefreshCw, Trophy, ClipboardCheck, ShieldCheck, Coffee, Eye, Monitor, Mic, GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateCertificadoPDF, generateGafetePDF, generateGafetesBatchPDF } from "@/utils/pdf/conferencePdf";
@@ -306,6 +306,16 @@ export default function ConferenceDetailPage() {
   const [editingMcField, setEditingMcField] = useState(null);
   const [mcInput, setMcInput] = useState("");
   const [savingMc, setSavingMc] = useState(false);
+
+  // Arrastrar-y-soltar para reordenar sesiones de un día. El conjunto de
+  // horarios del día no cambia — al soltar, esos mismos horarios (en el
+  // mismo orden cronológico que ya tenían) se reasignan a las sesiones según
+  // su nueva posición visual. Así el reordenamiento sigue siendo consistente
+  // con el agrupado por franja y el "en curso" en vivo de las otras 3
+  // pantallas, que dependen de time_start real — no de un orden manual
+  // aparte que ellas no conocen.
+  const [sessionDragIndex, setSessionDragIndex] = useState(null);
+  const [sessionHoverIndex, setSessionHoverIndex] = useState(null);
 
   // Link público de auto-registro (iglesias invitadas registran a sus
   // miembros de antemano; en la puerta solo se recoge el gafete)
@@ -656,6 +666,40 @@ export default function ConferenceDetailPage() {
       setEditingMcField(null);
     } catch { /* silent */ }
     setSavingMc(false);
+  };
+
+  const handleSessionDragStart = (idx) => {
+    setSessionDragIndex(idx);
+    setSessionHoverIndex(idx);
+  };
+
+  const handleSessionDragEnter = (idx) => {
+    if (idx !== sessionHoverIndex) setSessionHoverIndex(idx);
+  };
+
+  const handleSessionDragEnd = async () => {
+    const from = sessionDragIndex;
+    const to = sessionHoverIndex;
+    setSessionDragIndex(null);
+    setSessionHoverIndex(null);
+    if (from === null || to === null || from === to || !currentDay) return;
+
+    const original = currentDay.sessions;
+    const slots = original.map((s) => ({ time_start: s.time_start, time_end: s.time_end }));
+    const reordered = [...original];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    const newSessions = reordered.map((s, i) => ({ ...s, time_start: slots[i].time_start, time_end: slots[i].time_end }));
+
+    setDays((prev) => prev.map((d) => (d.id === currentDay.id ? { ...d, sessions: newSessions } : d)));
+    try {
+      await conferenceService.reorderDaySessions(
+        currentDay.id,
+        newSessions.map((s) => ({ id: s.id, timeStart: s.time_start, timeEnd: s.time_end }))
+      );
+    } catch {
+      await fetchConference();
+    }
   };
 
   // Librillo del programa — misma vista previa en pestaña nueva que ya usa
@@ -1539,9 +1583,32 @@ export default function ConferenceDetailPage() {
                             )}
                           </div>
                         ),
-                        ...group.items.map((session) => (
+                        ...group.items.map((session) => {
+                        const flatIdx = currentDay.sessions.findIndex((s) => s.id === session.id);
+                        const isDragging = sessionDragIndex === flatIdx;
+                        const isHover = sessionHoverIndex === flatIdx && sessionDragIndex !== null && sessionDragIndex !== flatIdx;
+                        return (
                         <div key={session.id}
-                          className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-muted/40 transition-colors">
+                          draggable={!isLocked}
+                          onDragStart={() => handleSessionDragStart(flatIdx)}
+                          onDragEnter={() => handleSessionDragEnter(flatIdx)}
+                          onDragEnd={handleSessionDragEnd}
+                          onDragOver={(e) => e.preventDefault()}
+                          className={cn(
+                            "flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-3 sm:px-4 py-2.5 transition-colors",
+                            isDragging ? "opacity-40" : "opacity-100",
+                            isHover ? "bg-blue-500/10" : "hover:bg-muted/40",
+                          )}>
+                          {/* Asa de arrastre — solo visual/cursor, el drag
+                              source real es toda la fila (mismo criterio que
+                              ProgramPage.jsx). Oculta cuando el día está
+                              bloqueado, ya que ahí tampoco se puede reordenar. */}
+                          {!isLocked && (
+                            <div title="Arrastrar para reordenar"
+                              className="hidden sm:flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0">
+                              <GripVertical size={14} />
+                            </div>
+                          )}
                           {/* Hora (+ tipo, solo en móvil). Inicio y fin en
                               líneas separadas — en una sola línea "11:00 AM –
                               12:00 PM" no cabía en una columna angosta y se
@@ -1629,7 +1696,8 @@ export default function ConferenceDetailPage() {
                             )}
                           </div>
                         </div>
-                        )),
+                        );
+                        }),
                       ].filter(Boolean))}
                     </div>
                   )}
