@@ -2,9 +2,7 @@ import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {membersService} from "@/services/api";
 import {useAuth} from "@/contexts/AuthContext";
-import {PrintLayout} from "@/components/print";
-import MemberPrintCard from "@/components/print/MemberPrintCard";
-import {exportMemberPdf} from "@/utils/pdf/memberPdf";
+import {buildMemberFicha} from "@/utils/reportPrint";
 import {Button} from "@/components/ui/Button";
 import {
   ArrowLeft,
@@ -224,7 +222,6 @@ export default function MemberDetailPage() {
   const [groups, setGroups] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [printOpen, setPrintOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState("");
@@ -252,6 +249,14 @@ export default function MemberDetailPage() {
     })();
     return () => { ignore = true; };
   }, [id]);
+
+  const handlePrintFicha = () => {
+    const win = window.open("", "_blank");
+    const html = buildMemberFicha(member, groups || [], {name: user?.churchName, logoUrl: user?.churchLogo ?? null});
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+  };
 
   const handleDelete = async () => {
     try {
@@ -356,7 +361,7 @@ export default function MemberDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Volver a Miembros
         </button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setPrintOpen(true)}>
+          <Button variant="outline" onClick={handlePrintFicha}>
             <Printer className="w-4 h-4 mr-2" /> Imprimir / PDF
           </Button>
           <Button
@@ -559,17 +564,6 @@ export default function MemberDetailPage() {
         )}
         {transferError && <p className="text-xs text-red-700 dark:text-red-400 mt-2">{transferError}</p>}
       </Section>
-
-      {printOpen && (
-        <PrintLayout
-          title="Vista Previa — Ficha de Miembro"
-          subtitle={`${member.first_name} ${member.last_name}`}
-          onClose={() => setPrintOpen(false)}
-          onExportPdf={(onStart, onEnd) => exportMemberPdf(member, onStart, onEnd)}
-        >
-          <MemberPrintCard member={member} groups={groups || []} church={{name: user?.churchName, logoUrl: user?.churchLogo ?? null}} />
-        </PrintLayout>
-      )}
 
       {deleteConfirm && (
         <ConfirmDialog

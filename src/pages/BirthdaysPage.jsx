@@ -34,7 +34,7 @@ function avatarColor(name = "") {
 
 // El backend manda ISO con hora en UTC (ej. "1990-03-15T05:00:00.000Z") —
 // se reconstruye a mediodía local para que el día no se corra por huso
-// horario, mismo truco que ya usa MemberPrintCard/MemberDetailPage.
+// horario, mismo truco que ya usa reportPrint.js/MemberDetailPage.
 function localDate(isoDate) {
   return new Date(isoDate.slice(0, 10) + "T12:00:00");
 }

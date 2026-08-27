@@ -100,6 +100,25 @@ const CSS = `
   .cal-day-card .etitle{font-weight:700;color:#0f172a;font-size:10px;line-height:1.3;margin-bottom:3px}
   .cal-day-card .efield{font-size:8.5px;color:#475569;line-height:1.55}
   .cal-day-card .efield.estatus{color:#94a3b8}
+  /* ── Ficha de miembro (llena, para imprimir/descargar) ── */
+  .ficha-profile{display:flex;align-items:flex-start;gap:18px;margin-bottom:18px}
+  .ficha-avatar{width:80px;height:80px;border-radius:12px;flex-shrink:0;object-fit:cover;border:3px solid #f1f5f9}
+  .ficha-avatar-fallback{width:80px;height:80px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700}
+  .ficha-name{font-size:20px;font-weight:700;color:#0f172a;margin-bottom:6px}
+  .ficha-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .ficha-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
+  .ficha-since{font-size:10.5px;color:#94a3b8}
+  .ficha-section-title{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+  .ficha-section-title .bar{width:3px;height:13px;border-radius:2px;flex-shrink:0}
+  .ficha-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;margin-bottom:14px}
+  .ficha-field{margin-bottom:9px}
+  .ficha-field-label{font-size:9px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+  .ficha-field-value{font-size:12px;color:#0f172a;margin-top:2px;line-height:1.4}
+  .ficha-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .ficha-chip{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+  .ficha-quote{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px 16px;margin-bottom:14px}
+  .ficha-quote p{font-size:12px;color:#4c1d95;line-height:1.65;font-style:italic}
+  .ficha-divider{height:1px;background:#e2e8f0;margin:16px 0}
 `;
 
 // ── Botones flotantes (no se imprimen) ────────────────────────────────────
@@ -111,10 +130,12 @@ const actionBtns = `
 `;
 
 // ── Wrapper HTML completo ─────────────────────────────────────────────────
-function doc(title, body) {
+// extraStyle: CSS adicional solo para este documento (ej. fijar @page size
+// sin afectar a los demás reportes, que dejan el tamaño de página al navegador).
+function doc(title, body, extraStyle = "") {
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>${title} — Sistema Eclesiástico</title>
-<style>${CSS}</style></head><body>${body}${actionBtns}</body></html>`;
+<style>${CSS}${extraStyle}</style></head><body>${body}${actionBtns}</body></html>`;
 }
 
 // ── Cabecera de cada reporte (con branding de iglesia) ───────────────────
@@ -531,6 +552,150 @@ export function buildBlankVisitorForm(church = {}) {
     ${sigRow}
     ${footerFor(church)}
   `);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 4c. FICHA DE MIEMBRO — versión llena, para imprimir/descargar
+// ─────────────────────────────────────────────────────────────────────────
+const FICHA_AVATAR_BG = [
+  ["#3b5bdb", "#1c3cb5"], ["#6741d9", "#4c2daa"], ["#0ca678", "#087556"],
+  ["#e03131", "#b52020"], ["#e8590c", "#bb4700"], ["#0891b2", "#0a6e87"],
+];
+function fichaAvatarGradient(name = "") {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  const [from, to] = FICHA_AVATAR_BG[Math.abs(h) % FICHA_AVATAR_BG.length];
+  return `linear-gradient(135deg, ${from}, ${to})`;
+}
+const fichaFmtDate = (d) => {
+  if (!d) return null;
+  return new Date(String(d).slice(0, 10) + "T12:00:00").toLocaleDateString("es-ES", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+};
+const fichaCalcAge = (d) => {
+  if (!d) return null;
+  const birth = new Date(String(d).slice(0, 10) + "T12:00:00");
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+const FICHA_STATUS_CFG = {
+  ACTIVO: { bg: "#d1fae5", color: "#065f46", label: "Activo" },
+  INACTIVO: { bg: "#fee2e2", color: "#991b1b", label: "Inactivo" },
+  VISITANTE: { bg: "#fef3c7", color: "#92400e", label: "Visitante" },
+};
+const FICHA_AGE_GROUP_CFG = {
+  NIÑO: { bg: "#ccfbf1", color: "#0f766e", label: "Niño" },
+  JOVEN: { bg: "#ede9fe", color: "#5b21b6", label: "Joven" },
+};
+const FICHA_MARITAL_LABELS = {
+  SOLTERO: "Soltero/a", CASADO: "Casado/a", DIVORCIADO: "Divorciado/a",
+  VIUDO: "Viudo/a", UNION_LIBRE: "Unión libre",
+};
+
+function fichaField(label, value) {
+  if (!value) return "";
+  return `<div class="ficha-field">
+    <div class="ficha-field-label">${label}</div>
+    <div class="ficha-field-value">${value}</div>
+  </div>`;
+}
+
+function fichaSectionTitle(color, text) {
+  return `<div class="ficha-section-title" style="color:${color}">
+    <span class="bar" style="background:${color}"></span>${text}
+  </div>`;
+}
+
+export function buildMemberFicha(member, groups = [], church = {}) {
+  const fullName = `${member.first_name || ""} ${member.last_name || ""}`.trim();
+  const initials = `${member.first_name?.[0] ?? ""}${member.last_name?.[0] ?? ""}`.toUpperCase();
+  const age = fichaCalcAge(member.birth_date);
+  const statusCfg = FICHA_STATUS_CFG[member.status] ?? FICHA_STATUS_CFG.ACTIVO;
+  const ageGrpCfg = FICHA_AGE_GROUP_CFG[member.age_group];
+  const isChild = member.age_group === "NIÑO";
+  const isYouth = member.age_group === "JOVEN";
+  const guardianName = member.guardian_id
+    ? `${member.guardian_first_name || ""} ${member.guardian_last_name || ""}`.trim()
+    : member.guardian_name || null;
+  const genderLabel = member.gender === "MASCULINO" ? "Masculino" : member.gender === "FEMENINO" ? "Femenino" : member.gender || null;
+
+  const avatarHtml = member.photo_url
+    ? `<img class="ficha-avatar" src="${member.photo_url}" alt="${fullName}">`
+    : `<div class="ficha-avatar-fallback" style="background:${fichaAvatarGradient(fullName)}">${initials}</div>`;
+
+  const badges = [
+    `<span class="ficha-badge" style="background:${statusCfg.bg};color:${statusCfg.color}">${statusCfg.label}</span>`,
+    ageGrpCfg ? `<span class="ficha-badge" style="background:${ageGrpCfg.bg};color:${ageGrpCfg.color}">${ageGrpCfg.label}</span>` : "",
+    genderLabel ? `<span class="ficha-badge" style="background:#f3f4f6;color:#374151">${genderLabel}</span>` : "",
+  ].filter(Boolean).join("");
+
+  const memberSince = fichaFmtDate(member.member_since);
+
+  const childYouthSection = (isChild || isYouth) ? `
+    <div class="ficha-divider"></div>
+    ${fichaSectionTitle(isChild ? "#0f766e" : "#5b21b6", isChild ? "Información del Niño" : "Información del Joven")}
+    <div class="ficha-grid">
+      <div>
+        ${fichaField("Padre / Tutor", guardianName)}
+        ${isChild ? fichaField("Grado escolar", member.grade) : ""}
+      </div>
+      <div>
+        ${fichaField("Contacto de emergencia", member.emergency_contact)}
+        ${member.allergies ? `<div class="ficha-field">
+          <div class="ficha-field-label" style="color:#dc2626">Alergias / Condiciones médicas</div>
+          <div class="ficha-field-value" style="color:#b91c1c;font-weight:500">${member.allergies}</div>
+        </div>` : ""}
+      </div>
+    </div>` : "";
+
+  const groupsSection = groups.length > 0 ? `
+    <div class="ficha-divider"></div>
+    ${fichaSectionTitle("#d97706", "Grupos y Ministerios")}
+    <div class="ficha-chips">${groups.map((g) => `<span class="ficha-chip">${g.name}</span>`).join("")}</div>` : "";
+
+  const pastorSection = member.pastor_notes ? `
+    <div class="ficha-divider"></div>
+    ${fichaSectionTitle("#4f46e5", "Palabras del Pastor / Líder")}
+    <div class="ficha-quote"><p>&ldquo;${member.pastor_notes}&rdquo;</p></div>` : "";
+
+  return doc("Ficha de Miembro", `
+    ${hdr("Ficha de Miembro", fullName, "", church)}
+
+    <div class="ficha-profile">
+      ${avatarHtml}
+      <div>
+        <div class="ficha-name">${fullName}</div>
+        <div class="ficha-badges">${badges}</div>
+        ${memberSince ? `<div class="ficha-since">Miembro desde ${memberSince}</div>` : ""}
+      </div>
+    </div>
+    <div class="ficha-divider"></div>
+
+    <div class="ficha-grid">
+      <div>
+        ${fichaSectionTitle("#4f46e5", "Información Personal")}
+        ${fichaField("Fecha de nacimiento", member.birth_date ? `${fichaFmtDate(member.birth_date)}${age !== null ? ` · ${age} años` : ""}` : null)}
+        ${fichaField("Género", genderLabel)}
+        ${fichaField("Documento de identidad", member.document_id)}
+        ${fichaField("Estado civil", FICHA_MARITAL_LABELS[member.marital_status])}
+        ${fichaField("Ocupación", member.occupation)}
+      </div>
+      <div>
+        ${fichaSectionTitle("#059669", "Contacto")}
+        ${fichaField("Teléfono", member.phone)}
+        ${fichaField("Email", member.email)}
+        ${fichaField("Dirección", member.address)}
+      </div>
+    </div>
+    ${childYouthSection}
+    ${groupsSection}
+    ${pastorSection}
+    ${footerFor(church)}
+  `, "@page{size:letter}");
 }
 
 // ─────────────────────────────────────────────────────────────────────────
