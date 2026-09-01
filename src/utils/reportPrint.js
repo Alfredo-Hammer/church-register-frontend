@@ -2214,8 +2214,8 @@ export function buildPlanPDF(plan = {}, goals = [], actions = [], church = {}, o
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// PROGRAMA — librillo real: hojas tamaño carta EN HORIZONTAL (11in × 8.5in),
-// cada una con dos páginas de media carta (5.5in × 8.5in) una junto a otra,
+// PROGRAMA — librillo real: hojas A4 EN HORIZONTAL (11.69in × 8.27in),
+// cada una con dos páginas A5 (5.85in × 8.27in) una junto a otra,
 // ya en el orden de imposición correcto para que al imprimir a doble cara y
 // doblar la hoja por la mitad, las páginas queden en orden de lectura
 // (portada, interior, contraportada) sin que el usuario tenga que
@@ -2329,10 +2329,17 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   // numeral en círculo, notas con borde izquierdo) contra scrollHeight
   // real medido en el navegador — ver nota de verificación en el historial
   // de memoria del proyecto si se vuelve a tocar la tipografía de .bk-item.
-  const ITEM_BASE_IN = 0.51;
-  const ITEM_LEADER_IN = 0.17;
-  const ITEM_NOTES_IN = 0.17;
-  const PAGE_BUDGET_IN = 6.25;
+  // PAGE_BUDGET_IN reducido de 6.25 a 6.02 al pasar el panel de carta
+  // (8.5in alto) a A5/A4 (8.27in alto) — misma proporción de margen de
+  // seguridad, ajustada por los 0.23in menos de alto disponible.
+  // ITEM_BASE_IN/LEADER_IN/NOTES_IN vueltos a medir (scrollHeight real en
+  // navegador) tras subir .bk-item-time/leader/notes de ~9.5-10px a 12px —
+  // las notas en particular ahora envuelven a 2 líneas más seguido a este
+  // tamaño, así que su alto casi se duplicó frente a la versión anterior.
+  const ITEM_BASE_IN = 0.55;
+  const ITEM_LEADER_IN = 0.20;
+  const ITEM_NOTES_IN = 0.40;
+  const PAGE_BUDGET_IN = 6.02;
 
   const estimateItemHeight = (it) => {
     let h = ITEM_BASE_IN;
@@ -2486,20 +2493,20 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   :root {
     --ink: #1c1f26;
     --ink-soft: #4b4f58;
-    --muted: #8a8e97;
+    --muted: #6b6f78;
     --gold: #a9835a;
     --gold-deep: #8a6a41;
     --gold-soft: #cdb890;
     --rule: #e8e2d3;
     --rule-strong: #d8cfb8;
   }
-  @page { size: 11in 8.5in; margin: 0; }
+  @page { size: 11.693in 8.268in; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Georgia, 'Times New Roman', serif; color: var(--ink); font-size: 12px; line-height: 1.5; }
 
-  .bk-sheet { display: flex; width: 11in; height: 8.5in; page-break-after: always; }
+  .bk-sheet { display: flex; width: 11.693in; height: 8.268in; page-break-after: always; }
 
-  .bk-panel { width: 5.5in; height: 8.5in; padding: 0.32in; box-sizing: border-box; background: #fff; }
+  .bk-panel { width: 5.8465in; height: 8.268in; padding: 0.32in; box-sizing: border-box; background: #fff; }
 
   /* ── Portada: zonas arriba/medio/abajo repartidas con space-between,
      esquinas abiertas en vez de un recuadro cerrado — look editorial en
@@ -2531,7 +2538,7 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
 
   .bk-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .bk-cover-footer-line { width: 100%; max-width: 120px; height: 1px; background: var(--rule); }
-  .bk-cover-footer p { font-size: 8.5px; color: var(--gold-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; }
+  .bk-cover-footer p { font-size: 8.5px; color: var(--gold-deep); font-family: Arial, sans-serif; letter-spacing: 0.4px; }
 
   /* ── Resto de páginas: cabecera editorial fija arriba (una raya, con o
      sin texto), folio SOLO abajo pegado al margen exterior. ── */
@@ -2559,11 +2566,11 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   .bk-item-body { flex: 1; min-width: 0; }
   .bk-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .bk-item-type { font-size: 7px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-deep); background: rgba(169,131,90,0.12); padding: 2px 7px; border-radius: 20px; font-family: Arial, sans-serif; }
-  .bk-item-time { font-size: 9.5px; color: var(--muted); font-family: 'Courier New', monospace; flex-shrink: 0; }
+  .bk-item-time { font-size: 12px; color: var(--muted); font-family: 'Courier New', monospace; flex-shrink: 0; }
   .bk-item-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 3px; }
-  .bk-item-leader { font-size: 10px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
+  .bk-item-leader { font-size: 12px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
   .bk-item-leader::before { content: "— "; }
-  .bk-item-notes { font-size: 9.5px; color: var(--muted); font-style: italic; margin-top: 2px; padding-left: 7px; border-left: 2px solid var(--gold-soft); }
+  .bk-item-notes { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 2px; padding-left: 7px; border-left: 2px solid var(--gold-soft); }
   .bk-empty { text-align: center; color: var(--muted); padding: 26px 0; font-size: 11px; }
 
   .bk-rule { width: 44px; height: 1px; background: var(--rule-strong); margin: 4px 0; }
@@ -2575,7 +2582,7 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
   @media screen {
     body { background: #e5e7eb; padding: 24px 0; }
     .bk-sheet { background: #fff; margin: 0 auto 20px; box-shadow: 0 4px 18px rgba(0,0,0,.12); }
-    .no-print { display: block; text-align: center; max-width: 11in; margin: 0 auto 16px; font-size: 12px; color: #4b5563; font-family: Arial, sans-serif; line-height: 1.6; }
+    .no-print { display: block; text-align: center; max-width: 11.693in; margin: 0 auto 16px; font-size: 12px; color: #4b5563; font-family: Arial, sans-serif; line-height: 1.6; }
   }
   .actions { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 8px; z-index: 100; }
   .btn-print { background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(79,70,229,.4); font-family: Arial, sans-serif; }
@@ -2584,7 +2591,8 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
 </style></head><body>
 
   <p class="no-print">
-    Hojas tamaño carta en horizontal — cada una trae dos páginas de media carta ya en el orden correcto para doblar.
+    Hojas tamaño A4 en horizontal — cada una trae dos páginas A5 ya en el orden correcto para doblar.
+    Si al imprimir ves que sale reducido, revisa en el diálogo de impresión que el tamaño de papel sea A4 y la escala 100% (no "Ajustar al área imprimible").
     Imprime a doble cara (recomendado: volteo por el borde corto — si el orden sale invertido, prueba con borde largo,
     varía según la impresora) y dobla cada hoja por la mitad.
     ${isMultiSheet ? `Este programa usa ${numSheets} hojas: imprímelas todas, dobla cada una por separado y encájalas en orden (hoja 1 por fuera, hoja 2 adentro, y así sucesivamente) para armar el librillo completo.` : 'Al doblarla ya tienes el librillo completo.'}
@@ -2601,7 +2609,7 @@ export function buildProgramBooklet(program = {}, items = [], church = {}) {
 
 // ── Librillo del programa de conferencia ────────────────────────────────────
 // Misma arquitectura de imposición saddle-stitch que buildProgramBooklet
-// (hoja carta horizontal, cada una con 2 páginas de media carta ya en el
+// (hoja A4 horizontal, cada una con 2 páginas A5 ya en el
 // orden correcto para doblar) — la diferencia real es que acá el interior
 // se organiza por DÍA en vez de una sola lista plana de ítems, y cada sesión
 // ya trae su propia hora de inicio/fin (no hay que acumular por duración
@@ -2714,11 +2722,16 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   // corresponda), así que el día que sigue simplemente continúa llenando
   // el espacio que quedó libre — el propio encabezado de "Día N" deja bien
   // claro dónde empieza cada uno aunque comparta hoja con el anterior.
-  const ITEM_BASE_IN = 0.51;
-  const ITEM_LEADER_IN = 0.17;
-  const ITEM_SCRIPTURE_IN = 0.15;
-  const ITEM_NOTES_IN = 0.17;
-  const PAGE_BUDGET_IN = 6.25;
+  // BASE/LEADER/SCRIPTURE/NOTES vueltos a medir (scrollHeight real en
+  // navegador) tras subir .bk-item-time/leader/scripture/notes de
+  // ~9.5-11px a 12px — ver misma nota en buildProgramBooklet.
+  const ITEM_BASE_IN = 0.55;
+  const ITEM_LEADER_IN = 0.20;
+  const ITEM_SCRIPTURE_IN = 0.20;
+  const ITEM_NOTES_IN = 0.40;
+  // Reducido de 6.25 a 6.02 al pasar el panel de carta (8.5in alto) a
+  // A5/A4 (8.27in alto) — ver misma nota en buildProgramBooklet.
+  const PAGE_BUDGET_IN = 6.02;
   const DAY_HEADER_IN = 0.5;
   const TIME_GROUP_IN = 0.3;
   const EMPTY_DAY_IN = 0.7;
@@ -2899,20 +2912,20 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   :root {
     --ink: #1c1f26;
     --ink-soft: #4b4f58;
-    --muted: #8a8e97;
+    --muted: #6b6f78;
     --gold: #a9835a;
     --gold-deep: #8a6a41;
     --gold-soft: #cdb890;
     --rule: #e8e2d3;
     --rule-strong: #d8cfb8;
   }
-  @page { size: 11in 8.5in; margin: 0; }
+  @page { size: 11.693in 8.268in; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Georgia, 'Times New Roman', serif; color: var(--ink); font-size: 12px; line-height: 1.5; }
 
-  .bk-sheet { display: flex; width: 11in; height: 8.5in; page-break-after: always; }
+  .bk-sheet { display: flex; width: 11.693in; height: 8.268in; page-break-after: always; }
 
-  .bk-panel { width: 5.5in; height: 8.5in; padding: 0.32in; box-sizing: border-box; background: #fff; }
+  .bk-panel { width: 5.8465in; height: 8.268in; padding: 0.32in; box-sizing: border-box; background: #fff; }
 
   .bk-cover-frame {
     width: 100%; height: 100%; box-sizing: border-box; position: relative;
@@ -2941,7 +2954,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
 
   .bk-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .bk-cover-footer-line { width: 100%; max-width: 120px; height: 1px; background: var(--rule); }
-  .bk-cover-footer p { font-size: 8.5px; color: var(--gold-soft); font-family: Arial, sans-serif; letter-spacing: 0.4px; }
+  .bk-cover-footer p { font-size: 8.5px; color: var(--gold-deep); font-family: Arial, sans-serif; letter-spacing: 0.4px; }
 
   .bk-plain-page { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0.34in 0.38in; }
   .bk-run-head { height: 0.24in; display: flex; align-items: center; font-size: 8px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); font-family: Arial, sans-serif; border-bottom: 1px solid var(--rule); margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2980,12 +2993,12 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   .bk-item-body { flex: 1; min-width: 0; }
   .bk-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .bk-item-type { font-size: 7px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-deep); background: rgba(169,131,90,0.12); padding: 2px 7px; border-radius: 20px; font-family: Arial, sans-serif; }
-  .bk-item-time { font-size: 11px; font-weight: 700; color: var(--ink-soft); font-family: 'Courier New', monospace; flex-shrink: 0; }
+  .bk-item-time { font-size: 12px; font-weight: 700; color: var(--ink-soft); font-family: 'Courier New', monospace; flex-shrink: 0; }
   .bk-item-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 3px; }
-  .bk-item-leader { font-size: 10px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
+  .bk-item-leader { font-size: 12px; color: var(--ink-soft); margin-top: 1px; font-family: Arial, sans-serif; }
   .bk-item-leader::before { content: "— "; }
-  .bk-item-scripture { font-size: 9.5px; color: var(--gold-deep); font-style: italic; margin-top: 1px; font-family: Arial, sans-serif; }
-  .bk-item-notes { font-size: 9.5px; color: var(--muted); font-style: italic; margin-top: 2px; padding-left: 7px; border-left: 2px solid var(--gold-soft); }
+  .bk-item-scripture { font-size: 12px; color: var(--gold-deep); font-style: italic; margin-top: 1px; font-family: Arial, sans-serif; }
+  .bk-item-notes { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 2px; padding-left: 7px; border-left: 2px solid var(--gold-soft); }
   .bk-empty { text-align: center; color: var(--muted); padding: 26px 0; font-size: 11px; }
 
   .bk-rule { width: 44px; height: 1px; background: var(--rule-strong); margin: 4px 0; }
@@ -2997,7 +3010,7 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
   @media screen {
     body { background: #e5e7eb; padding: 24px 0; }
     .bk-sheet { background: #fff; margin: 0 auto 20px; box-shadow: 0 4px 18px rgba(0,0,0,.12); }
-    .no-print { display: block; text-align: center; max-width: 11in; margin: 0 auto 16px; font-size: 12px; color: #4b5563; font-family: Arial, sans-serif; line-height: 1.6; }
+    .no-print { display: block; text-align: center; max-width: 11.693in; margin: 0 auto 16px; font-size: 12px; color: #4b5563; font-family: Arial, sans-serif; line-height: 1.6; }
   }
   .actions { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 8px; z-index: 100; }
   .btn-print { background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(79,70,229,.4); font-family: Arial, sans-serif; }
@@ -3006,7 +3019,8 @@ export async function buildConferenceProgramBooklet(conference = {}, days = [], 
 </style></head><body>
 
   <p class="no-print">
-    Vista previa del programa — hojas tamaño carta en horizontal, cada una con dos páginas de media carta ya en el orden correcto para doblar.
+    Vista previa del programa — hojas tamaño A4 en horizontal, cada una con dos páginas A5 ya en el orden correcto para doblar.
+    Si al imprimir ves que sale reducido, revisa en el diálogo de impresión que el tamaño de papel sea A4 y la escala 100% (no "Ajustar al área imprimible").
     Imprime a doble cara (recomendado: volteo por el borde corto — si el orden sale invertido, prueba con borde largo,
     varía según la impresora) y dobla cada hoja por la mitad.
     ${isMultiSheet ? `Este programa usa ${numSheets} hojas: imprímelas todas, dobla cada una por separado y encájalas en orden (hoja 1 por fuera, hoja 2 adentro, y así sucesivamente) para armar el librillo completo.` : 'Al doblarla ya tienes el librillo completo.'}
